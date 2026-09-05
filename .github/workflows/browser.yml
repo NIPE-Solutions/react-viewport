@@ -22,7 +22,7 @@ jobs:
       PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/library
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Set up Node.js
@@ -55,7 +55,7 @@ jobs:
       PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/website
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Set up Node.js
