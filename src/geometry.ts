@@ -36,11 +36,11 @@ export function getBottomOcclusion(layout: LayoutViewport, visual: VisualViewpor
 }
 
 export function inferKeyboard(input: KeyboardInferenceInput): KeyboardState {
-  if (
-    !input.editableFocused ||
-    input.hasNativeGeometry ||
-    Math.abs(input.visual.scale - 1) > 0.01
-  ) {
+  const scale = input.visual.scale
+  const isScaleAtRest =
+    Number.isFinite(scale) && scale > 0 && Math.abs(scale - 1) <= 0.01 + Number.EPSILON
+
+  if (!input.editableFocused || input.hasNativeGeometry || !isScaleAtRest) {
     return { open: false, height: 0 }
   }
 

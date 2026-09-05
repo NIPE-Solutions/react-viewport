@@ -33,6 +33,10 @@ describe('normalizeFinite', () => {
     expect(normalizeFinite(320)).toBe(320)
   })
 
+  it('preserves a finite fractional dimension', () => {
+    expect(normalizeFinite(320.5)).toBe(320.5)
+  })
+
   it.each([
     [Number.NaN, 0],
     [Number.POSITIVE_INFINITY, 0],
@@ -82,6 +86,17 @@ describe('inferKeyboard', () => {
     ).toEqual({ open: true, height: 120 })
   })
 
+  it('uses the 80px floor when the ratio threshold is smaller', () => {
+    expect(
+      inferKeyboard({
+        layout: { width: 390, height: 400 },
+        visual: visual({ height: 320 }),
+        editableFocused: true,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: true, height: 80 })
+  })
+
   it('requires focused editable content', () => {
     expect(
       inferKeyboard({
@@ -109,6 +124,28 @@ describe('inferKeyboard', () => {
       inferKeyboard({
         layout,
         visual: visual({ height: 500, scale: 1.02 }),
+        editableFocused: true,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: false, height: 0 })
+  })
+
+  it.each([0.99, 1.01])('accepts scale %s at the zoom tolerance boundary', (scale) => {
+    expect(
+      inferKeyboard({
+        layout,
+        visual: visual({ height: 500, scale }),
+        editableFocused: true,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: true, height: 300 })
+  })
+
+  it('rejects invalid scale geometry', () => {
+    expect(
+      inferKeyboard({
+        layout,
+        visual: visual({ height: 500, scale: Number.NaN }),
         editableFocused: true,
         hasNativeGeometry: false,
       }),
