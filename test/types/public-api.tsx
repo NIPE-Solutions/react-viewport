@@ -9,7 +9,11 @@ import type {
   ViewportSupport,
   VisualViewportState,
 } from '@nipe-solutions/react-viewport'
-import { ViewportProvider, useViewport } from '@nipe-solutions/react-viewport'
+import {
+  ViewportProvider,
+  useViewport,
+  useViewportCssVariables,
+} from '@nipe-solutions/react-viewport'
 
 declare const state: ViewportState
 const ready: boolean = state.ready
@@ -25,6 +29,12 @@ void [ready, layout, visual, keyboard, safeArea, orientation, supported, provide
 
 const hookState = useViewport()
 const node = <ViewportProvider targetWindow={null}>{hookState.ready}</ViewportProvider>
+const element = document.createElement('div')
+const ref = { current: element }
+useViewportCssVariables()
+useViewportCssVariables({ target: element })
+useViewportCssVariables({ target: ref })
+useViewportCssVariables({ target: null })
 void node
 
 // @ts-expect-error snapshots are readonly
