@@ -34,6 +34,19 @@ function isAllowedPackedFile(file) {
   )
 }
 
+export function assertNoRuntimeDependencies(packageJson) {
+  const dependencies = packageJson.dependencies
+  const dependencyNames =
+    dependencies !== null && typeof dependencies === 'object' && !Array.isArray(dependencies)
+      ? Object.keys(dependencies)
+      : null
+
+  assert.ok(
+    dependencies === undefined || dependencyNames?.length === 0,
+    `Package must not declare runtime dependencies: ${dependencyNames?.join(', ') ?? 'invalid value'}`,
+  )
+}
+
 async function run(executable, arguments_, cwd) {
   try {
     return await executeFile(executable, arguments_, {
@@ -81,6 +94,7 @@ export async function verifyPackage(root = packageRoot) {
     const packageJson = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
     const packageExports = packageJson.exports?.['.']
 
+    assertNoRuntimeDependencies(packageJson)
     assert.deepEqual(packageExports, expectedExports)
 
     for (const target of Object.values(expectedExports)) {

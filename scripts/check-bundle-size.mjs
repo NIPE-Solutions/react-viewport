@@ -14,7 +14,7 @@ const packageRoot = resolve(scriptDirectory, '..')
 const measuredBaselines = {
   esm: 11_804,
   gzip: 3_448,
-  tarball: 9_839,
+  tarball: 9_830,
 }
 const limits = Object.fromEntries(
   Object.entries(measuredBaselines).map(([name, bytes]) => [
@@ -31,17 +31,21 @@ const bundledReactMarkers = [
 ]
 
 export function getBareImports(source, format) {
-  const pattern =
+  const patterns = [
     format === 'esm'
       ? /\b(?:import|export)\s*(?:[^'";]*?\sfrom\s*)?["']([^"']+)["']/g
-      : /\brequire\(["']([^"']+)["']\)/g
+      : /\brequire\(["']([^"']+)["']\)/g,
+    /\bimport\s*\(\s*["']([^"']+)["']/g,
+  ]
   const specifiers = []
 
-  for (const match of source.matchAll(pattern)) {
-    const specifier = match[1]
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      const specifier = match[1]
 
-    if (specifier !== undefined && !specifier.startsWith('.') && !specifier.startsWith('/')) {
-      specifiers.push(specifier)
+      if (specifier !== undefined && !specifier.startsWith('.') && !specifier.startsWith('/')) {
+        specifiers.push(specifier)
+      }
     }
   }
 
@@ -88,9 +92,9 @@ export async function measureBundleSize(root = packageRoot) {
         gzip: gzipSync(esmBuffer).byteLength,
         tarball: pack.size,
       },
-      bareImports: {
-        esm: assertReactIsExternal(esmSource, 'esm'),
-        cjs: assertReactIsExternal(cjsSource, 'cjs'),
+      sources: {
+        esm: esmSource,
+        cjs: cjsSource,
       },
     }
   } finally {
@@ -98,20 +102,36 @@ export async function measureBundleSize(root = packageRoot) {
   }
 }
 
-export async function checkBundleSize(root = packageRoot) {
-  const result = await measureBundleSize(root)
+export function reportBundleMeasurements(measurements, writeLine = console.log) {
+  const failures = []
 
   for (const name of Object.keys(limits)) {
-    const measurement = result.measurements[name]
+    const measurement = measurements[name]
     const limit = limits[name]
 
-    console.log(`${name}: ${measurement} bytes (limit ${limit} bytes)`)
-    assert.ok(measurement <= limit, `${name} size ${measurement} exceeds ${limit} byte limit`)
+    writeLine(`${name}: ${measurement} bytes (limit ${limit} bytes)`)
+
+    if (measurement > limit) {
+      failures.push(`${name} size ${measurement} exceeds ${limit} byte limit`)
+    }
   }
 
-  console.log(`ESM bare imports: ${result.bareImports.esm.join(', ')}`)
-  console.log(`CJS bare imports: ${result.bareImports.cjs.join(', ')}`)
-  return result
+  assert.equal(failures.length, 0, failures.join('\n'))
+}
+
+export async function checkBundleSize(root = packageRoot) {
+  const measured = await measureBundleSize(root)
+
+  reportBundleMeasurements(measured.measurements)
+
+  const bareImports = {
+    esm: assertReactIsExternal(measured.sources.esm, 'esm'),
+    cjs: assertReactIsExternal(measured.sources.cjs, 'cjs'),
+  }
+
+  console.log(`ESM bare imports: ${bareImports.esm.join(', ')}`)
+  console.log(`CJS bare imports: ${bareImports.cjs.join(', ')}`)
+  return { measurements: measured.measurements, bareImports }
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

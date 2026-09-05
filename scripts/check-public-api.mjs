@@ -24,9 +24,7 @@ const typeExports = [
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const packageRoot = resolve(scriptDirectory, '..')
 
-export async function checkPublicApi(root = packageRoot) {
-  const declarationPath = resolve(root, 'dist/index.d.ts')
-  const declaration = await readFile(declarationPath, 'utf8')
+export function collectDeclarationExports(declaration, declarationPath = 'index.d.ts') {
   const sourceFile = ts.createSourceFile(
     declarationPath,
     declaration,
@@ -37,23 +35,45 @@ export async function checkPublicApi(root = packageRoot) {
   const declarationExports = { runtime: [], types: [] }
 
   for (const statement of sourceFile.statements) {
-    if (!ts.isExportDeclaration(statement)) {
+    if (ts.isExportDeclaration(statement)) {
+      assert.ok(
+        statement.exportClause !== undefined && ts.isNamedExports(statement.exportClause),
+        'The public declaration entry must use named export declarations only',
+      )
+
+      for (const element of statement.exportClause.elements) {
+        const target = statement.isTypeOnly || element.isTypeOnly ? 'types' : 'runtime'
+        declarationExports[target].push(element.name.text)
+      }
       continue
     }
 
-    assert.ok(
-      statement.exportClause !== undefined && ts.isNamedExports(statement.exportClause),
-      'The public declaration entry must use named exports only',
+    const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined
+    const isInlineExport = modifiers?.some(
+      (modifier) =>
+        modifier.kind === ts.SyntaxKind.ExportKeyword ||
+        modifier.kind === ts.SyntaxKind.DefaultKeyword,
     )
 
-    for (const element of statement.exportClause.elements) {
-      const target = statement.isTypeOnly || element.isTypeOnly ? 'types' : 'runtime'
-      declarationExports[target].push(element.name.text)
-    }
+    assert.equal(
+      ts.isExportAssignment(statement) ||
+        ts.isNamespaceExportDeclaration(statement) ||
+        isInlineExport === true,
+      false,
+      'The public declaration entry must use named export declarations only',
+    )
   }
 
   declarationExports.runtime.sort()
   declarationExports.types.sort()
+
+  return declarationExports
+}
+
+export async function checkPublicApi(root = packageRoot) {
+  const declarationPath = resolve(root, 'dist/index.d.ts')
+  const declaration = await readFile(declarationPath, 'utf8')
+  const declarationExports = collectDeclarationExports(declaration, declarationPath)
 
   assert.deepEqual(declarationExports.runtime, [...runtimeExports].sort())
   assert.deepEqual(declarationExports.types, [...typeExports].sort())
