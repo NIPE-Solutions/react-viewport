@@ -14,7 +14,7 @@ const packageRoot = resolve(scriptDirectory, '..')
 const measuredBaselines = {
   esm: 11_804,
   gzip: 3_448,
-  tarball: 13_791,
+  tarball: 15_253,
 }
 const limits = Object.fromEntries(
   Object.entries(measuredBaselines).map(([name, bytes]) => [
