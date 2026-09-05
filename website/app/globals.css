@@ -345,7 +345,6 @@ h3 {
 .coordinate-plane {
   position: relative;
   min-width: 0;
-  aspect-ratio: calc(100vw / 100vh);
   margin: 0;
   overflow: hidden;
   border: 1px solid var(--rule);
@@ -354,6 +353,13 @@ h3 {
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 2rem 2rem;
+}
+
+.coordinate-plane__sizer {
+  display: block;
+  width: 100%;
+  height: auto;
+  visibility: hidden;
 }
 
 .coordinate-drawing {

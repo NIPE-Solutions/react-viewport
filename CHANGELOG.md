@@ -15,8 +15,8 @@ Initial alpha release. The package provides:
 
 The complete automated quality gate passed for this revision: 89 unit tests, 10
 package checks and four packed consumers, 39 cross-engine library browser tests,
-13 documentation-site browser tests, and six verified static documentation
-routes. See the
+39 cross-engine documentation-site browser tests, and six verified static
+documentation routes. See the
 [`0.1.0-alpha.0` readiness report](docs/releases/0.1.0-alpha.0-readiness.md) for
 the measured bundle, browser, documentation, and deployment evidence.
 

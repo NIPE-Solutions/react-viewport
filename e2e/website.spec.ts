@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import process from 'node:process'
 
 const responsiveSizes = [
   { name: 'compact', width: 320, height: 844 },
@@ -30,9 +31,14 @@ for (const size of responsiveSizes) {
   })
 }
 
-test('supports keyboard navigation with a visible skip-link focus indicator', async ({ page }) => {
+test('supports keyboard navigation with a visible skip-link focus indicator', async ({
+  browserName,
+  page,
+}) => {
   await page.goto('/')
-  await page.keyboard.press('Tab')
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  )
 
   const skipLink = page.getByRole('link', { name: 'Skip to content' })
   await expect(skipLink).toBeFocused()

@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const playwrightCli = path.join(repositoryRoot, 'node_modules/playwright/cli.js')
 
 async function readRepositoryFile(file) {
   return readFile(path.join(repositoryRoot, file), 'utf8')
@@ -49,7 +52,7 @@ test('browser CI runs independent library and website jobs with distinct persist
   )
   assert.match(
     workflow,
-    /website:[\s\S]*playwright install --with-deps chromium[\s\S]*npm run test:website:e2e -- --reporter=html --output=test-results\/website[\s\S]*name: website-playwright-report-/,
+    /website:[\s\S]*playwright install --with-deps chromium firefox webkit[\s\S]*npm run test:website:e2e -- --reporter=html --output=test-results\/website[\s\S]*name: website-playwright-report-/,
   )
   assert.equal(workflow.match(/actions\/upload-artifact@v\d+/g)?.length, 2)
   assert.equal(workflow.match(/if:\s*always\(\)/g)?.length, 2)
@@ -63,6 +66,41 @@ test('Playwright configurations partition library and website specifications', a
 
   assert.match(libraryConfiguration, /testIgnore:\s*['"]website\.spec\.ts['"]/)
   assert.match(websiteConfiguration, /testMatch:\s*['"]website\.spec\.ts['"]/)
+})
+
+test('website Playwright discovery runs every scenario in Chromium, Firefox, and WebKit', () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      playwrightCli,
+      'test',
+      '--config',
+      'playwright.website.config.ts',
+      '--list',
+      '--reporter=line',
+    ],
+    {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+    },
+  )
+
+  assert.equal(result.status, 0, result.stderr || result.stdout)
+  const discoveredTests = result.stdout.split('\n').filter((line) => /website\.spec\.ts/.test(line))
+
+  assert.equal(discoveredTests.length, 39, result.stdout)
+  assert.ok(
+    discoveredTests.some((line) => line.includes('[chromium]')),
+    result.stdout,
+  )
+  assert.ok(
+    discoveredTests.some((line) => line.includes('[firefox]')),
+    result.stdout,
+  )
+  assert.ok(
+    discoveredTests.some((line) => line.includes('[webkit]')),
+    result.stdout,
+  )
 })
 
 test('release CI uses OIDC, an npm environment, and no long-lived npm token', async () => {
@@ -99,13 +137,13 @@ test('Dependabot covers npm dependencies and GitHub Actions', async () => {
   assert.match(configuration, /package-ecosystem:\s*['"]github-actions['"]/)
 })
 
-test('the default build and Vercel both target the exported website', async () => {
+test('the default build and Vercel static builder both target the exported website', async () => {
   const packageJson = JSON.parse(await readRepositoryFile('package.json'))
   const vercel = JSON.parse(await readRepositoryFile('vercel.json'))
   const vercelIgnore = await readRepositoryFile('.vercelignore')
 
   assert.equal(packageJson.scripts.build, 'npm run build:website')
-  assert.equal(vercel.framework, 'nextjs')
+  assert.equal(vercel.framework, null)
   assert.equal(vercel.installCommand, 'npm ci')
   assert.equal(vercel.buildCommand, 'npm run build:website')
   assert.equal(vercel.outputDirectory, 'website/out')

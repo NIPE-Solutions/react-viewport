@@ -79,6 +79,12 @@ export function GeometryDemo() {
               : 'Nested viewport coordinate plane showing layout viewport, visual viewport, safe area, and keyboard occlusion'
           }
         >
+          <svg
+            className="coordinate-plane__sizer"
+            width="100vw"
+            height="100vh"
+            aria-hidden="true"
+          />
           {geometry === null ? (
             <div className="coordinate-plane__pending" aria-hidden="true">
               <span>Awaiting client geometry</span>
