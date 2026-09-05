@@ -32,6 +32,7 @@
     "lint": "eslint .",
     "test": "npm run test:unit && npm run test:types",
     "test:api": "node scripts/check-public-api.mjs",
+    "test:e2e": "playwright test",
     "test:package": "node --test test/package/*.test.mjs",
     "test:size": "node scripts/check-bundle-size.mjs",
     "test:types": "tsc --project test/types/tsconfig.json --noEmit",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.58.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "eslint": "^10.10.0",
