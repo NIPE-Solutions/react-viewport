@@ -43,7 +43,10 @@ export function ViewportReadout() {
 ```
 
 No provider is required for normal use. Use `ViewportProvider` only to scope a
-subtree to another `Window`, such as an iframe or test window.
+subtree to an accessible, same-origin `Window`, such as an iframe or test
+window. A cross-origin window cannot expose the document APIs this package
+measures. Passing `targetWindow={null}` intentionally supplies the stable server
+snapshot (`ready: false`) to descendants.
 
 ```tsx
 import { ViewportProvider } from '@nipe-solutions/react-viewport'

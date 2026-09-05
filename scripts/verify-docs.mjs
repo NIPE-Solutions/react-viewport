@@ -4,13 +4,12 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
+const defaultPackageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
+const packageRoot = resolve(process.env.REACT_VIEWPORT_DOCS_ROOT ?? defaultPackageRoot)
 
-const requirements = [
+const textRequirements = [
   ['README.md', 'Reliable mobile viewport state for React.'],
   ['README.md', 'npm install @nipe-solutions/react-viewport'],
-  ['README.md', 'useViewport'],
-  ['README.md', 'useViewportCssVariables'],
   ['README.md', 'Layout viewport'],
   ['README.md', 'Visual viewport'],
   ['README.md', 'When CSS is enough'],
@@ -23,41 +22,65 @@ const requirements = [
   ['README.md', 'https://github.com/NIPE-Solutions/react-viewport'],
   ['README.md', 'max(80 CSS px, 15% of layout height)'],
   ['README.md', 'limitations'],
-  ['docs/browser-notes.md', 'Browser notes registry'],
   ['docs/browser-notes.md', 'max(80 CSS px, 15% of layout height)'],
-  ['docs/browser-notes.md', 'Supported'],
-  ['docs/browser-notes.md', 'Tested'],
-  ['docs/browser-notes.md', 'Fallback'],
-  ['docs/REAL_DEVICE_QA.md', 'AUTOMATED'],
-  ['docs/REAL_DEVICE_QA.md', 'MANUAL PENDING'],
-  ['docs/REAL_DEVICE_QA.md', 'MANUAL VERIFIED'],
-  ['docs/REAL_DEVICE_QA.md', 'iPhone Safari'],
-  ['docs/REAL_DEVICE_QA.md', 'iPad Safari'],
-  ['docs/REAL_DEVICE_QA.md', 'Android Chrome'],
-  ['docs/REAL_DEVICE_QA.md', 'Desktop Safari'],
-  ['docs/REAL_DEVICE_QA.md', 'Desktop Chrome'],
-  ['docs/REAL_DEVICE_QA.md', 'PWA'],
-  ['docs/REAL_DEVICE_QA.md', 'WebView'],
-  ['docs/REAL_DEVICE_QA.md', 'external keyboard'],
-  ['docs/REAL_DEVICE_QA.md', 'keyboard open/close'],
-  ['docs/REAL_DEVICE_QA.md', 'rapid input switching'],
-  ['docs/REAL_DEVICE_QA.md', 'rotation'],
-  ['docs/REAL_DEVICE_QA.md', 'toolbar collapse/expansion'],
-  ['docs/REAL_DEVICE_QA.md', 'scrolling with and without the keyboard'],
-  ['docs/REAL_DEVICE_QA.md', 'modal input'],
-  ['docs/REAL_DEVICE_QA.md', 'fixed-bottom composer'],
-  ['docs/REAL_DEVICE_QA.md', 'safe areas'],
-  ['docs/REAL_DEVICE_QA.md', 'zoom'],
-  ['docs/REAL_DEVICE_QA.md', 'restoration after blur'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],
   ['SECURITY.md', 'Security Policy'],
+  ['SECURITY.md', 'https://github.com/NIPE-Solutions/react-viewport/security/advisories/new'],
+  ['SECURITY.md', 'office@nipesolutions.com'],
+  ['SECURITY.md', 'https://opensource.nipesolutions.com/security'],
   ['CODE_OF_CONDUCT.md', 'Code of Conduct'],
   ['LICENSE', 'MIT License'],
   ['docs/RELEASING.md', 'npm pack'],
   ['.github/ISSUE_TEMPLATE/bug-report.yml', 'browser'],
   ['.github/ISSUE_TEMPLATE/config.yml', 'blank_issues_enabled'],
   ['.github/pull_request_template.md', 'Testing'],
+]
+
+const platformStatuses = new Map([
+  ['iPhone Safari', 'MANUAL PENDING'],
+  ['iPad Safari', 'MANUAL PENDING'],
+  ['Android Chrome', 'MANUAL PENDING'],
+  ['PWA (standalone, where available)', 'MANUAL PENDING'],
+  ['Embedded WebView', 'MANUAL PENDING'],
+  ['external keyboard (where available)', 'MANUAL PENDING'],
+  ['Desktop Chrome', 'AUTOMATED'],
+  ['Desktop Safari / WebKit', 'AUTOMATED'],
+])
+
+const qaScenarioColumns = [
+  'Scenario',
+  'iPhone Safari',
+  'iPad Safari',
+  'Android Chrome',
+  'PWA',
+  'Embedded WebView',
+  'external keyboard',
+  'Desktop Chrome',
+  'Desktop Safari / WebKit',
+]
+
+const qaScenarios = [
+  'keyboard open/close',
+  'rapid input switching',
+  'rotation',
+  'toolbar collapse/expansion',
+  'scrolling with and without the keyboard',
+  'modal input',
+  'fixed-bottom composer',
+  'safe areas',
+  'zoom',
+  'restoration after blur',
+]
+
+const browserNoteFields = [
+  'Date',
+  'Browser / engine / version',
+  'Capability',
+  'Classification',
+  'Observation',
+  'Evidence',
+  'Decision',
 ]
 
 const contents = new Map()
@@ -70,16 +93,159 @@ async function readDocument(path) {
   return contents.get(path)
 }
 
-for (const [path, requiredText] of requirements) {
+function getSection(content, heading) {
+  const expression = new RegExp(
+    `^## ${escapeRegularExpression(heading)}\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`,
+    'm',
+  )
+  const match = expression.exec(content)
+  assert.ok(match?.[1] !== undefined, `Missing "${heading}" section`)
+  return match[1]
+}
+
+function parseMarkdownTable(section, description) {
+  const lines = section.split('\n')
+  const start = lines.findIndex((line) => line.startsWith('|'))
+  assert.ok(start >= 0, `${description} must contain a Markdown table`)
+
+  const tableLines = []
+  for (const line of lines.slice(start)) {
+    if (!line.startsWith('|')) {
+      break
+    }
+    tableLines.push(line)
+  }
+
+  assert.ok(tableLines.length >= 3, `${description} must contain a header, separator, and row`)
+  assert.match(tableLines[1], /^\|(?:\s*:?-{3,}:?\s*\|)+$/)
+
+  const [headerLine, _separatorLine, ...rowLines] = tableLines
+  const headers = parseMarkdownRow(headerLine)
+  const rows = rowLines.map((line) => parseMarkdownRow(line))
+
+  for (const row of rows) {
+    assert.equal(row.length, headers.length, `${description} has a row with the wrong column count`)
+  }
+
+  return { headers, rows }
+}
+
+function parseMarkdownRow(line) {
+  assert.ok(line.endsWith('|'), `Malformed Markdown table row: ${line}`)
+  return line
+    .slice(1, -1)
+    .split('|')
+    .map((cell) => cell.trim())
+}
+
+function assertHeaders(actual, expected, description) {
+  assert.deepEqual(actual, expected, `${description} must use the required columns`)
+}
+
+function assertQuickStart(readme) {
+  const section = getSection(readme, 'Quick start')
+  const match = /^```tsx\n([\s\S]*?)\n```/m.exec(section)
+  assert.ok(match?.[1] !== undefined, 'Quick start must begin with a fenced TSX example')
+  const example = match[1]
+
+  assert.match(
+    example,
+    /import\s*\{\s*useViewport\s*\}\s*from\s*['"]@nipe-solutions\/react-viewport['"]/,
+    'Quick start must import useViewport from the package',
+  )
+  assert.match(
+    example,
+    /\bconst\s+viewport\s*=\s*useViewport\(\)/,
+    'Quick start must call useViewport()',
+  )
+  assert.match(example, /export function \w+\(\)/, 'Quick start must export a runnable component')
+}
+
+function assertQaMatrix(qa) {
+  const platformTable = parseMarkdownTable(getSection(qa, 'Platform matrix'), 'Platform matrix')
+  assertHeaders(
+    platformTable.headers,
+    ['Platform / context', 'Status', 'Required scenarios', 'Evidence'],
+    'Platform matrix',
+  )
+
+  const platformRows = new Map(platformTable.rows.map((row) => [row[0], row]))
+  for (const [platform, expectedStatus] of platformStatuses) {
+    const row = platformRows.get(platform)
+    assert.ok(row !== undefined, `Platform matrix must contain an exact ${platform} row`)
+    assert.equal(row[1], expectedStatus, `${platform} status must be ${expectedStatus}`)
+  }
+
+  const scenarioTable = parseMarkdownTable(getSection(qa, 'Scenario coverage'), 'Scenario coverage')
+  assertHeaders(scenarioTable.headers, qaScenarioColumns, 'Scenario coverage')
+
+  const scenarioRows = new Map(scenarioTable.rows.map((row) => [row[0], row]))
+  for (const scenario of qaScenarios) {
+    const row = scenarioRows.get(scenario)
+    assert.ok(row !== undefined, `Scenario coverage must contain a ${scenario} scenario row`)
+
+    for (const [column, status] of qaScenarioColumns
+      .slice(1)
+      .map((column, index) => [column, row[index + 1]])) {
+      const expectedStatus =
+        column === 'Desktop Chrome' || column === 'Desktop Safari / WebKit'
+          ? 'AUTOMATED'
+          : 'MANUAL PENDING'
+      assert.equal(
+        status,
+        expectedStatus,
+        `${scenario} / ${column} status must be ${expectedStatus}`,
+      )
+    }
+  }
+
+  const statuses = [
+    ...platformTable.rows.map((row) => row[1]),
+    ...scenarioTable.rows.flatMap((row) => row.slice(1)),
+  ]
+  assert.equal(
+    statuses.includes('MANUAL VERIFIED'),
+    false,
+    'Initial QA matrix must have no MANUAL VERIFIED status',
+  )
+}
+
+function assertBrowserNoteRegistry(browserNotes) {
+  const registryTable = parseMarkdownTable(
+    getSection(browserNotes, 'Registry format'),
+    'Browser-note registry format',
+  )
+  assertHeaders(registryTable.headers, ['Field', 'Record'], 'Browser-note registry format')
+
+  const fields = new Map(registryTable.rows.map((row) => [row[0], row[1]]))
+  for (const field of browserNoteFields) {
+    const record = fields.get(field)
+    assert.ok(
+      record !== undefined && record.length > 0,
+      `Browser-note registry must include ${field}`,
+    )
+  }
+
+  assert.ok(
+    fields.get('Classification')?.includes('Supported, Tested, or Fallback'),
+    'Browser-note registry classification must distinguish Supported, Tested, and Fallback',
+  )
+}
+
+function escapeRegularExpression(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+for (const [path, requiredText] of textRequirements) {
   const content = await readDocument(path)
   const normalizedContent = content.replace(/\s+/g, ' ')
   assert.ok(normalizedContent.includes(requiredText), `${path} must include: ${requiredText}`)
 }
 
-const qa = await readDocument('docs/REAL_DEVICE_QA.md')
-for (const platform of ['iPhone', 'iPad', 'Android', 'PWA', 'WebView', 'external keyboard']) {
-  const row = qa.split('\n').find((line) => line.includes(platform))
-  assert.ok(row?.includes('MANUAL PENDING'), `${platform} must remain MANUAL PENDING`)
-}
+assertQuickStart(await readDocument('README.md'))
+assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
+assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))
 
-console.log(`Documentation verification passed (${requirements.length} content assertions).`)
+console.log(
+  `Documentation verification passed (${textRequirements.length} text checks and 3 structural checks).`,
+)

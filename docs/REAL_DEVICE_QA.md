@@ -21,6 +21,25 @@ There are no `MANUAL VERIFIED` rows in the initial alpha.
 | Desktop Chrome | AUTOMATED | deterministic resize, focus, scroll, fallback, CSS variables, and hydration scenarios | `e2e/viewport.spec.ts`, `e2e/hydration.spec.ts` |
 | Desktop Safari / WebKit | AUTOMATED | deterministic resize, focus, scroll, fallback, CSS variables, and hydration scenarios | `e2e/viewport.spec.ts`, `e2e/hydration.spec.ts` |
 
+## Scenario coverage
+
+Every physical target below remains pending for every required scenario. The
+desktop cells record deterministic fixture coverage only; they do not turn a
+physical-device result into a manual verification.
+
+| Scenario | iPhone Safari | iPad Safari | Android Chrome | PWA | Embedded WebView | external keyboard | Desktop Chrome | Desktop Safari / WebKit |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| keyboard open/close | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| rapid input switching | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| rotation | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| toolbar collapse/expansion | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| scrolling with and without the keyboard | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| modal input | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| fixed-bottom composer | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| safe areas | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| zoom | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+| restoration after blur | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | MANUAL PENDING | AUTOMATED | AUTOMATED |
+
 Desktop Safari / WebKit automation is not proof of physical iPhone or iPad
 Safari behavior. Automated fixtures cannot reproduce physical mobile browser
 chrome, keyboard animation, floating keyboards, or every WebView integration.

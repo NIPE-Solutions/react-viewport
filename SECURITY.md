@@ -8,12 +8,19 @@ breaking correction in a later alpha.
 
 ## Reporting a vulnerability
 
-Please do not disclose an unpatched vulnerability in a public issue. If this
-repository's GitHub Security tab offers private reporting, use that channel and
-include a minimal reproduction, affected versions, impact, and any mitigation
-you know. If private reporting is unavailable, use a private contact channel you
-already have with a project maintainer rather than opening a public issue.
+Please do not disclose an unpatched vulnerability in a public issue. Use the
+[repository's GitHub private vulnerability-reporting form](https://github.com/NIPE-Solutions/react-viewport/security/advisories/new)
+as the primary reporting route. Include a minimal reproduction, affected
+versions, impact, and any mitigation you know.
 
-The repository does not publish a security-response SLA or a public security
-email address in this alpha. Acknowledgement and remediation timing therefore
-cannot be promised here. Reporters will be credited only with their permission.
+If that form is unavailable to you, use the official NIPE Open Source security
+contact, [office@nipesolutions.com](mailto:office@nipesolutions.com), as the
+fallback. The address is published on the
+[NIPE Open Source Security page](https://opensource.nipesolutions.com/security).
+Do not put vulnerability details in a public issue. If neither private route is
+available, a non-sensitive public request for a private reporting channel is
+acceptable; wait for a private response before sharing any vulnerability detail.
+
+The repository does not publish a security-response SLA in this alpha.
+Acknowledgement and remediation timing therefore cannot be promised here.
+Reporters will be credited only with their permission.
