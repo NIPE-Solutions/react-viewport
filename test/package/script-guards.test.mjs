@@ -65,7 +65,7 @@ test('bundle size reporting prints every measurement and limit before failing', 
 
   assert.throws(
     () =>
-      reportBundleMeasurements({ esm: 12_986, gzip: 3_961, tarball: 14_884 }, (line) =>
+      reportBundleMeasurements({ esm: 12_986, gzip: 3_961, tarball: 15_172 }, (line) =>
         lines.push(line),
       ),
     /esm size 12986 exceeds 12985 byte limit/,
@@ -73,6 +73,6 @@ test('bundle size reporting prints every measurement and limit before failing', 
   assert.deepEqual(lines, [
     'esm: 12986 bytes (limit 12985 bytes)',
     'gzip: 3961 bytes (limit 3960 bytes)',
-    'tarball: 14884 bytes (limit 14883 bytes)',
+    'tarball: 15172 bytes (limit 15171 bytes)',
   ])
 })
