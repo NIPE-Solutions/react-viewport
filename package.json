@@ -26,12 +26,15 @@
   },
   "packageManager": "npm@11",
   "scripts": {
+    "build": "npm run build:website",
     "build:dist": "vite build && tsc -p tsconfig.build.json",
     "build:website": "npm run build:dist && next build website",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build:dist && npm run test:api && npm run test:size && npm run test:package && node scripts/verify-docs.mjs && npm run build && node scripts/verify-website.mjs && npm run test:workflows",
     "dev:website": "npm run build:dist && next dev website",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
+    "release:check": "node scripts/verify-release.mjs",
     "serve:website": "node scripts/serve-website.mjs",
     "test": "npm run test:unit && npm run test:types",
     "test:api": "node scripts/check-public-api.mjs",
@@ -41,6 +44,7 @@
     "test:size": "node scripts/check-bundle-size.mjs",
     "test:types": "tsc --project test/types/tsconfig.json --noEmit",
     "test:unit": "vitest run",
+    "test:workflows": "node --test scripts/verify-workflows.test.mjs scripts/verify-release.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
