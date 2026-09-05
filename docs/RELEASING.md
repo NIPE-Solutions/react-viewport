@@ -20,6 +20,7 @@ access has been configured.
    npm run test:size
    npm run test:package
    npm run test:e2e
+   npm run test:website:e2e
    node scripts/verify-docs.mjs
    ```
 
@@ -30,6 +31,11 @@ access has been configured.
    ```sh
    npm pack --dry-run
    ```
+
+The tag-triggered release workflow repeats both three-engine Playwright suites
+after the full quality gate and before release metadata validation, packing, or
+publication. A green pull-request browser workflow is useful evidence but does
+not substitute for this tag-specific pre-publication gate.
 
 ## Publishing decision
 

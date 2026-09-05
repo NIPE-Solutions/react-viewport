@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Barlow, IBM_Plex_Mono } from 'next/font/google'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
@@ -45,6 +45,12 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+
 export default function RootLayout({ children }: { readonly children: ReactNode }) {
   return (
     <html lang="en" className={`${textFont.variable} ${dataFont.variable}`}>
@@ -64,6 +70,8 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
               <Link href="/api">API</Link>
               <Link href="/browser-behavior">Browser behavior</Link>
               <Link href="/examples">Examples</Link>
+              <Link href="/guides">Guides</Link>
+              <Link href="/project">Project</Link>
               <Link href="/imprint">Imprint</Link>
               <Link href="/privacy">Privacy</Link>
             </nav>

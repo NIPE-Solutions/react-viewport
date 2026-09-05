@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
-import { apiReference, typeReference } from '../website/content/docs.ts'
+import { apiReference, site, typeReference } from '../website/content/docs.ts'
 
 const repositoryRoot = process.cwd()
 const outputRoot = path.join(repositoryRoot, 'website', 'out')
@@ -25,6 +25,25 @@ const routes = [
     route: '/examples',
     file: 'examples.html',
     copy: ['Examples', 'CSS-variable composer', 'When CSS is enough'],
+  },
+  {
+    route: '/guides',
+    file: 'guides.html',
+    copy: [
+      'SSR and hydration',
+      'Performance model',
+      'Factual comparison',
+      'CSS viewport units',
+      'Direct VisualViewport',
+      'Direct VirtualKeyboard',
+      'Frequently asked questions',
+      'Limitations',
+    ],
+  },
+  {
+    route: '/project',
+    file: 'project.html',
+    copy: ['Contributing', 'Security', 'Real-device QA'],
   },
   {
     route: '/imprint',
@@ -57,6 +76,11 @@ for (const { route, file, copy } of routes) {
 }
 
 const home = await readFile(path.join(outputRoot, 'index.html'), 'utf8')
+assert.match(
+  home,
+  /<meta[^>]+name="viewport"[^>]+content="[^"]*viewport-fit=cover[^"]*"/,
+  'The site viewport metadata must opt into safe-area coverage',
+)
 assert.ok(
   home.includes('Initializing viewport measurement'),
   'The static hero must identify geometry as initializing before the client measurement',
@@ -70,6 +94,21 @@ for (const expectedLink of [
   'https://opensource.nipesolutions.com',
 ]) {
   assert.ok(home.includes(expectedLink), `Home must link to ${expectedLink}`)
+}
+for (const expectedRoute of ['/guides', '/project']) {
+  assert.ok(
+    home.includes(`href="${expectedRoute}"`),
+    `Site navigation must link to ${expectedRoute}`,
+  )
+}
+
+const projectPage = await readFile(path.join(outputRoot, 'project.html'), 'utf8')
+for (const expectedLink of [
+  `${site.repository}/blob/main/CONTRIBUTING.md`,
+  `${site.repository}/blob/main/SECURITY.md`,
+  `${site.repository}/blob/main/docs/REAL_DEVICE_QA.md`,
+]) {
+  assert.ok(projectPage.includes(expectedLink), `Project guidance must link to ${expectedLink}`)
 }
 
 const sitemap = await readFile(path.join(outputRoot, 'sitemap.xml'), 'utf8')

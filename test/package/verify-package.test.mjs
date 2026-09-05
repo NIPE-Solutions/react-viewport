@@ -42,6 +42,10 @@ test('ESM and CommonJS consumers import safely without browser globals', () => {
   assert.deepEqual(verification.consumers.slice(0, 2), ['esm', 'cjs'])
 })
 
-test('Vite and Next.js compile against the installed tarball', () => {
-  assert.deepEqual(verification.consumers.slice(2), ['vite', 'next'])
+test('React 18 server rendering and hydration exercise the installed tarball and types', () => {
+  assert.equal(verification.consumers[2], 'react18')
+})
+
+test('React 19 Vite and Next.js consumers compile against the installed tarball', () => {
+  assert.deepEqual(verification.consumers.slice(3), ['vite', 'next'])
 })

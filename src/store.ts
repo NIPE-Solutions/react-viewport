@@ -227,7 +227,7 @@ function readKeyboard(
   }
 
   return inferKeyboard({
-    layout: baseline.layout,
+    layout,
     visual,
     editableFocused,
     hasNativeGeometry: false,

@@ -21,6 +21,7 @@ const textRequirements = [
   ['README.md', 'https://opensource.nipesolutions.com'],
   ['README.md', 'https://github.com/NIPE-Solutions/react-viewport'],
   ['README.md', 'max(80 CSS px, 15% of layout height)'],
+  ['README.md', 'viewport-fit=cover'],
   ['README.md', 'limitations'],
   ['docs/browser-notes.md', 'max(80 CSS px, 15% of layout height)'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
@@ -29,6 +30,7 @@ const textRequirements = [
   ['CODE_OF_CONDUCT.md', 'Code of Conduct'],
   ['LICENSE', 'MIT License'],
   ['docs/RELEASING.md', 'npm pack'],
+  ['docs/RELEASING.md', 'npm run test:website:e2e'],
   ['.github/ISSUE_TEMPLATE/bug-report.yml', 'browser'],
   ['.github/ISSUE_TEMPLATE/config.yml', 'blank_issues_enabled'],
   ['.github/pull_request_template.md', 'Testing'],
@@ -41,34 +43,31 @@ const platformStatuses = new Map([
   ['PWA (standalone, where available)', 'MANUAL PENDING'],
   ['Embedded WebView', 'MANUAL PENDING'],
   ['external keyboard (where available)', 'MANUAL PENDING'],
-  ['Desktop Chrome', 'AUTOMATED'],
-  ['Desktop Safari / WebKit', 'AUTOMATED'],
+  ['Desktop Chromium', 'PARTIAL AUTOMATION'],
+  ['Desktop Firefox', 'PARTIAL AUTOMATION'],
+  ['Desktop WebKit', 'PARTIAL AUTOMATION'],
 ])
 
 const qaScenarioColumns = [
   'Scenario',
-  'iPhone Safari',
-  'iPad Safari',
-  'Android Chrome',
-  'PWA',
-  'Embedded WebView',
-  'external keyboard',
-  'Desktop Chrome',
-  'Desktop Safari / WebKit',
+  'Physical-device status',
+  'Automated status',
+  'Automated scope',
+  'Evidence',
 ]
 
-const qaScenarios = [
-  'keyboard open/close',
-  'rapid input switching',
-  'rotation',
-  'toolbar collapse/expansion',
-  'scrolling with and without the keyboard',
-  'modal input',
-  'fixed-bottom composer',
-  'safe areas',
-  'zoom',
-  'restoration after blur',
-]
+const qaScenarios = new Map([
+  ['keyboard open/close', 'AUTOMATED FIXTURE'],
+  ['rapid input switching', 'MANUAL PENDING'],
+  ['rotation', 'AUTOMATED UNIT'],
+  ['toolbar collapse/expansion', 'AUTOMATED FIXTURE'],
+  ['scrolling with and without the keyboard', 'AUTOMATED FIXTURE'],
+  ['modal input', 'MANUAL PENDING'],
+  ['fixed-bottom composer', 'AUTOMATED FIXTURE'],
+  ['safe areas', 'AUTOMATED UNIT'],
+  ['zoom', 'AUTOMATED FIXTURE'],
+  ['restoration after blur', 'AUTOMATED UNIT'],
+])
 
 const browserNoteFields = [
   'Date',
@@ -158,7 +157,7 @@ function assertQuickStart(readme) {
   assert.match(example, /export function \w+\(\)/, 'Quick start must export a runnable component')
 }
 
-function assertQaMatrix(qa) {
+async function assertQaMatrix(qa) {
   const platformTable = parseMarkdownTable(getSection(qa, 'Platform matrix'), 'Platform matrix')
   assertHeaders(
     platformTable.headers,
@@ -171,40 +170,55 @@ function assertQaMatrix(qa) {
     const row = platformRows.get(platform)
     assert.ok(row !== undefined, `Platform matrix must contain an exact ${platform} row`)
     assert.equal(row[1], expectedStatus, `${platform} status must be ${expectedStatus}`)
+    if (expectedStatus !== 'MANUAL PENDING') {
+      await assertEvidenceLinks(row[3], `${platform} evidence`)
+    }
   }
 
   const scenarioTable = parseMarkdownTable(getSection(qa, 'Scenario coverage'), 'Scenario coverage')
   assertHeaders(scenarioTable.headers, qaScenarioColumns, 'Scenario coverage')
 
   const scenarioRows = new Map(scenarioTable.rows.map((row) => [row[0], row]))
-  for (const scenario of qaScenarios) {
+  for (const [scenario, expectedAutomatedStatus] of qaScenarios) {
     const row = scenarioRows.get(scenario)
     assert.ok(row !== undefined, `Scenario coverage must contain a ${scenario} scenario row`)
+    assert.equal(row[1], 'MANUAL PENDING', `${scenario} physical status must remain pending`)
+    assert.equal(
+      row[2],
+      expectedAutomatedStatus,
+      `${scenario} automated status must be ${expectedAutomatedStatus}`,
+    )
+    assert.ok(row[3].length > 0, `${scenario} must define its exact automated scope`)
 
-    for (const [column, status] of qaScenarioColumns
-      .slice(1)
-      .map((column, index) => [column, row[index + 1]])) {
-      const expectedStatus =
-        column === 'Desktop Chrome' || column === 'Desktop Safari / WebKit'
-          ? 'AUTOMATED'
-          : 'MANUAL PENDING'
-      assert.equal(
-        status,
-        expectedStatus,
-        `${scenario} / ${column} status must be ${expectedStatus}`,
-      )
+    if (expectedAutomatedStatus === 'MANUAL PENDING') {
+      assert.equal(row[4], '—', `${scenario} must not cite nonexistent automated evidence`)
+    } else {
+      await assertEvidenceLinks(row[4], `${scenario} evidence`)
     }
   }
 
   const statuses = [
     ...platformTable.rows.map((row) => row[1]),
-    ...scenarioTable.rows.flatMap((row) => row.slice(1)),
+    ...scenarioTable.rows.flatMap((row) => [row[1], row[2]]),
   ]
   assert.equal(
     statuses.includes('MANUAL VERIFIED'),
     false,
     'Initial QA matrix must have no MANUAL VERIFIED status',
   )
+}
+
+async function assertEvidenceLinks(cell, description) {
+  const targets = [...cell.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)].map((match) => match[1])
+  assert.ok(targets.length > 0, `${description} must contain a Markdown evidence link`)
+
+  for (const target of targets) {
+    const evidencePath = resolve(packageRoot, 'docs', target)
+    await assert.doesNotReject(
+      readFile(evidencePath, 'utf8'),
+      `${description} does not exist: ${target}`,
+    )
+  }
 }
 
 function assertBrowserNoteRegistry(browserNotes) {
@@ -269,7 +283,7 @@ for (const [path, requiredText] of textRequirements) {
 }
 
 assertQuickStart(await readDocument('README.md'))
-assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
+await assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
 assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))
 assertSecurityPolicy(await readDocument('SECURITY.md'))
 

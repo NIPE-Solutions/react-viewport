@@ -20,6 +20,10 @@ keyboard-capable editable content, a non-zoomed visual viewport, and a reduction
 from the keyboard-closed baseline of at least `max(80 CSS px, 15% of layout
 height)`. The threshold is deliberately conservative and may be changed only
 with browser evidence, a registry entry, and a regression test.
+The closed baseline proves that keyboard-sized visual reduction occurred; it is
+not reported as keyboard height. Reported fallback height is always current
+layout-bottom occlusion, so a simultaneous layout and visual shrink with no
+current occlusion remains closed.
 
 ## Registry format
 

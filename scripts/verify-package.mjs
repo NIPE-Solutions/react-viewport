@@ -22,6 +22,7 @@ const expectedExports = {
 const consumers = [
   { name: 'esm', executable: 'node', arguments: ['index.mjs'] },
   { name: 'cjs', executable: 'node', arguments: ['index.cjs'] },
+  { name: 'react18', executable: 'npm', arguments: ['run', 'verify'] },
   { name: 'vite', executable: 'npm', arguments: ['run', 'build'] },
   { name: 'next', executable: 'npm', arguments: ['run', 'build'] },
 ]

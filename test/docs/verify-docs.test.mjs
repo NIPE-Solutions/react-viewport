@@ -24,6 +24,12 @@ const documentPaths = [
   '.github/ISSUE_TEMPLATE/bug-report.yml',
   '.github/ISSUE_TEMPLATE/config.yml',
   '.github/pull_request_template.md',
+  'e2e/hydration.spec.ts',
+  'e2e/viewport.spec.ts',
+  'e2e/website.spec.ts',
+  'test/unit/geometry.test.ts',
+  'test/unit/safe-area.test.ts',
+  'test/unit/store.test.ts',
 ]
 
 async function withMutatedDocuments(path, from, to, verify) {
@@ -83,9 +89,18 @@ test('rejects a physical platform status mutation', async () => {
 test('rejects a desktop platform status mutation', async () => {
   await withMutatedDocuments(
     'docs/REAL_DEVICE_QA.md',
-    '| Desktop Chrome | AUTOMATED',
-    '| Desktop Chrome | MANUAL PENDING',
-    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /Desktop Chrome status/),
+    '| Desktop Chromium | PARTIAL AUTOMATION',
+    '| Desktop Chromium | MANUAL PENDING',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /Desktop Chromium status/),
+  )
+})
+
+test('rejects QA automation evidence that does not resolve to a repository file', async () => {
+  await withMutatedDocuments(
+    'docs/REAL_DEVICE_QA.md',
+    'e2e/viewport.spec.ts',
+    'e2e/missing.spec.ts',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /evidence.*does not exist/i),
   )
 })
 
@@ -101,8 +116,8 @@ test('rejects a required scenario-row mutation', async () => {
 test('rejects an initial manual-verification status', async () => {
   await withMutatedDocuments(
     'docs/REAL_DEVICE_QA.md',
-    '| Desktop Safari / WebKit | AUTOMATED | deterministic resize, focus, scroll, fallback, CSS variables, and hydration scenarios | `e2e/viewport.spec.ts`, `e2e/hydration.spec.ts` |',
-    '| Desktop Safari / WebKit | AUTOMATED | deterministic resize, focus, scroll, fallback, CSS variables, and hydration scenarios | `e2e/viewport.spec.ts`, `e2e/hydration.spec.ts` |\n| Experimental device | MANUAL VERIFIED | not applicable | — |',
+    '| Desktop WebKit | PARTIAL AUTOMATION | Only the exact fixture scopes in the scenario table | [library browser suite](../e2e/viewport.spec.ts), [hydration suite](../e2e/hydration.spec.ts), [website suite](../e2e/website.spec.ts) |',
+    '| Desktop WebKit | PARTIAL AUTOMATION | Only the exact fixture scopes in the scenario table | [library browser suite](../e2e/viewport.spec.ts), [hydration suite](../e2e/hydration.spec.ts), [website suite](../e2e/website.spec.ts) |\n| Experimental device | MANUAL VERIFIED | not applicable | — |',
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /no MANUAL VERIFIED/),
   )
 })

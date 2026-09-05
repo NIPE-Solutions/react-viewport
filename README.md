@@ -82,10 +82,13 @@ native VisualViewport reading.
 When the Virtual Keyboard API supplies geometry, that geometry is authoritative.
 Otherwise, the package infers an occluding software keyboard only when an
 editable element is focused, zoom is not active, and visual-bottom occlusion
-crosses `max(80 CSS px, 15% of layout height)`. Focus alone never means that a
-software keyboard is open. This deliberate heuristic can miss small, floating,
-or split keyboards; treat `keyboard` as measured or inferred geometry, not a
-device-level keyboard guarantee.
+crosses `max(80 CSS px, 15% of layout height)`. The keyboard-closed baseline is
+only an evidence gate: reported fallback height is always the current
+`max(0, layout.height - (visual.height + visual.offsetTop))`. If layout and visual
+height shrink together with no current bottom occlusion, the keyboard remains
+closed. Focus alone never means that a software keyboard is open. This deliberate
+heuristic can miss small, floating, or split keyboards; treat `keyboard` as
+measured or inferred geometry, not a device-level keyboard guarantee.
 
 ## CSS variables
 
@@ -104,12 +107,12 @@ export function App() {
 ```css
 .composer {
   position: fixed;
-  right: max(1rem, env(safe-area-inset-right));
+  right: max(1rem, var(--react-viewport-safe-area-right, 0px));
   bottom: calc(
     var(--react-viewport-keyboard-height, 0px) +
       max(1rem, var(--react-viewport-safe-area-bottom, 0px))
   );
-  left: max(1rem, env(safe-area-inset-left));
+  left: max(1rem, var(--react-viewport-safe-area-left, 0px));
 }
 ```
 
@@ -117,7 +120,16 @@ The hook writes these client-side variables: layout and visual width/height,
 visual offsets/page positions/scale, keyboard height, and four safe-area inset
 lengths. Dimensional variables such as `--react-viewport-layout-height` are
 removed until the first measurement, rather than populated with made-up server
-values. The hook cleans up only the properties installed by its own instance.
+values. Multiple live hooks coordinate ownership per target property: the
+last-mounted owner supplies values, and the last owner to leave restores the
+latest consumer value observed before a library write. A stable ref target may
+start null, be replaced, or detach; ownership and subscriptions migrate after
+the corresponding React commit without stale writes to the previous element.
+
+Non-zero `env(safe-area-inset-*)` values generally require the page viewport to
+opt into `viewport-fit=cover`. Configure that metadata before relying on the
+package's measured `safeArea` values; unsupported or zero-inset environments
+truthfully report zero.
 
 ## SSR and hydration
 

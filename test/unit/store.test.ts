@@ -213,9 +213,7 @@ describe('createViewportStore', () => {
       fake.focus(editable)
     }
 
-    fake.setLayout(390, 500)
     fake.setVisualViewport({ height: 500 })
-    fake.dispatchResize()
     fake.dispatchVisualResize()
 
     if (!focusFirst) {
@@ -224,8 +222,44 @@ describe('createViewportStore', () => {
 
     fake.flushAnimationFrame()
 
-    expect(store.getSnapshot().layout).toEqual({ width: 390, height: 500 })
+    expect(store.getSnapshot().layout).toEqual({ width: 390, height: 800 })
     expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
+    unsubscribe()
+  })
+
+  it('uses the baseline only as evidence and reports current bottom occlusion', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const editable = fake.createEditable()
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(editable)
+    fake.setLayout(390, 700)
+    fake.setVisualViewport({ height: 500, offsetTop: 20 })
+    fake.dispatchResize()
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 180 })
+    unsubscribe()
+  })
+
+  it('does not infer a keyboard when layout and visual geometry shrink together', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const editable = fake.createEditable()
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(editable)
+    fake.setLayout(390, 500)
+    fake.setVisualViewport({ height: 500 })
+    fake.dispatchResize()
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
     unsubscribe()
   })
 

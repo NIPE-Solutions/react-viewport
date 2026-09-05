@@ -114,12 +114,15 @@ test('release CI uses OIDC, an npm environment, and no long-lived npm token', as
   assert.match(workflow, /registry-url:\s*['"]https:\/\/registry\.npmjs\.org['"]/)
 })
 
-test('release CI validates, checks, packs, then publishes the tarball with provenance', async () => {
+test('release CI requires both browser matrices before packing and publishing with provenance', async () => {
   const workflow = await readRepositoryFile('.github/workflows/release.yml')
 
   assertOrdered(workflow, [
     'npm ci',
     'npm run check',
+    'playwright install --with-deps chromium firefox webkit',
+    'npm run test:e2e',
+    'npm run test:website:e2e',
     'npm run release:check',
     'npm pack',
     'npm publish',

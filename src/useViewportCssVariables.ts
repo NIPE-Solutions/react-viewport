@@ -1,96 +1,100 @@
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useLayoutEffect, useRef } from 'react'
 
-import { VIEWPORT_CSS_VARIABLES, writeViewportCssVariables } from './css-variables.js'
+import {
+  releaseOwnedViewportCssVariables,
+  writeOwnedViewportCssVariables,
+  type ViewportCssVariableOwner,
+} from './css-variable-ownership.js'
 import { ViewportContext } from './context.js'
 import { getViewportStore } from './store-registry.js'
+import type { ViewportStore } from './store.js'
 import type { ViewportCssVariablesOptions } from './types.js'
 
-interface OwnedProperty {
-  previousValue: string
-  previousPriority: string
-  value: string
-  priority: string
+interface CssVariableBinding {
+  sync(
+    targetWindow: Window | null | undefined,
+    targetOption: ViewportCssVariablesOptions['target'],
+  ): void
+  destroy(): void
 }
+
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export function useViewportCssVariables(options: ViewportCssVariablesOptions = {}): void {
   const targetWindow = useContext(ViewportContext)
-  const targetOption = options.target
+  const bindingRef = useRef<CssVariableBinding | null>(null)
 
-  useEffect(() => {
-    if (targetWindow === null || typeof window === 'undefined') {
-      return
+  if (bindingRef.current === null) {
+    bindingRef.current = createCssVariableBinding()
+  }
+
+  const binding = bindingRef.current
+
+  useIsomorphicLayoutEffect(() => () => binding.destroy(), [binding])
+  useIsomorphicLayoutEffect(() => {
+    binding.sync(targetWindow, options.target)
+  })
+}
+
+function createCssVariableBinding(): CssVariableBinding {
+  const owner: ViewportCssVariableOwner = {}
+  let selectedWindow: Window | null = null
+  let target: HTMLElement | null = null
+  let store: ViewportStore | null = null
+  let unsubscribe: (() => void) | null = null
+
+  function destroy(): void {
+    unsubscribe?.()
+    unsubscribe = null
+
+    if (target !== null) {
+      releaseOwnedViewportCssVariables(target, owner)
     }
 
-    const selectedWindow = targetWindow ?? window
-    const target = resolveTarget(targetOption, selectedWindow)
+    selectedWindow = null
+    target = null
+    store = null
+  }
 
-    if (target === null) {
-      return
-    }
+  return {
+    sync(targetWindow, targetOption) {
+      const nextWindow = resolveWindow(targetWindow)
+      const nextTarget = nextWindow === null ? null : resolveTarget(targetOption, nextWindow)
 
-    const cssTarget = target
+      if (nextWindow === selectedWindow && nextTarget === target) {
+        return
+      }
 
-    const ownedProperties = new Map<string, OwnedProperty>()
-    const store = getViewportStore(selectedWindow)
+      destroy()
 
-    function update(): void {
-      for (const name of VIEWPORT_CSS_VARIABLES) {
-        const currentValue = cssTarget.style.getPropertyValue(name)
-        const currentPriority = cssTarget.style.getPropertyPriority(name)
-        const ownedProperty = ownedProperties.get(name)
+      if (nextWindow === null || nextTarget === null) {
+        return
+      }
 
-        if (ownedProperty === undefined) {
-          ownedProperties.set(name, {
-            previousValue: currentValue,
-            previousPriority: currentPriority,
-            value: '',
-            priority: '',
-          })
-        } else if (
-          currentValue !== ownedProperty.value ||
-          currentPriority !== ownedProperty.priority
-        ) {
-          ownedProperty.previousValue = currentValue
-          ownedProperty.previousPriority = currentPriority
+      const nextStore = getViewportStore(nextWindow)
+      selectedWindow = nextWindow
+      target = nextTarget
+      store = nextStore
+
+      const update = () => {
+        if (target !== null && store !== null) {
+          writeOwnedViewportCssVariables(target, owner, store.getSnapshot())
         }
       }
 
-      writeViewportCssVariables(cssTarget, store.getSnapshot())
+      update()
+      unsubscribe = nextStore.subscribe(update)
+    },
+    destroy,
+  }
+}
 
-      for (const name of VIEWPORT_CSS_VARIABLES) {
-        const ownedProperty = ownedProperties.get(name)
+function resolveWindow(targetWindow: Window | null | undefined): Window | null {
+  if (targetWindow === null || typeof window === 'undefined') {
+    return null
+  }
 
-        if (ownedProperty !== undefined) {
-          ownedProperty.value = cssTarget.style.getPropertyValue(name)
-          ownedProperty.priority = cssTarget.style.getPropertyPriority(name)
-        }
-      }
-    }
-
-    update()
-    const unsubscribe = store.subscribe(update)
-
-    return () => {
-      unsubscribe()
-
-      for (const [name, ownedProperty] of ownedProperties) {
-        if (
-          cssTarget.style.getPropertyValue(name) === ownedProperty.value &&
-          cssTarget.style.getPropertyPriority(name) === ownedProperty.priority
-        ) {
-          if (ownedProperty.previousValue === '') {
-            cssTarget.style.removeProperty(name)
-          } else {
-            cssTarget.style.setProperty(
-              name,
-              ownedProperty.previousValue,
-              ownedProperty.previousPriority,
-            )
-          }
-        }
-      }
-    }
-  }, [targetOption, targetWindow])
+  return targetWindow ?? window
 }
 
 function resolveTarget(

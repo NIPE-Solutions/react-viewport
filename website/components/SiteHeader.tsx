@@ -4,6 +4,8 @@ const navigation = [
   { href: '/api', label: 'API' },
   { href: '/browser-behavior', label: 'Browser behavior' },
   { href: '/examples', label: 'Examples' },
+  { href: '/guides', label: 'Guides' },
+  { href: '/project', label: 'Project' },
 ] as const
 
 export function SiteHeader() {

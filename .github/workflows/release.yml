@@ -35,6 +35,12 @@ jobs:
         run: npm ci
       - name: Run full quality gate
         run: npm run check
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Run library browser matrix
+        run: npm run test:e2e
+      - name: Run website browser matrix
+        run: npm run test:website:e2e
       - name: Validate release metadata and repository state
         run: npm run release:check -- --tag "$GITHUB_REF_NAME" --dist-tag alpha
       - name: Pack release artifact

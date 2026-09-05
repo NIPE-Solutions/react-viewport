@@ -153,6 +153,27 @@ test('infers keyboard occlusion from a focused 800 to 500 visual-height sequence
     })
 })
 
+test('does not infer a keyboard when layout and visual geometry shrink together', async ({
+  page,
+}) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+  await page.getByLabel('Editable control').focus()
+
+  await page.evaluate(() => {
+    window.__viewportFixture.setLayout(390, 500)
+    window.__viewportFixture.setVisualViewport({ height: 500 })
+    window.__viewportFixture.dispatch('window-resize', 'visual-resize')
+  })
+
+  await expect
+    .poll(() => readState(page))
+    .toMatchObject({
+      layout: { width: 390, height: 500 },
+      visual: { height: 500, offsetTop: 0, scale: 1 },
+      keyboard: { open: false, height: 0 },
+    })
+})
+
 test('rejects a focused 800 to 750 toolbar-like visual-height sequence', async ({ page }) => {
   await openReadyFixture(page, '?layout=mock&visual=mock')
   await page.getByLabel('Editable control').focus()

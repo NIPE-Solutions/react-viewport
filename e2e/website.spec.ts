@@ -55,7 +55,16 @@ test('supports keyboard navigation with a visible skip-link focus indicator', as
 })
 
 test('has no serious accessibility violations on every documentation route', async ({ page }) => {
-  for (const route of ['/', '/api', '/browser-behavior', '/examples', '/imprint', '/privacy']) {
+  for (const route of [
+    '/',
+    '/api',
+    '/browser-behavior',
+    '/examples',
+    '/guides',
+    '/project',
+    '/imprint',
+    '/privacy',
+  ]) {
     await page.goto(route)
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

@@ -299,6 +299,148 @@ describe('viewport CSS variables', () => {
     expect(cssValue(target, '--react-viewport-layout-width')).toBe('consumer-after-update')
   })
 
+  it.each(['first', 'second'] as const)(
+    'keeps same-target variables owned until the final hook leaves when the %s hook unmounts first',
+    async (firstToUnmount) => {
+      const firstWindow = createTargetWindow()
+      const secondWindow = createTargetWindow()
+      Object.defineProperty(firstWindow, 'innerWidth', { configurable: true, value: 640 })
+      Object.defineProperty(secondWindow, 'innerWidth', { configurable: true, value: 720 })
+      const target = document.createElement('div')
+      target.style.setProperty('--react-viewport-layout-width', 'consumer-before-hooks')
+      const container = document.createElement('div')
+      document.body.append(container)
+      const root = createRoot(container)
+      mountedRoots.push(root)
+
+      function Owner() {
+        useViewportCssVariables({ target })
+        return null
+      }
+
+      function renderOwners(first: boolean, second: boolean) {
+        act(() => {
+          root.render(
+            <>
+              {first ? (
+                <ViewportProvider key="first" targetWindow={firstWindow}>
+                  <Owner />
+                </ViewportProvider>
+              ) : null}
+              {second ? (
+                <ViewportProvider key="second" targetWindow={secondWindow}>
+                  <Owner />
+                </ViewportProvider>
+              ) : null}
+            </>,
+          )
+        })
+      }
+
+      renderOwners(true, true)
+      await act(async () => {
+        flushFrames(firstWindow)
+        flushFrames(secondWindow)
+      })
+      expect(cssValue(target, '--react-viewport-layout-width')).toBe('720px')
+
+      renderOwners(firstToUnmount !== 'first', firstToUnmount !== 'second')
+      expect(cssValue(target, '--react-viewport-layout-width')).toBe(
+        firstToUnmount === 'first' ? '720px' : '640px',
+      )
+
+      renderOwners(false, false)
+      expect(cssValue(target, '--react-viewport-layout-width')).toBe('consumer-before-hooks')
+    },
+  )
+
+  it('reapplies the remaining same-target owner and restores a consumer write after the final owner leaves', async () => {
+    installAnimationFrame(window)
+    const target = document.createElement('div')
+    const container = document.createElement('div')
+    document.body.append(container)
+    const root = createRoot(container)
+    mountedRoots.push(root)
+
+    function Owner() {
+      useViewportCssVariables({ target })
+      return null
+    }
+
+    act(() => {
+      root.render(
+        <>
+          <Owner key="first" />
+          <Owner key="second" />
+        </>,
+      )
+    })
+    await act(async () => flushFrames(window))
+
+    target.style.setProperty('--react-viewport-layout-width', 'consumer-during-hooks')
+    act(() => root.render(<Owner key="first" />))
+    expect(cssValue(target, '--react-viewport-layout-width')).toBe(`${window.innerWidth}px`)
+
+    act(() => root.render(null))
+    expect(cssValue(target, '--react-viewport-layout-width')).toBe('consumer-during-hooks')
+  })
+
+  it('migrates a stable ref from null through replacement and detachment without stale updates', async () => {
+    const targetWindow = createTargetWindow()
+    const firstTarget = document.createElement('div')
+    const secondTarget = document.createElement('div')
+    firstTarget.style.setProperty('--react-viewport-layout-width', 'first-before')
+    secondTarget.style.setProperty('--react-viewport-layout-width', 'second-before')
+    const targetRef: React.RefObject<HTMLElement | null> = { current: null }
+    const container = document.createElement('div')
+    document.body.append(container)
+    const root = createRoot(container)
+    mountedRoots.push(root)
+
+    function Owner({ commit }: { readonly commit: number }) {
+      useViewportCssVariables({ target: targetRef })
+      return <span>{commit}</span>
+    }
+
+    function render(commit: number) {
+      act(() => {
+        root.render(
+          <ViewportProvider targetWindow={targetWindow}>
+            <Owner commit={commit} />
+          </ViewportProvider>,
+        )
+      })
+    }
+
+    render(0)
+    expect(() => resetViewportStoreForTests(targetWindow)).not.toThrow()
+
+    targetRef.current = firstTarget
+    render(1)
+    await act(async () => flushFrames(targetWindow))
+    expect(cssValue(firstTarget, '--react-viewport-layout-width')).toBe(
+      `${targetWindow.innerWidth}px`,
+    )
+
+    targetRef.current = secondTarget
+    render(2)
+    expect(cssValue(firstTarget, '--react-viewport-layout-width')).toBe('first-before')
+    expect(cssValue(secondTarget, '--react-viewport-layout-width')).toBe(
+      `${targetWindow.innerWidth}px`,
+    )
+
+    Object.defineProperty(targetWindow, 'innerWidth', { configurable: true, value: 640 })
+    targetWindow.dispatchEvent(new Event('resize'))
+    await act(async () => flushFrames(targetWindow))
+    expect(cssValue(firstTarget, '--react-viewport-layout-width')).toBe('first-before')
+    expect(cssValue(secondTarget, '--react-viewport-layout-width')).toBe('640px')
+
+    targetRef.current = null
+    render(3)
+    expect(cssValue(secondTarget, '--react-viewport-layout-width')).toBe('second-before')
+    expect(() => resetViewportStoreForTests(targetWindow)).not.toThrow()
+  })
+
   it('does not subscribe or write when the provider explicitly selects null', () => {
     const target = document.createElement('div')
 

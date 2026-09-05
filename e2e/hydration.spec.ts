@@ -48,14 +48,10 @@ test('hydrates the server snapshot without a mismatch before client geometry is 
   await expect(page.locator('#root')).toHaveAttribute('data-hydrated', 'true')
 
   expect(await readHydrationState(page)).toEqual(SERVER_STATE)
-  expect(
-    browserErrors.filter((message) => /hydrat|server html|did not match/i.test(message)),
-  ).toEqual([])
+  expect(browserErrors).toEqual([])
 
   await page.evaluate(() => window.__hydrationFixture.flushAnimationFrames())
 
   await expect.poll(async () => (await readHydrationState(page)).ready).toBe(true)
-  expect(
-    browserErrors.filter((message) => /hydrat|server html|did not match/i.test(message)),
-  ).toEqual([])
+  expect(browserErrors).toEqual([])
 })

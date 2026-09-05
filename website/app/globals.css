@@ -740,6 +740,29 @@ h3 {
   color: var(--ink-muted);
 }
 
+.comparison-table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.comparison-table-wrapper table {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.comparison-table-wrapper th,
+.comparison-table-wrapper td {
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+.comparison-table-wrapper thead th {
+  background: var(--paper-raised);
+}
+
 .variable-list {
   display: grid;
   margin: 2rem 0 0;
