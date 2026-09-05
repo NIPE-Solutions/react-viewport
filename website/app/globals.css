@@ -516,55 +516,109 @@ h3 {
   background: var(--keyboard-soft);
 }
 
-.simulation-controls {
+.scenario-controls {
   display: grid;
-  grid-template-columns: 1fr 1.25fr 1.25fr;
-  gap: 1rem 1.5rem;
-  align-items: end;
+  gap: 1rem;
   margin: 1.5rem 0 0;
   padding: 1rem 0 1.5rem;
   border: 0;
   border-top: 1px solid var(--rule);
 }
 
-.simulation-controls legend {
+.scenario-controls legend {
   padding: 0 0.6rem 0 0;
   font-size: 0.88rem;
   font-weight: 600;
 }
 
-.simulation-controls label {
+.scenario-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scenario-selector button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.scenario-selector button[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.scenario-selector button:focus-visible {
+  outline: 3px solid var(--coordinate);
+  outline-offset: 2px;
+}
+
+.scenario-description {
+  max-width: 58rem;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.custom-geometry-controls {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.custom-geometry-controls label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.25rem auto;
   gap: 0.5rem;
   align-items: center;
   color: var(--ink-muted);
   font-size: 0.72rem;
 }
 
-.simulation-controls label input[type='range'] {
-  grid-column: 1 / -1;
+.custom-geometry-controls input {
+  min-width: 0;
   width: 100%;
-  accent-color: var(--coordinate);
-}
-
-.simulation-controls output {
+  padding: 0.45rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  background: var(--paper);
   color: var(--ink);
-  font-size: 0.64rem;
+  font: inherit;
 }
 
-.simulation-controls .toggle-control {
+.custom-geometry-controls input:focus-visible {
+  outline: 3px solid var(--coordinate);
+  outline-offset: 1px;
+}
+
+.geometry-formula {
   display: flex;
-  align-items: center;
-  align-self: center;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 1.5rem;
+  padding-block: 0.8rem;
+  border-block: 1px solid var(--rule);
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.geometry-formula code {
   color: var(--ink);
 }
 
-.toggle-control input {
-  width: 1.15rem;
-  height: 1.15rem;
-  accent-color: var(--coordinate);
+.geometry-warning {
+  margin: 0;
+  padding: 0.75rem;
+  border-left: 3px solid var(--keyboard);
+  background: var(--keyboard-soft);
+  color: var(--ink);
+  font-size: 0.78rem;
 }
 
 .install-section {
@@ -1078,12 +1132,8 @@ h3 {
     max-width: 34rem;
   }
 
-  .simulation-controls {
+  .custom-geometry-controls {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .simulation-controls .toggle-control {
-    grid-column: 1 / -1;
   }
 
   .concept-list,
@@ -1162,12 +1212,8 @@ h3 {
     width: 100%;
   }
 
-  .simulation-controls {
+  .custom-geometry-controls {
     grid-template-columns: 1fr;
-  }
-
-  .simulation-controls .toggle-control {
-    grid-column: auto;
   }
 
   .browser-list article {

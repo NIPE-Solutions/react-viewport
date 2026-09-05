@@ -70,6 +70,12 @@ describe('getBottomOcclusion', () => {
       getBottomOcclusion({ width: 390, height: 800 }, visual({ height: 790, offsetTop: 20 })),
     ).toBe(0)
   })
+
+  it('includes offsetTop in the shifted keyboard regression geometry', () => {
+    expect(
+      getBottomOcclusion({ width: 390, height: 800 }, visual({ height: 472, offsetTop: 28 })),
+    ).toBe(300)
+  })
 })
 
 describe('inferKeyboard', () => {
@@ -168,6 +174,39 @@ describe('inferKeyboard', () => {
       inferKeyboard({
         layout,
         visual: visual({ height: 730 }),
+        editableFocused: true,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: false, height: 0 })
+  })
+
+  it('does not infer browser chrome without editable focus', () => {
+    expect(
+      inferKeyboard({
+        layout,
+        visual: visual({ height: 720, offsetTop: 56 }),
+        editableFocused: false,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: false, height: 0 })
+  })
+
+  it('does not infer browser chrome with focus below the threshold', () => {
+    expect(
+      inferKeyboard({
+        layout,
+        visual: visual({ height: 720, offsetTop: 20 }),
+        editableFocused: true,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: false, height: 0 })
+  })
+
+  it('reports zero for an external-keyboard-like unchanged viewport', () => {
+    expect(
+      inferKeyboard({
+        layout,
+        visual: visual(),
         editableFocused: true,
         hasNativeGeometry: false,
       }),

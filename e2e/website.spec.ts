@@ -18,7 +18,7 @@ for (const size of responsiveSizes) {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
     await expect(
-      geometry.getByRole('img', { name: /nested viewport coordinate plane/i }),
+      geometry.getByRole('img', { name: /layout viewport|nested viewport coordinate plane/i }),
     ).toBeVisible()
     await expect(geometry.getByText('Layout viewport', { exact: true })).toBeVisible()
     await expect(geometry.getByText('Visual viewport', { exact: true })).toBeVisible()
@@ -81,26 +81,23 @@ test('does not create decorative animation for reduced-motion visitors', async (
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
 })
 
-test('labels real geometry and keeps desktop simulation explicit', async ({ page }) => {
+test('labels live geometry and keeps deterministic simulation separate', async ({ page }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
   await page.goto('/')
 
   const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
-  await expect(geometry.getByText('Live browser measurement')).toBeVisible()
+  await expect(geometry.getByText('Live browser geometry')).toBeVisible()
   await expect(geometry.getByText('Layout viewport', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Visual viewport', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Safe area', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Keyboard occlusion', { exact: true })).toBeVisible()
 
-  const simulation = page.getByRole('group', { name: 'Desktop simulation' })
-  await expect(simulation.getByText('Desktop simulation', { exact: true })).toBeVisible()
-  await simulation.getByRole('checkbox', { name: 'Use simulated geometry' }).check()
-  await simulation.getByRole('slider', { name: 'Visible viewport height' }).fill('520')
-  await simulation.getByRole('slider', { name: 'Keyboard occlusion height' }).fill('220')
-
-  await expect(page.getByTestId('geometry-mode')).toHaveText('Simulated geometry')
-  await expect(page.getByTestId('visual-height')).toHaveText('520 px')
-  await expect(page.getByTestId('keyboard-height')).toHaveText('220 px')
+  const views = page.getByRole('group', { name: 'View' })
+  await views.getByRole('button', { name: 'Soft keyboard' }).click()
+  await expect(page.getByTestId('geometry-mode')).toHaveText('Geometry simulator · Soft keyboard')
+  await expect(page.getByTestId('visual-height')).toHaveText('500 px')
+  await expect(page.getByTestId('bottom-occlusion')).toHaveText('300 px')
+  await expect(page.getByTestId('keyboard-height')).toHaveText('300 px')
 })
 
 test('keeps initialization honest and reserves the plane before measurement', async ({ page }) => {
@@ -122,7 +119,7 @@ test('keeps initialization honest and reserves the plane before measurement', as
     release()
   })
 
-  await expect(geometry.getByTestId('geometry-mode')).toHaveText('Live browser measurement')
+  await expect(geometry.getByTestId('geometry-mode')).toHaveText('Live browser geometry')
   const after = await boxOf(geometry.getByRole('img'))
   expect(Math.abs(after.width - before.width)).toBeLessThan(1)
   expect(Math.abs(after.height - before.height)).toBeLessThan(1)
@@ -133,30 +130,43 @@ test('renders zero safe-area and keyboard geometry without painted minimum bands
 }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
   await page.goto('/')
-  await expect(page.getByTestId('geometry-mode')).toHaveText('Live browser measurement')
+  await expect(page.getByTestId('geometry-mode')).toHaveText('Live browser geometry')
 
   expect(await renderedThickness(page.getByTestId('safe-top'), 'height')).toBe(0)
   expect(await renderedThickness(page.getByTestId('safe-right'), 'width')).toBe(0)
   expect(await renderedThickness(page.getByTestId('safe-bottom'), 'height')).toBe(0)
   expect(await renderedThickness(page.getByTestId('safe-left'), 'width')).toBe(0)
-  expect(await renderedThickness(page.getByTestId('keyboard-region'), 'height')).toBe(0)
+  await expect(page.getByTestId('keyboard-region')).toHaveCount(0)
 })
 
-test('keeps capped simulation controls and geometry readouts in agreement', async ({ page }) => {
+test('teaches coherent chrome, shifted keyboard, and zoom scenarios', async ({ page }) => {
   await page.goto('/')
-  const simulation = page.getByRole('group', { name: 'Desktop simulation' })
-  await simulation.getByRole('checkbox', { name: 'Use simulated geometry' }).check()
-  await simulation.getByRole('slider', { name: 'Visible viewport height' }).fill('440')
-  await simulation.getByRole('slider', { name: 'Keyboard occlusion height' }).fill('360')
-  await simulation.getByRole('slider', { name: 'Visible viewport height' }).fill('760')
+  const views = page.getByRole('group', { name: 'View' })
 
-  await expect(simulation.getByRole('slider', { name: 'Keyboard occlusion height' })).toHaveValue(
-    '40',
+  await views.getByRole('button', { name: 'Browser chrome' }).click()
+  await expect(page.getByTestId('visual-height')).toHaveText('720 px')
+  await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
+
+  await views.getByRole('button', { name: 'Shifted keyboard' }).click()
+  await expect(page.getByTestId('visual-height')).toHaveText('472 px')
+  await expect(page.getByTestId('bottom-occlusion')).toHaveText('300 px')
+  await expect(page.getByTestId('keyboard-height')).toHaveText('300 px')
+
+  await views.getByRole('button', { name: 'Zoom' }).click()
+  await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
+  await expect(page.getByTestId('scenario-description')).toContainText('scale, not keyboard')
+})
+
+test('warns when custom keyboard occlusion contradicts visual geometry', async ({ page }) => {
+  await page.goto('/')
+  const views = page.getByRole('group', { name: 'View' })
+  await views.getByRole('button', { name: 'Custom' }).click()
+  await page.getByRole('spinbutton', { name: 'Keyboard occlusion' }).fill('180')
+
+  await expect(page.getByTestId('bottom-occlusion')).toHaveText('152 px')
+  await expect(page.getByTestId('custom-warning')).toContainText(
+    'does not match the current bottom occlusion (152 px)',
   )
-  await expect(
-    simulation.locator('label').filter({ hasText: 'Keyboard occlusion height' }).locator('output'),
-  ).toHaveText('40 px')
-  await expect(page.getByTestId('keyboard-height')).toHaveText('40 px')
 })
 
 test('renders critical geometry and status labels at a legible size', async ({ page }) => {
