@@ -13,13 +13,10 @@ Please do not disclose an unpatched vulnerability in a public issue. Use the
 as the primary reporting route. Include a minimal reproduction, affected
 versions, impact, and any mitigation you know.
 
-If that form is unavailable to you, use the official NIPE Open Source security
-contact, [office@nipesolutions.com](mailto:office@nipesolutions.com), as the
-fallback. The address is published on the
-[NIPE Open Source Security page](https://opensource.nipesolutions.com/security).
-Do not put vulnerability details in a public issue. If neither private route is
-available, a non-sensitive public request for a private reporting channel is
-acceptable; wait for a private response before sharing any vulnerability detail.
+If private reporting is unavailable, open a public issue containing no
+vulnerability details and only request a private maintainer channel. Do not
+disclose security details in a public issue. Wait for a private response before
+sharing any vulnerability detail.
 
 The repository does not publish a security-response SLA in this alpha.
 Acknowledgement and remediation timing therefore cannot be promised here.

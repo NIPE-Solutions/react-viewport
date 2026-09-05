@@ -26,9 +26,6 @@ const textRequirements = [
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],
   ['SECURITY.md', 'Security Policy'],
-  ['SECURITY.md', 'https://github.com/NIPE-Solutions/react-viewport/security/advisories/new'],
-  ['SECURITY.md', 'office@nipesolutions.com'],
-  ['SECURITY.md', 'https://opensource.nipesolutions.com/security'],
   ['CODE_OF_CONDUCT.md', 'Code of Conduct'],
   ['LICENSE', 'MIT License'],
   ['docs/RELEASING.md', 'npm pack'],
@@ -232,6 +229,35 @@ function assertBrowserNoteRegistry(browserNotes) {
   )
 }
 
+function assertSecurityPolicy(securityPolicy) {
+  const normalizedSecurityPolicy = securityPolicy.replace(/\s+/g, ' ')
+  const privateAdvisoryUrl =
+    'https://github.com/NIPE-Solutions/react-viewport/security/advisories/new'
+  const safePublicFallback = [
+    'open a public issue containing no vulnerability details',
+    'only request a private maintainer channel',
+    'Do not disclose security details in a public issue.',
+    'Wait for a private response before sharing any vulnerability detail.',
+  ]
+
+  assert.ok(
+    securityPolicy.includes(privateAdvisoryUrl),
+    'Security policy must use the repository GitHub private-advisory URL as the primary route',
+  )
+  assert.equal(
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(securityPolicy),
+    false,
+    'Security policy must not include an email reporting route without package-specific authorization',
+  )
+
+  for (const requiredText of safePublicFallback) {
+    assert.ok(
+      normalizedSecurityPolicy.includes(requiredText),
+      `Security policy must include safe public fallback wording: ${requiredText}`,
+    )
+  }
+}
+
 function escapeRegularExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -245,7 +271,8 @@ for (const [path, requiredText] of textRequirements) {
 assertQuickStart(await readDocument('README.md'))
 assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
 assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))
+assertSecurityPolicy(await readDocument('SECURITY.md'))
 
 console.log(
-  `Documentation verification passed (${textRequirements.length} text checks and 3 structural checks).`,
+  `Documentation verification passed (${textRequirements.length} text checks and 4 structural checks).`,
 )

@@ -115,3 +115,21 @@ test('rejects a browser-note registry without its Evidence field', async () => {
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /Evidence/),
   )
 })
+
+test('rejects an unverified email reporting route', async () => {
+  await withMutatedDocuments(
+    'SECURITY.md',
+    'If private reporting is unavailable,',
+    'Email security@example.invalid. If private reporting is unavailable,',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not include an email/),
+  )
+})
+
+test('rejects a public fallback that could disclose vulnerability details', async () => {
+  await withMutatedDocuments(
+    'SECURITY.md',
+    'open a public issue containing no\nvulnerability details',
+    'open a public issue containing\nvulnerability details',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /safe public fallback/),
+  )
+})
