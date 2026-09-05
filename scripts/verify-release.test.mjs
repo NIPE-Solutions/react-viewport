@@ -90,11 +90,21 @@ process.stdout.write(JSON.stringify([{ filename: 'nipe-solutions-react-viewport-
 
   const result = spawnSync(
     process.execPath,
-    [releaseScript, '--dry-run', '--root', fixtureDirectory],
+    [
+      releaseScript,
+      '--dry-run',
+      '--root',
+      fixtureDirectory,
+      '--tag',
+      'v0.1.0-alpha.0',
+      '--dist-tag',
+      'alpha',
+    ],
     {
       encoding: 'utf8',
       env: {
         ...process.env,
+        GITHUB_REF_NAME: 'ambient-branch-name-must-not-be-used',
         PATH: `${binDirectory}${path.delimiter}${process.env.PATH ?? ''}`,
         RELEASE_TEST_CALL_LOG: callLog,
       },

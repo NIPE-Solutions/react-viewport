@@ -11,6 +11,9 @@ before(async () => {
 
 test('the packed archive contains only distributable artifacts', () => {
   assert.ok(verification.files.includes('package.json'))
+  assert.ok(verification.files.includes('README.md'))
+  assert.ok(verification.files.includes('CHANGELOG.md'))
+  assert.ok(verification.files.includes('LICENSE'))
   assert.ok(verification.files.some((file) => file.startsWith('dist/')))
   assert.ok(
     verification.files.every(

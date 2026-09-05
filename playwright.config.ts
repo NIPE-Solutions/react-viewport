@@ -9,6 +9,7 @@ delete process.env.NO_COLOR
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: 'website.spec.ts',
   retries: 1,
   use: {
     baseURL: fixtureOrigin,

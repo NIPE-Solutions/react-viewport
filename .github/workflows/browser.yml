@@ -14,9 +14,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
+  library:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PLAYWRIGHT_HTML_OPEN: never
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/library
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -32,16 +35,47 @@ jobs:
       - name: Install browser engines
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Run library browser suite
-        run: npm run test:e2e
-      - name: Run website browser suite
-        run: npm run test:website:e2e
-      - name: Upload browser failure reports
-        if: failure()
+        run: npm run test:e2e -- --reporter=html --output=test-results/library
+      - name: Upload library browser report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-reports-${{ github.run_attempt }}
+          name: library-playwright-report-${{ github.run_attempt }}
           path: |
-            playwright-report/
-            test-results/
+            playwright-report/library/
+            test-results/library/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PLAYWRIGHT_HTML_OPEN: never
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/website
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run website browser suite
+        run: npm run test:website:e2e -- --reporter=html --output=test-results/website
+      - name: Upload website browser report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-playwright-report-${{ github.run_attempt }}
+          path: |
+            playwright-report/website/
+            test-results/website/
           if-no-files-found: ignore
           retention-days: 14

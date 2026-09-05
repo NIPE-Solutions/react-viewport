@@ -36,21 +36,33 @@ test('quality CI installs reproducibly and runs the protected check on Node 24',
   assert.match(workflow, /actions\/setup-node@v\d+/)
 })
 
-test('browser CI installs every Playwright engine and runs both browser suites', async () => {
+test('browser CI runs independent library and website jobs with distinct persistent reports', async () => {
   const workflow = await readRepositoryFile('.github/workflows/browser.yml')
 
   assert.match(workflow, /permissions:\s*\n\s+contents: read/)
-  assert.match(workflow, /node-version:\s*24/)
-  assertOrdered(workflow, [
-    'npm ci',
-    'playwright install --with-deps chromium firefox webkit',
-    'npm run test:e2e',
-    'npm run test:website:e2e',
-  ])
-  assert.match(workflow, /if:\s*failure\(\)/)
-  assert.match(workflow, /actions\/upload-artifact@v\d+/)
-  assert.match(workflow, /playwright-report/)
-  assert.match(workflow, /test-results/)
+  assert.match(workflow, /jobs:\s*\n\s+library:/)
+  assert.match(workflow, /\n\s+website:/)
+  assert.doesNotMatch(workflow, /\bneeds:/)
+  assert.match(
+    workflow,
+    /library:[\s\S]*playwright install --with-deps chromium firefox webkit[\s\S]*npm run test:e2e -- --reporter=html --output=test-results\/library[\s\S]*name: library-playwright-report-/,
+  )
+  assert.match(
+    workflow,
+    /website:[\s\S]*playwright install --with-deps chromium[\s\S]*npm run test:website:e2e -- --reporter=html --output=test-results\/website[\s\S]*name: website-playwright-report-/,
+  )
+  assert.equal(workflow.match(/actions\/upload-artifact@v\d+/g)?.length, 2)
+  assert.equal(workflow.match(/if:\s*always\(\)/g)?.length, 2)
+  assert.match(workflow, /PLAYWRIGHT_HTML_OUTPUT_DIR:\s*playwright-report\/library/)
+  assert.match(workflow, /PLAYWRIGHT_HTML_OUTPUT_DIR:\s*playwright-report\/website/)
+})
+
+test('Playwright configurations partition library and website specifications', async () => {
+  const libraryConfiguration = await readRepositoryFile('playwright.config.ts')
+  const websiteConfiguration = await readRepositoryFile('playwright.website.config.ts')
+
+  assert.match(libraryConfiguration, /testIgnore:\s*['"]website\.spec\.ts['"]/)
+  assert.match(websiteConfiguration, /testMatch:\s*['"]website\.spec\.ts['"]/)
 })
 
 test('release CI uses OIDC, an npm environment, and no long-lived npm token', async () => {
@@ -60,6 +72,7 @@ test('release CI uses OIDC, an npm environment, and no long-lived npm token', as
   assert.match(workflow, /environment:\s*\n\s+name:\s*npm/)
   assert.doesNotMatch(workflow, /NPM_TOKEN|NODE_AUTH_TOKEN|_authToken/i)
   assert.match(workflow, /node-version:\s*24/)
+  assert.match(workflow, /actions\/setup-node@v7/)
   assert.match(workflow, /registry-url:\s*['"]https:\/\/registry\.npmjs\.org['"]/)
 })
 
