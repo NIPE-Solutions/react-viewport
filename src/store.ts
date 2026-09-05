@@ -1,6 +1,12 @@
 import { isKeyboardCapableElement } from './editable.js'
 import type { BrowserEnvironment } from './environment.js'
-import { getOrientation, inferKeyboard, normalizeFinite } from './geometry.js'
+import {
+  getOrientation,
+  inferKeyboard,
+  MIN_KEYBOARD_OCCLUSION_PX,
+  MIN_KEYBOARD_OCCLUSION_RATIO,
+  normalizeFinite,
+} from './geometry.js'
 import { createSafeAreaProbe, type SafeAreaProbe } from './safe-area.js'
 import { getServerSnapshot, snapshotsEqual } from './snapshot.js'
 import type { KeyboardState, LayoutViewport, ViewportState, VisualViewportState } from './types.js'
@@ -16,8 +22,12 @@ interface KeyboardBaseline {
   readonly visual: VisualViewportState
 }
 
+interface Subscription {
+  readonly listener: () => void
+}
+
 export function createViewportStore(environment: BrowserEnvironment): ViewportStore {
-  const subscribers = new Set<() => void>()
+  const subscribers = new Set<Subscription>()
   let snapshot = getServerSnapshot()
   let animationFrameId: number | null = null
   let probe: SafeAreaProbe | null = null
@@ -27,7 +37,8 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
 
   function subscribe(listener: () => void): () => void {
     const wasEmpty = subscribers.size === 0
-    subscribers.add(listener)
+    const subscription = { listener }
+    subscribers.add(subscription)
 
     if (wasEmpty) {
       activate()
@@ -41,7 +52,7 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
       }
 
       subscribed = false
-      subscribers.delete(listener)
+      subscribers.delete(subscription)
 
       if (subscribers.size === 0) {
         deactivate()
@@ -54,6 +65,7 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
     probe = createSafeAreaProbe(environment.document)
 
     listen(environment.window, 'resize', scheduleMeasurement)
+    listen(environment.window, 'scroll', scheduleMeasurement)
     listen(environment.document, 'focusin', handleFocusIn)
     listen(environment.document, 'focusout', handleFocusOut)
 
@@ -136,7 +148,7 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
     }
 
     snapshot = candidate
-    subscribers.forEach((listener) => listener())
+    subscribers.forEach(({ listener }) => listener())
   }
 
   return {
@@ -210,12 +222,31 @@ function readKeyboard(
     return getNativeKeyboardState(layout, environment.virtualKeyboard.boundingRect)
   }
 
+  if (!hasKeyboardSizedVisualReduction(baseline, visual)) {
+    return { open: false, height: 0 }
+  }
+
   return inferKeyboard({
     layout: baseline.layout,
     visual,
     editableFocused,
     hasNativeGeometry: false,
   })
+}
+
+function hasKeyboardSizedVisualReduction(
+  baseline: KeyboardBaseline,
+  visual: VisualViewportState,
+): boolean {
+  const baselineBottom = baseline.visual.height + baseline.visual.offsetTop
+  const currentBottom = visual.height + visual.offsetTop
+  const reduction = Math.max(0, baselineBottom - currentBottom)
+  const threshold = Math.max(
+    MIN_KEYBOARD_OCCLUSION_PX,
+    baseline.layout.height * MIN_KEYBOARD_OCCLUSION_RATIO,
+  )
+
+  return reduction >= threshold
 }
 
 function getNativeKeyboardState(

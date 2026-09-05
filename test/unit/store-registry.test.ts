@@ -88,4 +88,23 @@ describe('viewport store registry', () => {
     resetViewportStoreForTests(windowA)
     resetViewportStoreForTests(windowB)
   })
+
+  it('rejects reset while a store is active and permits it after cleanup', () => {
+    const targetWindow = createTargetWindow()
+    const store = getViewportStore(targetWindow)
+    const unsubscribe = store.subscribe(() => undefined)
+
+    expect(() => resetViewportStoreForTests(targetWindow)).toThrow()
+    expect(getViewportStore(targetWindow)).toBe(store)
+    expect(targetWindow.document.body.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
+
+    unsubscribe()
+
+    expect(targetWindow.document.body.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0)
+    expect(frames.get(targetWindow)?.size).toBe(0)
+    expect(() => resetViewportStoreForTests(targetWindow)).not.toThrow()
+    expect(getViewportStore(targetWindow)).not.toBe(store)
+
+    resetViewportStoreForTests(targetWindow)
+  })
 })

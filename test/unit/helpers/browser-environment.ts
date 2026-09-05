@@ -40,6 +40,7 @@ export interface FakeBrowserEnvironment {
   focus(element: HTMLElement): void
   blur(element: HTMLElement): void
   dispatchResize(): void
+  dispatchWindowScroll(): void
   dispatchVisualResize(): void
   dispatchVisualScroll(): void
   dispatchKeyboardGeometryChange(): void
@@ -208,6 +209,9 @@ export function createFakeBrowserEnvironment(
     },
     dispatchResize() {
       targetWindow.dispatchEvent(createEvent(targetDocument, 'resize'))
+    },
+    dispatchWindowScroll() {
+      targetWindow.dispatchEvent(createEvent(targetDocument, 'scroll'))
     },
     dispatchVisualResize() {
       visualViewport?.dispatchEvent(createEvent(targetDocument, 'resize'))

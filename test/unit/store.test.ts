@@ -31,6 +31,7 @@ describe('createViewportStore', () => {
     const unsubscribeFirst = store.subscribe(first)
 
     expect(fake.listenerCount('window', 'resize')).toBe(1)
+    expect(fake.listenerCount('window', 'scroll')).toBe(1)
     expect(fake.listenerCount('visualViewport', 'resize')).toBe(1)
     expect(fake.listenerCount('visualViewport', 'scroll')).toBe(1)
     expect(fake.listenerCount('virtualKeyboard', 'geometrychange')).toBe(1)
@@ -42,6 +43,7 @@ describe('createViewportStore', () => {
     const unsubscribeSecond = store.subscribe(second)
 
     expect(fake.listenerCount('window', 'resize')).toBe(1)
+    expect(fake.listenerCount('window', 'scroll')).toBe(1)
     expect(fake.listenerCount('visualViewport', 'resize')).toBe(1)
     expect(fake.listenerCount('visualViewport', 'scroll')).toBe(1)
     expect(fake.listenerCount('virtualKeyboard', 'geometrychange')).toBe(1)
@@ -62,6 +64,7 @@ describe('createViewportStore', () => {
     unsubscribeSecond()
 
     expect(fake.listenerCount('window', 'resize')).toBe(0)
+    expect(fake.listenerCount('window', 'scroll')).toBe(0)
     expect(fake.listenerCount('visualViewport', 'resize')).toBe(0)
     expect(fake.listenerCount('visualViewport', 'scroll')).toBe(0)
     expect(fake.listenerCount('virtualKeyboard', 'geometrychange')).toBe(0)
@@ -137,6 +140,32 @@ describe('createViewportStore', () => {
     expect(store.getServerSnapshot()).toBe(getServerSnapshot())
   })
 
+  it('keeps duplicate callback subscriptions independent', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const listener = vi.fn()
+
+    const unsubscribeFirst = store.subscribe(listener)
+    const unsubscribeSecond = store.subscribe(listener)
+    fake.flushAnimationFrame()
+
+    expect(listener).toHaveBeenCalledTimes(2)
+
+    listener.mockClear()
+    unsubscribeFirst()
+    fake.setLayout(400, 800)
+    fake.dispatchResize()
+    fake.flushAnimationFrame()
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(fake.listenerCount('window', 'resize')).toBe(1)
+    expect(fake.probeCount).toBe(1)
+
+    unsubscribeSecond()
+    expect(fake.listenerCount('window', 'resize')).toBe(0)
+    expect(fake.probeCount).toBe(0)
+  })
+
   it('uses native keyboard intersection geometry instead of visual inference', () => {
     const fake = createEnvironment({ virtualKeyboard: true })
     const store = createViewportStore(fake.environment)
@@ -196,6 +225,33 @@ describe('createViewportStore', () => {
     fake.flushAnimationFrame()
 
     expect(store.getSnapshot().layout).toEqual({ width: 390, height: 500 })
+    expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
+    unsubscribe()
+  })
+
+  it('requires visual geometry to shrink relative to the closed baseline', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const editable = fake.createEditable()
+    fake.setVisualViewport({ height: 650 })
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(editable)
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
+
+    fake.setVisualViewport({ height: 550 })
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
+
+    fake.setVisualViewport({ height: 500 })
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
     expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
     unsubscribe()
   })
@@ -261,6 +317,28 @@ describe('createViewportStore', () => {
       supported: { visualViewport: false, virtualKeyboard: false },
     })
     expect(fake.listenerCount('visualViewport', 'resize')).toBe(0)
+
+    fake.setScroll(67.25, 245.5)
+    fake.dispatchWindowScroll()
+    expect(fake.queuedAnimationFrames).toBe(1)
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().visual).toMatchObject({ pageTop: 245.5, pageLeft: 67.25 })
+    unsubscribe()
+  })
+
+  it('refreshes native VisualViewport page coordinates on window scroll', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.setVisualViewport({ pageTop: 240.5, pageLeft: 60.25 })
+    fake.dispatchWindowScroll()
+    expect(fake.queuedAnimationFrames).toBe(1)
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().visual).toMatchObject({ pageTop: 240.5, pageLeft: 60.25 })
     unsubscribe()
   })
 
