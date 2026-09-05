@@ -2,7 +2,7 @@ import process from 'node:process'
 
 import { defineConfig, devices } from '@playwright/test'
 
-const websitePort = 4174
+const websitePort = Number.parseInt(process.env.PLAYWRIGHT_WEBSITE_PORT ?? '4174', 10)
 const websiteOrigin = `http://127.0.0.1:${websitePort}`
 
 delete process.env.NO_COLOR

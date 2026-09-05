@@ -2,7 +2,7 @@ import process from 'node:process'
 
 import { defineConfig, devices } from '@playwright/test'
 
-const fixturePort = 4173
+const fixturePort = Number.parseInt(process.env.PLAYWRIGHT_FIXTURE_PORT ?? '4173', 10)
 const fixtureOrigin = `http://127.0.0.1:${fixturePort}`
 
 delete process.env.NO_COLOR
