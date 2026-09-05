@@ -97,6 +97,17 @@ describe('inferKeyboard', () => {
     ).toEqual({ open: true, height: 80 })
   })
 
+  it('rejects an occlusion below the 80px floor when the ratio threshold is smaller', () => {
+    expect(
+      inferKeyboard({
+        layout: { width: 390, height: 400 },
+        visual: visual({ height: 321 }),
+        editableFocused: true,
+        hasNativeGeometry: false,
+      }),
+    ).toEqual({ open: false, height: 0 })
+  })
+
   it('requires focused editable content', () => {
     expect(
       inferKeyboard({
