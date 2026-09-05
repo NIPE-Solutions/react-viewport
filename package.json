@@ -27,12 +27,15 @@
   "packageManager": "npm@11",
   "scripts": {
     "build:dist": "vite build && tsc -p tsconfig.build.json",
+    "build:website": "npm run build:dist && next build website",
+    "dev:website": "npm run build:dist && next dev website",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "test": "npm run test:unit && npm run test:types",
     "test:api": "node scripts/check-public-api.mjs",
     "test:e2e": "playwright test",
+    "test:website:e2e": "playwright test --config playwright.website.config.ts",
     "test:package": "node --test test/package/*.test.mjs",
     "test:size": "node scripts/check-bundle-size.mjs",
     "test:types": "tsc --project test/types/tsconfig.json --noEmit",
@@ -44,6 +47,7 @@
     "react-dom": "^18.3.0 || ^19.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.58.2",
     "@types/node": "^24.13.3",
@@ -51,6 +55,7 @@
     "@types/react-dom": "^19.2.7",
     "eslint": "^10.10.0",
     "jsdom": "^30.0.1",
+    "next": "^16.3.4",
     "prettier": "^3.9.6",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.69.0",
