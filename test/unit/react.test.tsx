@@ -8,6 +8,10 @@ import { SERVER_SNAPSHOT } from '../../src/snapshot.js'
 import { getViewportStore, resetViewportStoreForTests } from '../../src/store-registry.js'
 import type { ViewportState } from '../../src/types.js'
 
+declare global {
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined
+}
+
 const frames = new Map<Window, Map<number, FrameRequestCallback>>()
 let nextFrameId = 1
 const mountedRoots: Root[] = []

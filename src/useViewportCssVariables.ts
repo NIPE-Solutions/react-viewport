@@ -6,8 +6,8 @@ import { getViewportStore } from './store-registry.js'
 import type { ViewportCssVariablesOptions } from './types.js'
 
 interface OwnedProperty {
-  readonly previousValue: string
-  readonly previousPriority: string
+  previousValue: string
+  previousPriority: string
   value: string
   priority: string
 }
@@ -35,13 +35,23 @@ export function useViewportCssVariables(options: ViewportCssVariablesOptions = {
 
     function update(): void {
       for (const name of VIEWPORT_CSS_VARIABLES) {
-        if (!ownedProperties.has(name)) {
+        const currentValue = cssTarget.style.getPropertyValue(name)
+        const currentPriority = cssTarget.style.getPropertyPriority(name)
+        const ownedProperty = ownedProperties.get(name)
+
+        if (ownedProperty === undefined) {
           ownedProperties.set(name, {
-            previousValue: cssTarget.style.getPropertyValue(name),
-            previousPriority: cssTarget.style.getPropertyPriority(name),
+            previousValue: currentValue,
+            previousPriority: currentPriority,
             value: '',
             priority: '',
           })
+        } else if (
+          currentValue !== ownedProperty.value ||
+          currentPriority !== ownedProperty.priority
+        ) {
+          ownedProperty.previousValue = currentValue
+          ownedProperty.previousPriority = currentPriority
         }
       }
 

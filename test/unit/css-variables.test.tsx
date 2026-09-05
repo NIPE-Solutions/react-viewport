@@ -261,6 +261,44 @@ describe('viewport CSS variables', () => {
     expect(cssValue(target, '--consumer-property')).toBe('keep-me')
   })
 
+  it('restores a consumer value overwritten by a later store update without replacing a later consumer write', async () => {
+    const targetWindow = createTargetWindow()
+    const target = document.createElement('div')
+
+    function CssVariablesProbe() {
+      useViewportCssVariables({ target })
+      return null
+    }
+
+    renderClient(
+      <ViewportProvider targetWindow={targetWindow}>
+        <CssVariablesProbe />
+      </ViewportProvider>,
+    )
+
+    await act(async () => {
+      flushFrames(targetWindow)
+    })
+
+    target.style.setProperty('--react-viewport-layout-height', 'consumer-before-update')
+    Object.defineProperty(targetWindow, 'innerHeight', { configurable: true, value: 700 })
+    targetWindow.dispatchEvent(new Event('resize'))
+
+    await act(async () => {
+      flushFrames(targetWindow)
+    })
+
+    expect(cssValue(target, '--react-viewport-layout-height')).toBe('700px')
+    target.style.setProperty('--react-viewport-layout-width', 'consumer-after-update')
+
+    await act(async () => {
+      mountedRoots.splice(0).forEach((root) => root.unmount())
+    })
+
+    expect(cssValue(target, '--react-viewport-layout-height')).toBe('consumer-before-update')
+    expect(cssValue(target, '--react-viewport-layout-width')).toBe('consumer-after-update')
+  })
+
   it('does not subscribe or write when the provider explicitly selects null', () => {
     const target = document.createElement('div')
 
