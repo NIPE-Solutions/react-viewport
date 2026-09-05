@@ -8,7 +8,7 @@ export default defineConfig({
       formats: ['es', 'cjs'],
     },
     rolldownOptions: {
-      external: ['react', 'react-dom'],
+      external: /^react(?:-dom)?(?:\/.*)?$/,
     },
   },
 })
