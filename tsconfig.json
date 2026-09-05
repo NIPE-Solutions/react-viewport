@@ -11,8 +11,16 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2024",
+    "types": ["node"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "e2e/**/*.ts",
+    "playwright.config.ts"
+  ],
   "exclude": ["dist", "node_modules", "test/package/fixtures"]
 }

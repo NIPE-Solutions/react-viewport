@@ -1,32 +1,23 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import type { ViewportState, VisualViewportState } from '@nipe-solutions/react-viewport'
+import type { ViewportState } from '@nipe-solutions/react-viewport'
 
-type FixtureEvent =
-  'keyboard-geometrychange' | 'visual-resize' | 'visual-scroll' | 'window-resize' | 'window-scroll'
-
-interface FixtureDiagnostics {
-  readonly listenerCounts: Record<string, number>
-  readonly pendingAnimationFrames: number
-  readonly probeCount: number
-  readonly renderCount: number
-}
-
-interface BrowserFixtureControls {
-  setLayout(width: number, height: number): void
-  setWindowScroll(left: number, top: number): void
-  setVisualViewport(values: Partial<VisualViewportState>): void
-  setKeyboardRect(rect: { x: number; y: number; width: number; height: number }): void
-  dispatch(...events: FixtureEvent[]): void
-  getDiagnostics(): FixtureDiagnostics
-  unmount(): void
-}
-
-declare global {
-  interface Window {
-    __viewportFixture: BrowserFixtureControls
-  }
-}
+const VIEWPORT_CSS_PROPERTIES = [
+  '--react-viewport-layout-width',
+  '--react-viewport-layout-height',
+  '--react-viewport-visual-width',
+  '--react-viewport-visual-height',
+  '--react-viewport-visual-offset-top',
+  '--react-viewport-visual-offset-left',
+  '--react-viewport-visual-page-top',
+  '--react-viewport-visual-page-left',
+  '--react-viewport-scale',
+  '--react-viewport-keyboard-height',
+  '--react-viewport-safe-area-top',
+  '--react-viewport-safe-area-right',
+  '--react-viewport-safe-area-bottom',
+  '--react-viewport-safe-area-left',
+] as const
 
 const SERVER_STATE: ViewportState = {
   ready: false,
@@ -104,8 +95,7 @@ test('falls back to layout geometry and window page coordinates without VisualVi
 
   await page.evaluate(() => {
     window.__viewportFixture.setLayout(720, 540)
-    window.__viewportFixture.setWindowScroll(37.5, 212.25)
-    window.__viewportFixture.dispatch('window-resize', 'window-scroll')
+    window.__viewportFixture.dispatch('window-resize')
   })
 
   await expect
@@ -117,11 +107,29 @@ test('falls back to layout geometry and window page coordinates without VisualVi
         height: 540,
         offsetTop: 0,
         offsetLeft: 0,
-        pageTop: 212.25,
-        pageLeft: 37.5,
+        pageTop: 0,
+        pageLeft: 0,
         scale: 1,
       },
       supported: { visualViewport: false, virtualKeyboard: false },
+    })
+})
+
+test('updates fallback page coordinates from a window scroll event alone', async ({ page }) => {
+  await openReadyFixture(page, '?layout=mock&visual=absent')
+
+  await page.evaluate(() => {
+    window.__viewportFixture.setWindowScroll(37.5, 212.25)
+    window.__viewportFixture.dispatch('window-scroll')
+  })
+
+  await expect
+    .poll(() => readState(page))
+    .toMatchObject({
+      visual: {
+        pageTop: 212.25,
+        pageLeft: 37.5,
+      },
     })
 })
 
@@ -162,9 +170,34 @@ test('rejects a focused 800 to 750 toolbar-like visual-height sequence', async (
     })
 })
 
-test('publishes controlled visual offsets and page positions while rejecting zoom as a keyboard', async ({
+test('publishes controlled offsets and page positions from a VisualViewport scroll event alone', async ({
   page,
 }) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+
+  await page.evaluate(() => {
+    window.__viewportFixture.setVisualViewport({
+      offsetTop: 12.25,
+      offsetLeft: 7.5,
+      pageTop: 148.75,
+      pageLeft: 42.125,
+    })
+    window.__viewportFixture.dispatch('visual-scroll')
+  })
+
+  await expect
+    .poll(() => readState(page))
+    .toMatchObject({
+      visual: {
+        offsetTop: 12.25,
+        offsetLeft: 7.5,
+        pageTop: 148.75,
+        pageLeft: 42.125,
+      },
+    })
+})
+
+test('rejects a zoom resize as a keyboard', async ({ page }) => {
   await openReadyFixture(page, '?layout=mock&visual=mock')
   await page.getByLabel('Editable control').focus()
 
@@ -172,13 +205,9 @@ test('publishes controlled visual offsets and page positions while rejecting zoo
     window.__viewportFixture.setVisualViewport({
       width: 240.5,
       height: 500,
-      offsetTop: 12.25,
-      offsetLeft: 7.5,
-      pageTop: 148.75,
-      pageLeft: 42.125,
       scale: 2,
     })
-    window.__viewportFixture.dispatch('visual-resize', 'visual-scroll')
+    window.__viewportFixture.dispatch('visual-resize')
   })
 
   await expect
@@ -187,23 +216,18 @@ test('publishes controlled visual offsets and page positions while rejecting zoo
       visual: {
         width: 240.5,
         height: 500,
-        offsetTop: 12.25,
-        offsetLeft: 7.5,
-        pageTop: 148.75,
-        pageLeft: 42.125,
         scale: 2,
       },
       keyboard: { open: false, height: 0 },
     })
 })
 
-test('uses controlled native Virtual Keyboard intersection rectangles', async ({ page }) => {
+test('updates native keyboard intersection from a geometrychange event alone', async ({ page }) => {
   await openReadyFixture(page, '?layout=mock&visual=mock&keyboard=mock')
 
   await page.evaluate(() => {
-    window.__viewportFixture.setVisualViewport({ height: 500 })
     window.__viewportFixture.setKeyboardRect({ x: 20, y: 610, width: 350, height: 250 })
-    window.__viewportFixture.dispatch('visual-resize', 'keyboard-geometrychange')
+    window.__viewportFixture.dispatch('keyboard-geometrychange')
   })
 
   await expect
@@ -212,6 +236,54 @@ test('uses controlled native Virtual Keyboard intersection rectangles', async ({
       keyboard: { open: true, height: 190 },
       supported: { visualViewport: true, virtualKeyboard: true },
     })
+})
+
+test('accounts for listener identity and capture when tracking cleanup', async ({ page }) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock&keyboard=mock')
+
+  const counts = await page.evaluate(() => {
+    const trackedListener = () => undefined
+    const unknownListener = () => undefined
+    const count = () => window.__viewportFixture.getDiagnostics().listenerCounts['window:resize']
+    const initial = count()
+
+    window.removeEventListener('resize', unknownListener, true)
+    const afterUnknownRemoval = count()
+    window.addEventListener('resize', trackedListener, true)
+    const afterCapturedAddition = count()
+    window.addEventListener('resize', trackedListener, true)
+    const afterDuplicateAddition = count()
+    window.addEventListener('resize', trackedListener, false)
+    const afterCaptureVariant = count()
+    window.removeEventListener('resize', trackedListener, true)
+    const afterCapturedRemoval = count()
+    window.removeEventListener('resize', trackedListener, true)
+    const afterDuplicateRemoval = count()
+    window.removeEventListener('resize', trackedListener, false)
+    const final = count()
+
+    return {
+      initial,
+      afterUnknownRemoval,
+      afterCapturedAddition,
+      afterDuplicateAddition,
+      afterCaptureVariant,
+      afterCapturedRemoval,
+      afterDuplicateRemoval,
+      final,
+    }
+  })
+
+  expect(counts).toEqual({
+    initial: 1,
+    afterUnknownRemoval: 1,
+    afterCapturedAddition: 2,
+    afterDuplicateAddition: 2,
+    afterCaptureVariant: 3,
+    afterCapturedRemoval: 2,
+    afterDuplicateRemoval: 2,
+    final: 1,
+  })
 })
 
 test('batches duplicate source events into one animation-frame publication', async ({ page }) => {
@@ -310,26 +382,124 @@ test('removes listeners, queued frames, probes, and owned CSS variables on unmou
   page,
 }) => {
   await openReadyFixture(page, '?layout=mock&visual=mock&keyboard=mock')
-  const activeDiagnostics = await page.evaluate(() => ({
-    ...window.__viewportFixture.getDiagnostics(),
-    layoutWidth: document.documentElement.style.getPropertyValue('--react-viewport-layout-width'),
-  }))
+  const activeDiagnostics = await page.evaluate(
+    (properties) => ({
+      ...window.__viewportFixture.getDiagnostics(),
+      cssVariables: Object.fromEntries(
+        properties.map((property) => [
+          property,
+          document.documentElement.style.getPropertyValue(property),
+        ]),
+      ),
+    }),
+    VIEWPORT_CSS_PROPERTIES,
+  )
 
   expect(Object.values(activeDiagnostics.listenerCounts).some((count) => count > 0)).toBe(true)
   expect(activeDiagnostics.probeCount).toBe(1)
-  expect(activeDiagnostics.layoutWidth).toBe('390px')
+  expect(activeDiagnostics.cssVariables).toEqual({
+    '--react-viewport-layout-width': '390px',
+    '--react-viewport-layout-height': '800px',
+    '--react-viewport-visual-width': '390px',
+    '--react-viewport-visual-height': '800px',
+    '--react-viewport-visual-offset-top': '0px',
+    '--react-viewport-visual-offset-left': '0px',
+    '--react-viewport-visual-page-top': '0px',
+    '--react-viewport-visual-page-left': '0px',
+    '--react-viewport-scale': '1',
+    '--react-viewport-keyboard-height': '0px',
+    '--react-viewport-safe-area-top': '0px',
+    '--react-viewport-safe-area-right': '0px',
+    '--react-viewport-safe-area-bottom': '0px',
+    '--react-viewport-safe-area-left': '0px',
+  })
 
-  const cleanupDiagnostics = await page.evaluate(() => {
-    window.__viewportFixture.dispatch('window-resize', 'visual-resize')
+  const cleanupDiagnostics = await page.evaluate((properties) => {
     window.__viewportFixture.unmount()
+    const renderCount = window.__viewportFixture.getDiagnostics().renderCount
+    const observedEvents = {
+      documentFocusIn: 0,
+      documentFocusOut: 0,
+      windowResize: 0,
+      windowScroll: 0,
+      visualResize: 0,
+      visualScroll: 0,
+      keyboardGeometryChange: 0,
+    }
+    const onDocumentFocusIn = () => (observedEvents.documentFocusIn += 1)
+    const onDocumentFocusOut = () => (observedEvents.documentFocusOut += 1)
+    const onWindowResize = () => (observedEvents.windowResize += 1)
+    const onWindowScroll = () => (observedEvents.windowScroll += 1)
+    const onVisualResize = () => (observedEvents.visualResize += 1)
+    const onVisualScroll = () => (observedEvents.visualScroll += 1)
+    const onKeyboardGeometryChange = () => (observedEvents.keyboardGeometryChange += 1)
+    const visualViewport = window.visualViewport
+    const virtualKeyboard = (navigator as Navigator & { readonly virtualKeyboard?: EventTarget })
+      .virtualKeyboard
+
+    document.addEventListener('focusin', onDocumentFocusIn)
+    document.addEventListener('focusout', onDocumentFocusOut)
+    window.addEventListener('resize', onWindowResize)
+    window.addEventListener('scroll', onWindowScroll)
+    visualViewport?.addEventListener('resize', onVisualResize)
+    visualViewport?.addEventListener('scroll', onVisualScroll)
+    virtualKeyboard?.addEventListener('geometrychange', onKeyboardGeometryChange)
+    window.__viewportFixture.dispatch(
+      'document-focusin',
+      'document-focusout',
+      'window-resize',
+      'window-scroll',
+      'visual-resize',
+      'visual-scroll',
+      'keyboard-geometrychange',
+    )
+    document.removeEventListener('focusin', onDocumentFocusIn)
+    document.removeEventListener('focusout', onDocumentFocusOut)
+    window.removeEventListener('resize', onWindowResize)
+    window.removeEventListener('scroll', onWindowScroll)
+    visualViewport?.removeEventListener('resize', onVisualResize)
+    visualViewport?.removeEventListener('scroll', onVisualScroll)
+    virtualKeyboard?.removeEventListener('geometrychange', onKeyboardGeometryChange)
     return {
       ...window.__viewportFixture.getDiagnostics(),
-      layoutWidth: document.documentElement.style.getPropertyValue('--react-viewport-layout-width'),
+      renderCountBeforeDispatch: renderCount,
+      observedEvents,
+      cssVariables: Object.fromEntries(
+        properties.map((property) => [
+          property,
+          document.documentElement.style.getPropertyValue(property),
+        ]),
+      ),
     }
-  })
+  }, VIEWPORT_CSS_PROPERTIES)
 
   expect(cleanupDiagnostics.pendingAnimationFrames).toBe(0)
   expect(cleanupDiagnostics.probeCount).toBe(0)
-  expect(cleanupDiagnostics.layoutWidth).toBe('')
+  expect(cleanupDiagnostics.renderCount).toBe(cleanupDiagnostics.renderCountBeforeDispatch)
+  expect(cleanupDiagnostics.observedEvents).toEqual({
+    documentFocusIn: 1,
+    documentFocusOut: 1,
+    windowResize: 1,
+    windowScroll: 1,
+    visualResize: 1,
+    visualScroll: 1,
+    keyboardGeometryChange: 1,
+  })
   expect(Object.values(cleanupDiagnostics.listenerCounts).every((count) => count === 0)).toBe(true)
+  expect(cleanupDiagnostics.cssVariables).toEqual({
+    '--react-viewport-layout-width': '',
+    '--react-viewport-layout-height': '',
+    '--react-viewport-visual-width': '',
+    '--react-viewport-visual-height': '',
+    '--react-viewport-visual-offset-top': '',
+    '--react-viewport-visual-offset-left': '',
+    '--react-viewport-visual-page-top': '',
+    '--react-viewport-visual-page-left': '',
+    '--react-viewport-scale': '',
+    '--react-viewport-keyboard-height': '',
+    '--react-viewport-safe-area-top': '',
+    '--react-viewport-safe-area-right': '',
+    '--react-viewport-safe-area-bottom': '',
+    '--react-viewport-safe-area-left': '',
+  })
 })

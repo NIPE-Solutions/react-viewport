@@ -1,7 +1,13 @@
 import type { VisualViewportState } from '@nipe-solutions/react-viewport'
 
 export type FixtureEvent =
-  'keyboard-geometrychange' | 'visual-resize' | 'visual-scroll' | 'window-resize' | 'window-scroll'
+  | 'document-focusin'
+  | 'document-focusout'
+  | 'keyboard-geometrychange'
+  | 'visual-resize'
+  | 'visual-scroll'
+  | 'window-resize'
+  | 'window-scroll'
 
 export interface FixtureDiagnostics {
   readonly listenerCounts: Record<string, number>
@@ -31,6 +37,11 @@ interface FixtureOptions {
 interface VirtualKeyboardFixture extends EventTarget {
   boundingRect: DOMRectReadOnly
   overlaysContent: boolean
+}
+
+interface ListenerRegistration {
+  readonly listener: EventListenerOrEventListenerObject
+  readonly capture: boolean
 }
 
 class VisualViewportFixture extends EventTarget {
@@ -91,13 +102,18 @@ export function installBrowserFixture(options: FixtureOptions): BrowserFixtureCo
     value: controlledVirtualKeyboard ?? undefined,
   })
 
-  const listenerCounts = new Map<string, number>()
-  trackListeners('window', window, trackedEvents.window, listenerCounts)
-  trackListeners('document', document, trackedEvents.document, listenerCounts)
+  const listenerRegistrations = new Map<string, ListenerRegistration[]>()
+  trackListeners('window', window, trackedEvents.window, listenerRegistrations)
+  trackListeners('document', document, trackedEvents.document, listenerRegistrations)
 
   const activeVisualViewport = window.visualViewport
   if (activeVisualViewport !== null) {
-    trackListeners('visualViewport', activeVisualViewport, trackedEvents.visual, listenerCounts)
+    trackListeners(
+      'visualViewport',
+      activeVisualViewport,
+      trackedEvents.visual,
+      listenerRegistrations,
+    )
   }
 
   if (controlledVirtualKeyboard !== null) {
@@ -105,7 +121,7 @@ export function installBrowserFixture(options: FixtureOptions): BrowserFixtureCo
       'virtualKeyboard',
       controlledVirtualKeyboard,
       trackedEvents.keyboard,
-      listenerCounts,
+      listenerRegistrations,
     )
   }
 
@@ -160,22 +176,36 @@ export function installBrowserFixture(options: FixtureOptions): BrowserFixtureCo
     },
     dispatch(...events) {
       for (const event of events) {
-        if (event === 'window-resize') {
-          window.dispatchEvent(new Event('resize'))
-        } else if (event === 'window-scroll') {
-          window.dispatchEvent(new Event('scroll'))
-        } else if (event === 'visual-resize') {
-          controlledVisualViewport?.dispatchEvent(new Event('resize'))
-        } else if (event === 'visual-scroll') {
-          controlledVisualViewport?.dispatchEvent(new Event('scroll'))
-        } else {
-          controlledVirtualKeyboard?.dispatchEvent(new Event('geometrychange'))
+        switch (event) {
+          case 'document-focusin':
+            document.dispatchEvent(new Event('focusin'))
+            break
+          case 'document-focusout':
+            document.dispatchEvent(new Event('focusout'))
+            break
+          case 'window-resize':
+            window.dispatchEvent(new Event('resize'))
+            break
+          case 'window-scroll':
+            window.dispatchEvent(new Event('scroll'))
+            break
+          case 'visual-resize':
+            controlledVisualViewport?.dispatchEvent(new Event('resize'))
+            break
+          case 'visual-scroll':
+            controlledVisualViewport?.dispatchEvent(new Event('scroll'))
+            break
+          case 'keyboard-geometrychange':
+            controlledVirtualKeyboard?.dispatchEvent(new Event('geometrychange'))
+            break
         }
       }
     },
     getDiagnostics() {
       return {
-        listenerCounts: Object.fromEntries(listenerCounts),
+        listenerCounts: Object.fromEntries(
+          [...listenerRegistrations].map(([key, registrations]) => [key, registrations.length]),
+        ),
         pendingAnimationFrames: pendingAnimationFrames.size,
         probeCount: document.body.querySelectorAll('[aria-hidden="true"]').length,
         renderCount,
@@ -210,14 +240,14 @@ function trackListeners(
   source: string,
   target: EventTarget,
   eventTypes: readonly string[],
-  listenerCounts: Map<string, number>,
+  listenerRegistrations: Map<string, ListenerRegistration[]>,
 ): void {
   const trackedTypes = new Set(eventTypes)
   const addEventListener = target.addEventListener.bind(target)
   const removeEventListener = target.removeEventListener.bind(target)
 
   for (const type of trackedTypes) {
-    listenerCounts.set(`${source}:${type}`, 0)
+    listenerRegistrations.set(`${source}:${type}`, [])
   }
 
   Object.defineProperty(target, 'addEventListener', {
@@ -227,11 +257,23 @@ function trackListeners(
       listener: EventListenerOrEventListenerObject | null,
       options?: boolean | AddEventListenerOptions,
     ) {
+      addEventListener(type, listener, options)
+
       if (listener !== null && trackedTypes.has(type)) {
         const key = `${source}:${type}`
-        listenerCounts.set(key, (listenerCounts.get(key) ?? 0) + 1)
+        const registrations = listenerRegistrations.get(key)
+        const capture = getCapture(options)
+
+        if (
+          registrations !== undefined &&
+          !registrations.some(
+            (registration) =>
+              registration.listener === listener && registration.capture === capture,
+          )
+        ) {
+          registrations.push({ listener, capture })
+        }
       }
-      addEventListener(type, listener, options)
     },
   })
   Object.defineProperty(target, 'removeEventListener', {
@@ -241,13 +283,30 @@ function trackListeners(
       listener: EventListenerOrEventListenerObject | null,
       options?: boolean | EventListenerOptions,
     ) {
+      removeEventListener(type, listener, options)
+
       if (listener !== null && trackedTypes.has(type)) {
         const key = `${source}:${type}`
-        listenerCounts.set(key, Math.max(0, (listenerCounts.get(key) ?? 0) - 1))
+        const registrations = listenerRegistrations.get(key)
+        const capture = getCapture(options)
+        const registrationIndex =
+          registrations?.findIndex(
+            (registration) =>
+              registration.listener === listener && registration.capture === capture,
+          ) ?? -1
+
+        if (registrationIndex >= 0) {
+          registrations?.splice(registrationIndex, 1)
+        }
       }
-      removeEventListener(type, listener, options)
     },
   })
+}
+
+function getCapture(
+  options: boolean | AddEventListenerOptions | EventListenerOptions | undefined,
+): boolean {
+  return typeof options === 'boolean' ? options : (options?.capture ?? false)
 }
 
 declare global {
