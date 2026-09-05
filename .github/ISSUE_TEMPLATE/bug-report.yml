@@ -1,0 +1,45 @@
+name: Bug report
+description: Report reproducible viewport behavior that differs from the documented API.
+title: 'bug: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. Do not include security-sensitive details here; see SECURITY.md instead.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest code sample or repository that reproduces the behavior.
+      placeholder: Steps, expected result, and actual result.
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      placeholder: 0.1.0-alpha.0
+    validations:
+      required: true
+  - type: textarea
+    id: browser
+    attributes:
+      label: Browser and environment
+      description: Include browser/app version, engine, OS, device, standalone PWA/WebView status, and external keyboard state if relevant.
+      placeholder: Chrome 123 / Android 14 / Pixel 8 / browser tab / no external keyboard
+    validations:
+      required: true
+  - type: textarea
+    id: viewport-state
+    attributes:
+      label: Viewport state and evidence
+      description: Include layout/visual/keyboard/support values, screenshots or traces, and whether the result was automated or manually observed.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I have removed private or security-sensitive details.
+          required: true
+        - label: I have confirmed this is not only a browser-chrome or zoom change.
+          required: false

@@ -1,8 +1,13 @@
 .worktrees/
 .superpowers/
-node_modules/
 dist/
+node_modules/
 .next/
+website/out/
+*.tsbuildinfo
+coverage/
 playwright-report/
 test-results/
-
+.DS_Store
+.vercel/
+.env.local

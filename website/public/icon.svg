@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="React Viewport coordinate mark">
+  <rect width="64" height="64" fill="#F4F7F8"/>
+  <rect x="8" y="8" width="48" height="48" fill="none" stroke="#2257D6" stroke-width="5"/>
+  <rect x="18" y="14" width="34" height="34" fill="#E8EEF9" stroke="#173E9C" stroke-width="4"/>
+  <path d="M18 14h34v7H18z" fill="#18A6B7"/>
+  <path d="M8 44h48v12H8z" fill="#E2634D"/>
+</svg>

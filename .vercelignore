@@ -1,0 +1,9 @@
+.github/
+.superpowers/
+coverage/
+docs/
+e2e/
+node_modules/
+playwright-report/
+test/
+test-results/

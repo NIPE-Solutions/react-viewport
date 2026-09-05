@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">React Viewport</title>
+  <desc id="description">Nested layout, visual, safe-area, and keyboard coordinate planes.</desc>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#CAD6DC" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#F4F7F8"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <text x="72" y="118" fill="#15232D" font-family="Arial, sans-serif" font-size="30">@nipe-solutions/react-viewport</text>
+  <text x="72" y="230" fill="#15232D" font-family="Arial, sans-serif" font-size="78" font-weight="700">Viewport geometry</text>
+  <text x="72" y="316" fill="#15232D" font-family="Arial, sans-serif" font-size="78" font-weight="700">you can reason about.</text>
+  <rect x="702" y="76" width="420" height="480" fill="#F4F7F8" stroke="#2257D6" stroke-width="8"/>
+  <rect x="748" y="122" width="326" height="330" fill="#E8EEF9" stroke="#173E9C" stroke-width="6"/>
+  <path d="M748 122h326v30H748zM748 426h326v26H748z" fill="#18A6B7" opacity=".72"/>
+  <path d="M702 448h420v108H702z" fill="#E2634D"/>
+  <text x="724" y="535" fill="#15232D" font-family="monospace" font-size="24">keyboard occlusion</text>
+</svg>
