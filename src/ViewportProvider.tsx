@@ -5,5 +5,5 @@ export function ViewportProvider({
   children,
   targetWindow,
 }: ViewportProviderProps): React.ReactNode {
-  return <ViewportContext value={targetWindow}>{children}</ViewportContext>
+  return <ViewportContext.Provider value={targetWindow}>{children}</ViewportContext.Provider>
 }

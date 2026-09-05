@@ -1,4 +1,4 @@
-import { act, StrictMode } from 'react'
+import { act, isValidElement, StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -173,5 +173,29 @@ describe('React viewport bindings', () => {
 
     expect(document.body.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0)
     expect(() => resetViewportStoreForTests(window)).not.toThrow()
+  })
+
+  it('uses the standard context Provider member for React 18 compatibility', async () => {
+    const React18Provider = ({ children }: { readonly children: React.ReactNode }) => children
+
+    vi.resetModules()
+    vi.doMock('../../src/context.js', () => ({
+      ViewportContext: { Provider: React18Provider },
+    }))
+
+    try {
+      const { ViewportProvider: CompatibleViewportProvider } =
+        await import('../../src/ViewportProvider.js')
+      const element = CompatibleViewportProvider({ children: 'viewport', targetWindow: null })
+
+      if (!isValidElement(element)) {
+        throw new Error('Expected a React element')
+      }
+
+      expect(element.type).toBe(React18Provider)
+    } finally {
+      vi.doUnmock('../../src/context.js')
+      vi.resetModules()
+    }
   })
 })
