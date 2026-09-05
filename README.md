@@ -9,7 +9,9 @@ must respond to a measured keyboard occlusion.
 
 > **Alpha software:** `0.1.0-alpha.0` is an early release. Its API and browser
 > behavior may change. Physical-device QA is still pending; see
-> [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md).
+> [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md). Measured automated-release
+> evidence and deployment status are recorded in the
+> [`0.1.0-alpha.0` readiness report](docs/releases/0.1.0-alpha.0-readiness.md).
 
 ## Installation
 
@@ -163,6 +165,8 @@ physical-device matrix.
 - Security reporting: [`SECURITY.md`](SECURITY.md)
 - Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
+- Release readiness:
+  [`0.1.0-alpha.0`](docs/releases/0.1.0-alpha.0-readiness.md)
 - License: [MIT](LICENSE)
 
 [Part of NIPE Open Source](https://opensource.nipesolutions.com)

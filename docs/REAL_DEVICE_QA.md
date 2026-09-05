@@ -8,6 +8,12 @@ and evidence.
 
 There are no `MANUAL VERIFIED` rows in the initial alpha.
 
+The latest automated baseline on 2026-09-05 passed 39 library scenarios across
+desktop Chromium, Firefox, and WebKit, plus 13 documentation-site scenarios in
+desktop Chromium. Those results are detailed in the
+[`0.1.0-alpha.0` readiness report](releases/0.1.0-alpha.0-readiness.md) and do
+not change any physical row below from `MANUAL PENDING`.
+
 ## Platform matrix
 
 | Platform / context | Status | Required scenarios | Evidence |

@@ -13,5 +13,12 @@ Initial alpha release. The package provides:
 - Server-safe snapshots, deterministic unit tests, browser fixtures, and package
   consumer verification.
 
+The complete automated quality gate passed for this revision: 89 unit tests, 10
+package checks and four packed consumers, 39 cross-engine library browser tests,
+13 documentation-site browser tests, and six verified static documentation
+routes. See the
+[`0.1.0-alpha.0` readiness report](docs/releases/0.1.0-alpha.0-readiness.md) for
+the measured bundle, browser, documentation, and deployment evidence.
+
 This is an alpha release. Physical-device validation remains pending and is
 tracked in [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md).
