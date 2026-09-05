@@ -9,3 +9,5 @@ export type {
   ViewportSupport,
   VisualViewportState,
 } from './types.js'
+export { ViewportProvider } from './ViewportProvider.js'
+export { useViewport } from './useViewport.js'
