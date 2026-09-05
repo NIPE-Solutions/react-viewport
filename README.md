@@ -79,8 +79,17 @@ native VisualViewport reading.
 
 ### Keyboard state is conservative
 
-When the Virtual Keyboard API supplies geometry, that geometry is authoritative.
-Otherwise, the package infers an occluding software keyboard only when an
+`keyboard.height` is the estimated or reported bottom viewport occlusion caused
+by the software keyboard. It is not the physical keyboard's full rectangular
+height.
+
+Detection follows a deliberately short hierarchy:
+
+1. Native Virtual Keyboard geometry is authoritative when available.
+2. Otherwise, conservative VisualViewport inference can report an occlusion.
+3. When the evidence is insufficient, the library reports no keyboard.
+
+The fallback infers an occluding software keyboard only when an
 editable element is focused, zoom is not active, and visual-bottom occlusion
 crosses `max(80 CSS px, 15% of layout height)`. The keyboard-closed baseline is
 only an evidence gate: reported fallback height is always the current

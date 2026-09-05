@@ -10,8 +10,8 @@ browser/app version, date, scenarios, and evidence.
 
 There are no `MANUAL VERIFIED` rows in the initial alpha.
 
-The latest automated baseline on 2026-09-05 passed 42 library scenarios and 39
-documentation-site scenarios: 14 library and 13 site scenarios in each of
+The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42
+documentation-site scenarios: 14 library and 14 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
 [`0.1.0-alpha.0` readiness report](releases/0.1.0-alpha.0-readiness.md) and do
 not change any physical row below from `MANUAL PENDING`.
@@ -20,9 +20,9 @@ not change any physical row below from `MANUAL PENDING`.
 
 | Platform / context | Status | Required scenarios | Evidence |
 | --- | --- | --- | --- |
-| iPhone Safari | MANUAL PENDING | keyboard open/close; rapid input switching; rotation; toolbar collapse/expansion; scrolling with and without the keyboard; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
-| iPad Safari | MANUAL PENDING | keyboard open/close; rapid input switching; rotation; toolbar collapse/expansion; scrolling with and without the keyboard; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
-| Android Chrome | MANUAL PENDING | keyboard open/close; rapid input switching; rotation; toolbar collapse/expansion; scrolling with and without the keyboard; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
+| iPhone Safari | MANUAL PENDING | normal; URL bar changes; keyboard open/close; page scroll; orientation; rapid input switching; modal input; fixed-bottom composer; safe areas; zoom; hardware keyboard if available; restoration after blur | — |
+| iPad Safari | MANUAL PENDING | software keyboard; hardware keyboard; floating/split keyboard if available; keyboard open/close; page scroll; orientation; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
+| Android Chrome | MANUAL PENDING | normal; address-bar collapse; keyboard open/close; page scroll; orientation; rapid input switching; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
 | PWA (standalone, where available) | MANUAL PENDING | launch, keyboard open/close, rotation, safe areas, fixed-bottom composer, restoration after blur | — |
 | Embedded WebView | MANUAL PENDING | host integration, keyboard open/close, scrolling with and without the keyboard, modal input, safe areas, restoration after blur | — |
 | external keyboard (where available) | MANUAL PENDING | focus without soft keyboard, rotation, scrolling, keyboard fallback remains closed, restoration after blur | — |

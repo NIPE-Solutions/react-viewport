@@ -76,6 +76,16 @@ for (const { route, file, copy } of routes) {
 }
 
 const home = await readFile(path.join(outputRoot, 'index.html'), 'utf8')
+for (const expectedDemoCopy of [
+  'Browser chrome',
+  'Soft keyboard',
+  'Shifted keyboard',
+  'Zoom',
+  'Custom',
+  'layoutHeight - (visualOffsetTop + visualHeight)',
+]) {
+  assert.ok(home.includes(expectedDemoCopy), `Geometry demo must contain “${expectedDemoCopy}”`)
+}
 assert.match(
   home,
   /<meta[^>]+name="viewport"[^>]+content="[^"]*viewport-fit=cover[^"]*"/,
