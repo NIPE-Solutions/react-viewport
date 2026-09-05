@@ -38,7 +38,7 @@ jobs:
         run: npm run test:e2e -- --reporter=html --output=test-results/library
       - name: Upload library browser report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: library-playwright-report-${{ github.run_attempt }}
           path: |
@@ -71,7 +71,7 @@ jobs:
         run: npm run test:website:e2e -- --reporter=html --output=test-results/website
       - name: Upload website browser report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: website-playwright-report-${{ github.run_attempt }}
           path: |
