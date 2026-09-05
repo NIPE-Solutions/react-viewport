@@ -18,7 +18,8 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `npm run dev:website -- --port ${websitePort}`,
+    command: 'npm run build:website && npm run serve:website',
+    env: { WEBSITE_PORT: String(websitePort) },
     url: websiteOrigin,
     reuseExistingServer: false,
     timeout: 120_000,

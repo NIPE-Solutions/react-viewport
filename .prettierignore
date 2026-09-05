@@ -3,5 +3,6 @@ docs/
 dist/
 node_modules/
 website/.next/
+website/next-env.d.ts
 website/out/
 package-lock.json

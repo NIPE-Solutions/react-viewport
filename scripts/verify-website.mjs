@@ -3,6 +3,8 @@ import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
+import { apiReference, typeReference } from '../website/content/docs.ts'
+
 const repositoryRoot = process.cwd()
 const outputRoot = path.join(repositoryRoot, 'website', 'out')
 const canonicalOrigin = 'https://react-viewport.nipesolutions.com'
@@ -55,6 +57,14 @@ for (const { route, file, copy } of routes) {
 }
 
 const home = await readFile(path.join(outputRoot, 'index.html'), 'utf8')
+assert.ok(
+  home.includes('Initializing viewport measurement'),
+  'The static hero must identify geometry as initializing before the client measurement',
+)
+assert.ok(
+  !home.includes('Live browser measurement'),
+  'The static hero must not label illustrative or server values as a live measurement',
+)
 for (const expectedLink of [
   'https://github.com/NIPE-Solutions/react-viewport',
   'https://opensource.nipesolutions.com',
@@ -84,6 +94,53 @@ const analyticsPackages = Object.keys(installedPackages).filter((name) =>
 assert.deepEqual(analyticsPackages, [], 'The documentation site must not install analytics')
 assert.doesNotMatch(home, /googletagmanager|segment\.com|posthog|plausible|fathom/i)
 
+const expectedPublicTypes = [
+  'KeyboardState',
+  'LayoutViewport',
+  'SafeAreaInsets',
+  'ViewportCssVariablesOptions',
+  'ViewportOrientation',
+  'ViewportProviderProps',
+  'ViewportState',
+  'ViewportSupport',
+  'VisualViewportState',
+]
+assert.deepEqual(
+  typeReference.map(({ name }) => name).toSorted(),
+  expectedPublicTypes.toSorted(),
+  'The API source must document every public readonly type exactly once',
+)
+
+const apiHtml = await readFile(path.join(outputRoot, 'api.html'), 'utf8')
+const apiText = canonicalDeclaration(htmlToText(apiHtml))
+const declarations = await Promise.all([
+  readFile(path.join(repositoryRoot, 'dist', 'ViewportProvider.d.ts'), 'utf8'),
+  readFile(path.join(repositoryRoot, 'dist', 'useViewport.d.ts'), 'utf8'),
+  readFile(path.join(repositoryRoot, 'dist', 'useViewportCssVariables.d.ts'), 'utf8'),
+])
+const runtimeDeclarations = canonicalDeclaration(declarations.join('\n'))
+const typeDeclarations = canonicalDeclaration(
+  await readFile(path.join(repositoryRoot, 'dist', 'types.d.ts'), 'utf8'),
+)
+
+for (const entry of apiReference) {
+  const signature = canonicalDeclaration(entry.signature)
+  assert.ok(
+    runtimeDeclarations.includes(signature),
+    `${entry.name} must match the built public declaration`,
+  )
+  assert.ok(apiText.includes(signature), `${entry.name} must render its exact public signature`)
+}
+
+for (const entry of typeReference) {
+  const signature = canonicalDeclaration(entry.signature)
+  assert.ok(
+    typeDeclarations.includes(signature),
+    `${entry.name} must match the built public declaration`,
+  )
+  assert.ok(apiText.includes(signature), `${entry.name} must render its exact public declaration`)
+}
+
 process.stdout.write(`Website verification passed for ${routes.length} static routes.\n`)
 
 async function assertDirectory(directory) {
@@ -100,4 +157,22 @@ async function assertDirectory(directory) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function htmlToText(html) {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#x27;', "'")
+    .replaceAll('&#39;', "'")
+}
+
+function canonicalDeclaration(value) {
+  return value
+    .replace(/\/\/#[^\n]*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }

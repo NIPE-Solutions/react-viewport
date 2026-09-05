@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useViewport, type ViewportState } from '@nipe-solutions/react-viewport'
 
@@ -29,19 +29,6 @@ interface SimulationState {
   readonly safeBottom: number
 }
 
-const fallbackGeometry: GeometryModel = {
-  layout: { width: 390, height: 800 },
-  visual: {
-    width: 366,
-    height: 720,
-    offsetTop: 28,
-    offsetLeft: 12,
-    scale: 1,
-  },
-  safeArea: { top: 18, right: 10, bottom: 24, left: 10 },
-  keyboard: { open: false, height: 0 },
-}
-
 export function GeometryDemo() {
   const viewport = useViewport()
   const [simulation, setSimulation] = useState<SimulationState>({
@@ -51,12 +38,17 @@ export function GeometryDemo() {
     safeBottom: 24,
   })
 
-  const realGeometry = geometryFromViewport(viewport) ?? fallbackGeometry
+  const realGeometry = geometryFromViewport(viewport)
   const geometry = useMemo(
     () => (simulation.enabled ? simulatedGeometry(simulation) : realGeometry),
     [realGeometry, simulation],
   )
-  const styles = diagramStyles(geometry)
+  const mode = simulation.enabled
+    ? 'Simulated geometry'
+    : geometry === null
+      ? 'Initializing viewport measurement'
+      : 'Live browser measurement'
+  const keyboardMaximum = 800 - simulation.visualHeight
 
   return (
     <section className="geometry-demo" aria-labelledby="geometry-heading">
@@ -68,31 +60,105 @@ export function GeometryDemo() {
             mockup.
           </p>
         </div>
-        <output className="mode-indicator" data-testid="geometry-mode">
-          {simulation.enabled ? 'Simulated geometry' : 'Live browser measurement'}
+        <output
+          className="mode-indicator"
+          data-state={geometry === null ? 'pending' : 'ready'}
+          data-testid="geometry-mode"
+        >
+          {mode}
         </output>
       </header>
 
       <div className="geometry-demo__body">
         <figure
           className="coordinate-plane"
-          style={styles}
           role="img"
-          aria-label="Nested viewport coordinate plane showing layout viewport, visual viewport, safe area, and keyboard occlusion"
+          aria-label={
+            geometry === null
+              ? 'Nested viewport coordinate plane awaiting its first browser measurement'
+              : 'Nested viewport coordinate plane showing layout viewport, visual viewport, safe area, and keyboard occlusion'
+          }
         >
-          <div className="layout-plane" aria-hidden="true">
-            <span className="plane-label plane-label--layout">layout</span>
-            <div className="visual-plane">
-              <span className="safe-band safe-band--top" />
-              <span className="safe-band safe-band--right" />
-              <span className="safe-band safe-band--bottom" />
-              <span className="safe-band safe-band--left" />
-              <span className="plane-label plane-label--visual">visual</span>
+          {geometry === null ? (
+            <div className="coordinate-plane__pending" aria-hidden="true">
+              <span>Awaiting client geometry</span>
             </div>
-            <div className="keyboard-plane">
-              <span>keyboard occlusion</span>
-            </div>
-          </div>
+          ) : (
+            <>
+              <svg
+                className="coordinate-drawing"
+                viewBox={`0 0 ${geometry.layout.width} ${geometry.layout.height}`}
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+              >
+                <rect
+                  className="layout-plane"
+                  x="0"
+                  y="0"
+                  width={geometry.layout.width}
+                  height={geometry.layout.height}
+                />
+                <rect
+                  className="visual-plane"
+                  x={geometry.visual.offsetLeft}
+                  y={geometry.visual.offsetTop}
+                  width={geometry.visual.width}
+                  height={geometry.visual.height}
+                />
+                <rect
+                  className="safe-band safe-band--top"
+                  data-testid="safe-top"
+                  x={geometry.visual.offsetLeft}
+                  y={geometry.visual.offsetTop}
+                  width={geometry.visual.width}
+                  height={geometry.safeArea.top}
+                />
+                <rect
+                  className="safe-band safe-band--right"
+                  data-testid="safe-right"
+                  x={geometry.visual.offsetLeft + geometry.visual.width - geometry.safeArea.right}
+                  y={geometry.visual.offsetTop}
+                  width={geometry.safeArea.right}
+                  height={geometry.visual.height}
+                />
+                <rect
+                  className="safe-band safe-band--bottom"
+                  data-testid="safe-bottom"
+                  x={geometry.visual.offsetLeft}
+                  y={geometry.visual.offsetTop + geometry.visual.height - geometry.safeArea.bottom}
+                  width={geometry.visual.width}
+                  height={geometry.safeArea.bottom}
+                />
+                <rect
+                  className="safe-band safe-band--left"
+                  data-testid="safe-left"
+                  x={geometry.visual.offsetLeft}
+                  y={geometry.visual.offsetTop}
+                  width={geometry.safeArea.left}
+                  height={geometry.visual.height}
+                />
+                <rect
+                  className="keyboard-plane"
+                  data-testid="keyboard-region"
+                  x="0"
+                  y={geometry.layout.height - geometry.keyboard.height}
+                  width={geometry.layout.width}
+                  height={geometry.keyboard.height}
+                />
+              </svg>
+              <span className="plane-label plane-label--layout" aria-hidden="true">
+                layout
+              </span>
+              <span className="plane-label plane-label--visual" aria-hidden="true">
+                visual
+              </span>
+              {geometry.keyboard.height > 0 ? (
+                <span className="plane-label plane-label--keyboard" aria-hidden="true">
+                  keyboard occlusion
+                </span>
+              ) : null}
+            </>
+          )}
           <figcaption>Origin 0,0 · one unit equals one CSS pixel before diagram scaling</figcaption>
         </figure>
 
@@ -102,7 +168,11 @@ export function GeometryDemo() {
               <i className="legend-swatch legend-swatch--layout" />
               Layout viewport
             </dt>
-            <dd>{formatSize(geometry.layout.width, geometry.layout.height)}</dd>
+            <dd>
+              {geometry === null
+                ? 'Pending'
+                : formatSize(geometry.layout.width, geometry.layout.height)}
+            </dd>
           </div>
           <div>
             <dt>
@@ -110,11 +180,15 @@ export function GeometryDemo() {
               Visual viewport
             </dt>
             <dd>
-              <span data-testid="visual-height">{round(geometry.visual.height)} px</span>
-              <small>
-                {round(geometry.visual.width)} wide · offset {round(geometry.visual.offsetLeft)},
-                {round(geometry.visual.offsetTop)} · scale {geometry.visual.scale.toFixed(2)}
-              </small>
+              <span data-testid="visual-height">
+                {geometry === null ? 'Pending' : `${round(geometry.visual.height)} px`}
+              </span>
+              {geometry === null ? null : (
+                <small>
+                  {round(geometry.visual.width)} wide · offset {round(geometry.visual.offsetLeft)},
+                  {round(geometry.visual.offsetTop)} · scale {geometry.visual.scale.toFixed(2)}
+                </small>
+              )}
             </dd>
           </div>
           <div>
@@ -123,8 +197,9 @@ export function GeometryDemo() {
               Safe area
             </dt>
             <dd>
-              {geometry.safeArea.top} / {geometry.safeArea.right} / {geometry.safeArea.bottom} /{' '}
-              {geometry.safeArea.left} px
+              {geometry === null
+                ? 'Pending'
+                : `${geometry.safeArea.top} / ${geometry.safeArea.right} / ${geometry.safeArea.bottom} / ${geometry.safeArea.left} px`}
             </dd>
           </div>
           <div>
@@ -132,7 +207,9 @@ export function GeometryDemo() {
               <i className="legend-swatch legend-swatch--keyboard" />
               Keyboard occlusion
             </dt>
-            <dd data-testid="keyboard-height">{round(geometry.keyboard.height)} px</dd>
+            <dd data-testid="keyboard-height">
+              {geometry === null ? 'Pending' : `${round(geometry.keyboard.height)} px`}
+            </dd>
           </div>
         </dl>
       </div>
@@ -158,12 +235,14 @@ export function GeometryDemo() {
             step="10"
             value={simulation.visualHeight}
             disabled={!simulation.enabled}
-            onChange={(event) =>
+            onChange={(event) => {
+              const visualHeight = Number(event.target.value)
               setSimulation((current) => ({
                 ...current,
-                visualHeight: Number(event.target.value),
+                visualHeight,
+                keyboardHeight: Math.min(current.keyboardHeight, 800 - visualHeight),
               }))
-            }
+            }}
           />
           <output>{simulation.visualHeight} px</output>
         </label>
@@ -172,7 +251,7 @@ export function GeometryDemo() {
           <input
             type="range"
             min="0"
-            max="360"
+            max={keyboardMaximum}
             step="10"
             value={simulation.keyboardHeight}
             disabled={!simulation.enabled}
@@ -215,22 +294,6 @@ function simulatedGeometry(simulation: SimulationState): GeometryModel {
     safeArea: { top: 18, right: 10, bottom: simulation.safeBottom, left: 10 },
     keyboard: { open: keyboardHeight > 0, height: keyboardHeight },
   }
-}
-
-function diagramStyles(geometry: GeometryModel): CSSProperties {
-  const percent = (value: number, total: number) => `${(value / total) * 100}%`
-  return {
-    aspectRatio: `${geometry.layout.width} / ${geometry.layout.height}`,
-    '--visual-width': percent(geometry.visual.width, geometry.layout.width),
-    '--visual-height': percent(geometry.visual.height, geometry.layout.height),
-    '--visual-top': percent(geometry.visual.offsetTop, geometry.layout.height),
-    '--visual-left': percent(geometry.visual.offsetLeft, geometry.layout.width),
-    '--safe-top': percent(geometry.safeArea.top, geometry.layout.height),
-    '--safe-right': percent(geometry.safeArea.right, geometry.layout.width),
-    '--safe-bottom': percent(geometry.safeArea.bottom, geometry.layout.height),
-    '--safe-left': percent(geometry.safeArea.left, geometry.layout.width),
-    '--keyboard-height': percent(geometry.keyboard.height, geometry.layout.height),
-  } as CSSProperties
 }
 
 function formatSize(width: number, height: number): string {

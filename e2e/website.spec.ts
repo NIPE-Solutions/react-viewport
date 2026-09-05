@@ -88,13 +88,81 @@ test('labels real geometry and keeps desktop simulation explicit', async ({ page
   await expect(page.getByTestId('keyboard-height')).toHaveText('220 px')
 })
 
+test('keeps initialization honest and reserves the plane before measurement', async ({ page }) => {
+  await holdAnimationFrames(page)
+  await page.setViewportSize({ width: 1200, height: 900 })
+  await page.goto('/')
+
+  const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
+  await expect(geometry.getByTestId('geometry-mode')).toHaveText(
+    'Initializing viewport measurement',
+  )
+  await expect(geometry.getByTestId('visual-height')).toHaveText('Pending')
+  const before = await boxOf(geometry.getByRole('img'))
+
+  await page.evaluate(() => {
+    const release = (window as Window & { __releaseViewportMeasurement?: () => void })
+      .__releaseViewportMeasurement
+    if (release === undefined) throw new Error('Animation-frame gate was not installed')
+    release()
+  })
+
+  await expect(geometry.getByTestId('geometry-mode')).toHaveText('Live browser measurement')
+  const after = await boxOf(geometry.getByRole('img'))
+  expect(Math.abs(after.width - before.width)).toBeLessThan(1)
+  expect(Math.abs(after.height - before.height)).toBeLessThan(1)
+})
+
+test('renders zero safe-area and keyboard geometry without painted minimum bands', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1200, height: 900 })
+  await page.goto('/')
+  await expect(page.getByTestId('geometry-mode')).toHaveText('Live browser measurement')
+
+  expect(await renderedThickness(page.getByTestId('safe-top'), 'height')).toBe(0)
+  expect(await renderedThickness(page.getByTestId('safe-right'), 'width')).toBe(0)
+  expect(await renderedThickness(page.getByTestId('safe-bottom'), 'height')).toBe(0)
+  expect(await renderedThickness(page.getByTestId('safe-left'), 'width')).toBe(0)
+  expect(await renderedThickness(page.getByTestId('keyboard-region'), 'height')).toBe(0)
+})
+
+test('keeps capped simulation controls and geometry readouts in agreement', async ({ page }) => {
+  await page.goto('/')
+  const simulation = page.getByRole('group', { name: 'Desktop simulation' })
+  await simulation.getByRole('checkbox', { name: 'Use simulated geometry' }).check()
+  await simulation.getByRole('slider', { name: 'Visible viewport height' }).fill('440')
+  await simulation.getByRole('slider', { name: 'Keyboard occlusion height' }).fill('360')
+  await simulation.getByRole('slider', { name: 'Visible viewport height' }).fill('760')
+
+  await expect(simulation.getByRole('slider', { name: 'Keyboard occlusion height' })).toHaveValue(
+    '40',
+  )
+  await expect(
+    simulation.locator('label').filter({ hasText: 'Keyboard occlusion height' }).locator('output'),
+  ).toHaveText('40 px')
+  await expect(page.getByTestId('keyboard-height')).toHaveText('40 px')
+})
+
+test('renders critical geometry and status labels at a legible size', async ({ page }) => {
+  await page.goto('/')
+  for (const locator of [
+    page.getByTestId('geometry-mode'),
+    page.locator('.plane-label--layout'),
+    page.locator('.plane-label--visual'),
+  ]) {
+    const fontSize = await locator.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    )
+    expect(fontSize).toBeGreaterThanOrEqual(13)
+  }
+})
+
 test('draws the live layout plane with the measured aspect ratio', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('/')
 
-  const plane = page.getByRole('img', { name: /nested viewport coordinate plane/i })
-  const box = await plane.boundingBox()
-  if (box === null) throw new Error('Coordinate plane did not have a layout box')
+  const box = await boxOf(page.locator('.layout-plane'))
 
   expect(box.width / box.height).toBeCloseTo(1.44, 1)
 })
@@ -149,6 +217,46 @@ async function topOf(locator: ReturnType<Page['getByTestId']>): Promise<number> 
   const box = await locator.boundingBox()
   if (box === null) throw new Error('Composer did not have a layout box')
   return box.y
+}
+
+async function boxOf(locator: ReturnType<Page['locator']>) {
+  const box = await locator.boundingBox()
+  if (box === null) throw new Error('Element did not have a layout box')
+  return box
+}
+
+async function renderedThickness(
+  locator: ReturnType<Page['getByTestId']>,
+  dimension: 'height' | 'width',
+): Promise<number> {
+  return locator.evaluate((element, selectedDimension) => {
+    const bounds = element.getBoundingClientRect()
+    return bounds[selectedDimension]
+  }, dimension)
+}
+
+async function holdAnimationFrames(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window)
+    const queuedFrames: FrameRequestCallback[] = []
+    let holding = true
+
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      configurable: true,
+      value(callback: FrameRequestCallback) {
+        if (!holding) return nativeRequestAnimationFrame(callback)
+        queuedFrames.push(callback)
+        return queuedFrames.length
+      },
+    })
+    Object.defineProperty(window, '__releaseViewportMeasurement', {
+      configurable: true,
+      value() {
+        holding = false
+        for (const callback of queuedFrames.splice(0)) nativeRequestAnimationFrame(callback)
+      },
+    })
+  })
 }
 
 async function installVisualViewportFixture(page: Page): Promise<void> {

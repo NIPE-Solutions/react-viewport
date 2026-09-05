@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
 const defaultPackageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const packageRoot = resolve(process.env.REACT_VIEWPORT_DOCS_ROOT ?? defaultPackageRoot)
@@ -116,7 +116,7 @@ function parseMarkdownTable(section, description) {
   assert.ok(tableLines.length >= 3, `${description} must contain a header, separator, and row`)
   assert.match(tableLines[1], /^\|(?:\s*:?-{3,}:?\s*\|)+$/)
 
-  const [headerLine, _separatorLine, ...rowLines] = tableLines
+  const [headerLine, , ...rowLines] = tableLines
   const headers = parseMarkdownRow(headerLine)
   const rows = rowLines.map((line) => parseMarkdownRow(line))
 
@@ -273,6 +273,6 @@ assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
 assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))
 assertSecurityPolicy(await readDocument('SECURITY.md'))
 
-console.log(
-  `Documentation verification passed (${textRequirements.length} text checks and 4 structural checks).`,
+process.stdout.write(
+  `Documentation verification passed (${textRequirements.length} text checks and 4 structural checks).\n`,
 )

@@ -319,7 +319,7 @@ h3 {
   align-items: center;
   gap: 0.5rem;
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -329,6 +329,10 @@ h3 {
   border-radius: 50%;
   background: var(--safe);
   content: '';
+}
+
+.mode-indicator[data-state='pending']::before {
+  background: var(--ink-muted);
 }
 
 .geometry-demo__body {
@@ -341,7 +345,7 @@ h3 {
 .coordinate-plane {
   position: relative;
   min-width: 0;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: calc(100vw / 100vh);
   margin: 0;
   overflow: hidden;
   border: 1px solid var(--rule);
@@ -352,13 +356,38 @@ h3 {
   background-size: 2rem 2rem;
 }
 
-.layout-plane {
+.coordinate-drawing {
   position: absolute;
   z-index: 2;
   inset: 0;
-  overflow: hidden;
-  border: 3px solid var(--coordinate);
-  background: transparent;
+  width: 100%;
+  height: 100%;
+}
+
+.layout-plane {
+  fill: transparent;
+  stroke: var(--coordinate);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.coordinate-plane__pending {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-muted);
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+}
+
+.coordinate-plane__pending::before {
+  position: absolute;
+  width: 42%;
+  aspect-ratio: 1;
+  border: 1px dashed var(--coordinate);
+  content: '';
 }
 
 .plane-label {
@@ -366,89 +395,46 @@ h3 {
   z-index: 5;
   padding: 0.2rem 0.35rem;
   font-family: var(--font-code);
-  font-size: 0.62rem;
+  font-size: 0.8125rem;
   font-style: normal;
   line-height: 1;
 }
 
 .plane-label--layout {
-  top: 0;
-  right: 0;
+  top: 0.65rem;
+  right: 0.65rem;
   background: var(--coordinate);
   color: #fff;
 }
 
 .visual-plane {
-  position: absolute;
-  top: var(--visual-top);
-  left: var(--visual-left);
-  width: min(var(--visual-width), calc(100% - var(--visual-left)));
-  height: min(var(--visual-height), calc(100% - var(--visual-top)));
-  overflow: hidden;
-  border: 2px solid var(--coordinate-deep);
-  background: color-mix(in srgb, var(--coordinate) 8%, transparent);
+  fill: color-mix(in srgb, var(--coordinate) 8%, transparent);
+  stroke: var(--coordinate-deep);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
 }
 
 .plane-label--visual {
-  top: max(0.35rem, var(--safe-top));
-  left: max(0.35rem, var(--safe-left));
+  top: 0.65rem;
+  left: 0.65rem;
   background: var(--coordinate-deep);
   color: #fff;
 }
 
 .safe-band {
-  position: absolute;
-  z-index: 3;
-  background: color-mix(in srgb, var(--safe) 56%, transparent);
-}
-
-.safe-band--top {
-  top: 0;
-  right: 0;
-  left: 0;
-  height: max(3px, var(--safe-top));
-}
-
-.safe-band--right {
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: max(3px, var(--safe-right));
-}
-
-.safe-band--bottom {
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: max(3px, var(--safe-bottom));
-}
-
-.safe-band--left {
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: max(3px, var(--safe-left));
+  fill: color-mix(in srgb, var(--safe) 56%, transparent);
 }
 
 .keyboard-plane {
-  position: absolute;
-  z-index: 4;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: var(--keyboard-height);
-  min-height: 0;
-  overflow: hidden;
-  border-top: 2px solid var(--keyboard);
-  background: color-mix(in srgb, var(--keyboard) 58%, var(--keyboard-soft));
+  fill: color-mix(in srgb, var(--keyboard) 58%, var(--keyboard-soft));
 }
 
-.keyboard-plane span {
-  position: absolute;
-  top: 0.35rem;
+.plane-label--keyboard {
+  right: auto;
+  bottom: 2rem;
   left: 0.5rem;
-  font-family: var(--font-code);
-  font-size: 0.6rem;
+  background: var(--keyboard);
+  color: var(--ink);
   white-space: nowrap;
 }
 
@@ -460,7 +446,7 @@ h3 {
   left: 0.6rem;
   color: var(--ink-muted);
   font-family: var(--font-code);
-  font-size: 0.56rem;
+  font-size: 0.6875rem;
   line-height: 1.35;
 }
 

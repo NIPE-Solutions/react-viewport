@@ -75,47 +75,95 @@ export const cssComposer = `.composer {
 export const apiReference = [
   {
     name: 'useViewport()',
-    signature: 'function useViewport(): ViewportState',
+    signature: 'export declare function useViewport(): ViewportState;',
     description:
       'Subscribes to the current window, or to the window supplied by the nearest ViewportProvider.',
   },
   {
     name: 'useViewportCssVariables()',
-    signature: 'function useViewportCssVariables(options?: ViewportCssVariablesOptions): void',
+    signature:
+      'export declare function useViewportCssVariables(options?: ViewportCssVariablesOptions): void;',
     description:
-      'Writes current geometry to a target element without routing high-frequency updates through React state.',
+      'Writes current geometry to options.target, or to the document root when target is omitted. The target can be an HTMLElement, a React ref, or null.',
   },
   {
     name: '<ViewportProvider>',
-    signature: 'function ViewportProvider(props: ViewportProviderProps): React.ReactNode',
+    signature: `export declare function ViewportProvider({ children, targetWindow, }: ViewportProviderProps): React.ReactNode;`,
     description:
-      'Scopes descendants to an accessible same-origin Window. Passing null intentionally selects the server snapshot.',
+      'Renders children and scopes descendants to targetWindow. Omitting targetWindow uses the global window; passing null intentionally selects the server snapshot.',
   },
 ] as const
 
 export const typeReference = [
   {
-    name: 'ViewportState',
-    signature: `interface ViewportState {
-  ready: boolean
-  layout: LayoutViewport | null
-  visual: VisualViewportState | null
-  keyboard: KeyboardState
-  safeArea: SafeAreaInsets
-  orientation: 'portrait' | 'landscape' | null
-  supported: ViewportSupport
+    name: 'LayoutViewport',
+    signature: `export interface LayoutViewport {
+  readonly width: number;
+  readonly height: number;
 }`,
   },
   {
     name: 'VisualViewportState',
-    signature: `interface VisualViewportState {
-  width: number
-  height: number
-  offsetTop: number
-  offsetLeft: number
-  pageTop: number
-  pageLeft: number
-  scale: number
+    signature: `export interface VisualViewportState {
+  readonly width: number;
+  readonly height: number;
+  readonly offsetTop: number;
+  readonly offsetLeft: number;
+  readonly pageTop: number;
+  readonly pageLeft: number;
+  readonly scale: number;
+}`,
+  },
+  {
+    name: 'KeyboardState',
+    signature: `export interface KeyboardState {
+  readonly open: boolean;
+  readonly height: number;
+}`,
+  },
+  {
+    name: 'SafeAreaInsets',
+    signature: `export interface SafeAreaInsets {
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly left: number;
+}`,
+  },
+  {
+    name: 'ViewportOrientation',
+    signature: `export type ViewportOrientation = 'portrait' | 'landscape';`,
+  },
+  {
+    name: 'ViewportSupport',
+    signature: `export interface ViewportSupport {
+  readonly visualViewport: boolean;
+  readonly virtualKeyboard: boolean;
+}`,
+  },
+  {
+    name: 'ViewportState',
+    signature: `export interface ViewportState {
+  readonly ready: boolean;
+  readonly layout: LayoutViewport | null;
+  readonly visual: VisualViewportState | null;
+  readonly keyboard: KeyboardState;
+  readonly safeArea: SafeAreaInsets;
+  readonly orientation: ViewportOrientation | null;
+  readonly supported: ViewportSupport;
+}`,
+  },
+  {
+    name: 'ViewportProviderProps',
+    signature: `export interface ViewportProviderProps {
+  readonly children: React.ReactNode;
+  readonly targetWindow?: Window | null;
+}`,
+  },
+  {
+    name: 'ViewportCssVariablesOptions',
+    signature: `export interface ViewportCssVariablesOptions {
+  readonly target?: HTMLElement | React.RefObject<HTMLElement | null> | null;
 }`,
   },
 ] as const
