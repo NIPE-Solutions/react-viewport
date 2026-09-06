@@ -14,10 +14,10 @@ Physical iPhone Safari and Android Chrome testing is pending. Nothing in this
 matrix, the desktop browser suites, or the upstream issue links records a
 physical-device pass.
 
-The latest automated baseline on 2026-09-06 passed 54 library scenarios and 78
-documentation-site scenarios: 18 library and 26 site scenarios in each of
+The latest automated baseline on 2026-09-06 passed 54 library scenarios and 93
+documentation-site scenarios: 18 library and 31 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
-[`2026-09-06` product-hardening readiness report](releases/2026-09-06-product-hardening-readiness.md)
+[`2026-09-06` Device Lab readiness report](releases/2026-09-06-device-lab-readiness.md)
 and do not change any physical row below from `MANUAL PENDING`.
 
 ## Platform matrix
@@ -108,3 +108,65 @@ When a person completes a row, keep the pending evidence and add an entry with
 the exact device model, OS and browser/app version, test date, tested scenarios,
 result, screenshots or trace location, and any linked browser-note record. Do
 not replace a `MANUAL PENDING` status solely because an automated test exists.
+
+## Live Device Lab protocol
+
+Open https://react-viewport.nipesolutions.com/lab on the physical device. Use the
+full-page composer, not the homepage simulation. Enable **Show geometry** and
+record **Copy diagnostics** before opening the keyboard, during keyboard display,
+after scrolling, after rotation, and after closing it. Copying is user-initiated,
+contains only geometry/capabilities/build identity, and never includes input text
+or user agent. Nothing is uploaded or stored by the site.
+
+### iPhone Safari — MANUAL PENDING
+
+- [ ] Page loads and live values are present.
+- [ ] Tap input; physical software keyboard opens.
+- [ ] Record whether keyboard.open changes appropriately.
+- [ ] Record bottom occlusion and raw safe area independently.
+- [ ] Composer remains visible while typing.
+- [ ] Scroll while keyboard is open; composer remains visible.
+- [ ] Browser chrome changes alone do not look like a keyboard.
+- [ ] Close keyboard; geometry and composer return.
+- [ ] Rotate both with keyboard open and closed; no reload needed.
+- [ ] Check safe areas in portrait/landscape and zoom accessibility.
+
+### Android Chrome — MANUAL PENDING
+
+- [ ] Page loads and live values are present.
+- [ ] Tap input; physical software keyboard opens.
+- [ ] Record whether keyboard.open changes appropriately.
+- [ ] Record VisualViewport dimensions, offsets and bottom occlusion.
+- [ ] Composer remains visible while typing.
+- [ ] Scroll while keyboard is open; composer remains visible.
+- [ ] Browser chrome changes alone do not look like a keyboard.
+- [ ] Close keyboard; geometry and composer return.
+- [ ] Rotate both with keyboard open and closed; no reload needed.
+- [ ] Check safe areas and zoom accessibility.
+
+### Exact recording template
+
+Device: pending; OS/version: pending; browser/version: pending; date: pending.
+Build SHA from /build.json: pending. Browser mode (tab/PWA/WebView): pending.
+Keyboard type (docked/floating/split/hardware): pending.
+
+| Phase | Layout W×H | Visual W×H | offsetTop / offsetLeft | pageTop | scale | keyboard.open | keyboard.height | safeArea.bottom | effectiveBottom | Composer visible? |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Before keyboard | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| During keyboard | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| Scroll with keyboard | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| Rotated | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+| After keyboard closes | pending | pending | pending | pending | pending | pending | pending | pending | pending | pending |
+
+Paste diagnostics for each phase in the QA report (never message text). Record
+VisualViewport and VirtualKeyboard capability flags; they do not identify the
+active source. Record the observation, not an assumed pass:
+
+- Closed keyboard state despite a docked keyboard and non-zero bottom occlusion:
+  isolate browser support/inference; attach numeric geometry.
+- Correct open state and non-zero inset but covered composer: isolate website layout.
+- Both viewports shrink together with no bottom occlusion: no inset may be needed.
+- Raw safe area stays non-zero: max(), not addition, avoids double counting.
+
+Desktop Playwright WebKit does not verify physical Safari keyboard behavior.
+No physical-device test was performed during this implementation session.

@@ -1,9 +1,8 @@
-.github/
+node_modules/
+.worktrees/
 .superpowers/
 coverage/
-docs/
-e2e/
-node_modules/
 playwright-report/
-test/
 test-results/
+website/.next/
+website/out/

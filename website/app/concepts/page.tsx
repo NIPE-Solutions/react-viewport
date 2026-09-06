@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 import { GeometryDemo } from '../../components/GeometryDemo'
 
@@ -141,7 +143,12 @@ export default function ConceptsPage() {
       </div>
 
       <div className="simulator-section site-frame" id="simulator">
-        <GeometryDemo />
+        <GeometryDemo
+          code={readFileSync(
+            path.join(process.cwd(), 'website/components/GeometryDemo.tsx'),
+            'utf8',
+          )}
+        />
       </div>
 
       <article className="site-frame prose browser-prose">

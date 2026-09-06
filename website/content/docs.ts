@@ -41,7 +41,7 @@ export const site = {
   title: 'React Viewport',
   seoTitle: 'React Viewport — Visual viewport, keyboard and safe-area geometry for React',
   description:
-    'Measured React geometry for visual viewports, software-keyboard occlusion, and safe areas, with documented browser fallbacks and limits.',
+    'Read the visible viewport, bottom keyboard occlusion and safe-area geometry from one shared React state.',
   origin: 'https://react-viewport.nipesolutions.com',
   repository: 'https://github.com/NIPE-Solutions/react-viewport',
   changelog: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md',
@@ -83,11 +83,23 @@ function ModalActions() {
   const { keyboard, safeArea } = useViewport()
   const bottomInset = Math.max(keyboard.height, safeArea.bottom)
 
-  return <footer style={{ bottom: bottomInset }}>…</footer>
+  return (
+    <footer style={{ position: 'fixed', left: 16, right: 16, bottom: bottomInset + 16 }}>
+      <button type="button">Cancel</button>
+      <button type="submit" form="settings">Save</button>
+    </footer>
+  )
 }`
 
-export const visibleArea = `const { visual } = useViewport()
-const visibleHeight = visual?.height ?? null`
+export const visibleArea = `import { useViewport } from '@nipe-solutions/react-viewport'
+
+export function VisibleAreaPanel() {
+  const { visual } = useViewport()
+  if (!visual) return <p>Measuring viewport…</p>
+  return <section style={{ maxHeight: visual.height, overflowY: 'auto' }}>
+    Visible height: {visual.height}px
+  </section>
+}`
 
 export const cssSafeAreaFooter = `.footer {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));

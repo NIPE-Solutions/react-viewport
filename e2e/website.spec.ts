@@ -13,7 +13,15 @@ test('navigation follows the product learning path', async ({ page }) => {
 
   await expect(
     page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link'),
-  ).toHaveText(['Overview', 'Examples', 'Concepts', 'API', 'Browser behavior', 'Project'])
+  ).toHaveText([
+    'Overview',
+    'Examples',
+    'Device Lab',
+    'Concepts',
+    'API',
+    'Browser behavior',
+    'Project',
+  ])
 })
 
 test('concepts explains viewport changes before the geometry controls', async ({ page }) => {
@@ -41,7 +49,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
   await expect(
     page.getByRole('link', { name: 'Explore the concepts and simulator' }),
   ).toHaveAttribute('href', '/concepts')
-  await expect(page.getByRole('group', { name: 'View' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'View' })).toHaveCount(1)
 
   const modalPreview = page.locator('.use-case-list article').filter({ hasText: 'Modal actions' })
   await expect(modalPreview).toContainText('larger of keyboard occlusion and the safe-area bottom')
@@ -52,7 +60,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
   const homepageEvidence = page.getByRole('region', {
     name: 'Browser evidence has boundaries',
   })
-  await expect(homepageEvidence).toContainText(/Automated evidence.*54.*78/s)
+  await expect(homepageEvidence).toContainText(/Automated evidence.*54.*93/s)
   await expect(homepageEvidence).toContainText(/Physical-device status.*pending/is)
 
   const referenceLinks = [
@@ -73,7 +81,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
 
   const automatedEvidence = page.getByRole('region', { name: 'Automated evidence' })
   await expect(automatedEvidence).toContainText('54 library scenarios')
-  await expect(automatedEvidence).toContainText('78 documentation-site scenarios')
+  await expect(automatedEvidence).toContainText('93 documentation-site scenarios')
   await expect(
     automatedEvidence.getByRole('link', { name: 'Library browser suite', exact: true }),
   ).toHaveAttribute(
@@ -90,7 +98,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
     automatedEvidence.getByRole('link', { name: 'Current readiness report', exact: true }),
   ).toHaveAttribute(
     'href',
-    'https://github.com/NIPE-Solutions/react-viewport/blob/main/docs/releases/2026-09-06-product-hardening-readiness.md',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/docs/releases/2026-09-06-device-lab-readiness.md',
   )
   await expect(page.getByRole('complementary', { name: 'Physical-device status' })).toContainText(
     'pending',
@@ -123,7 +131,7 @@ test('metadata describes measured viewport geometry without universal keyboard c
   )
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
     'content',
-    'Measured React geometry for visual viewports, software-keyboard occlusion, and safe areas, with documented browser fallbacks and limits.',
+    'Read the visible viewport, bottom keyboard occlusion and safe-area geometry from one shared React state.',
   )
   await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
     'content',
@@ -165,49 +173,56 @@ test('trust page links to repository policy and release documents', async ({ pag
   }
 })
 
-test('hero leads with a usable composer and separates live browser state from simulation', async ({
+test('before and after use the same form with distinct geometry input', async ({
   page,
+  browserName,
 }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
   await page.goto('/')
-
-  const hero = page.getByRole('region', {
-    name: 'Know what part of the screen is actually usable.',
-  })
-  await expect(
-    hero.getByRole('heading', {
-      name: 'Know what part of the screen is actually usable.',
-    }),
-  ).toBeVisible()
-  await expect(hero.getByText('Live browser', { exact: true })).toBeVisible()
-  await expect(
-    hero.getByText(/const \{ visual, keyboard, safeArea \} = useViewport\(\)/),
-  ).toBeVisible()
-
-  const liveValues = hero.locator('[data-live-viewport-value]')
-  await expect(liveValues).toHaveCount(3)
-  const beforeSimulation = await liveValues.allTextContents()
-
-  const simulationToggle = hero.getByRole('button', { name: 'Simulate keyboard' })
-  await expect(simulationToggle).toHaveAttribute('aria-pressed', 'false')
-  await simulationToggle.click()
-  await expect(simulationToggle).toHaveAttribute('aria-pressed', 'true')
-  await expect(hero.getByText('Simulated keyboard', { exact: true })).toBeVisible()
-  await expect(liveValues).toHaveText(beforeSimulation)
-
-  const geometryLink = hero.getByRole('link', { name: 'Explore the geometry', exact: true })
-  await expect(geometryLink).toHaveAttribute('href', '/concepts#simulator')
-  await geometryLink.click()
-  await expect(page).toHaveURL(/\/concepts#simulator$/)
-  await expect(page.locator('#simulator')).toBeVisible()
+  const comparison = page.getByRole('region', { name: 'Same composer. Different geometry input.' })
+  await expect(comparison.getByText('SIMULATION', { exact: true })).toBeVisible()
+  const aware = page.getByTestId('aware-composer')
+  const unaware = page.getByTestId('unaware-composer')
+  expect((await topOf(unaware)) - (await topOf(aware))).toBeCloseTo(156, 0)
+  const beforeKeyboard = comparison.locator('[data-simulated-keyboard]').first()
+  expect((await boxOf(unaware)).y).toBeGreaterThan((await boxOf(beforeKeyboard)).y)
+  expect((await boxOf(aware)).y + (await boxOf(aware)).height).toBeLessThan(
+    (await boxOf(beforeKeyboard)).y,
+  )
+  await comparison.getByRole('button', { name: 'Close simulated keyboard' }).focus()
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  )
+  await expect(aware.getByRole('textbox')).toBeFocused()
+  await comparison.getByRole('button', { name: 'Close simulated keyboard' }).click()
+  expect((await topOf(unaware)) - (await topOf(aware))).toBeCloseTo(12, 0)
+  await expect(comparison.locator('[data-simulated-keyboard]')).toHaveCount(0)
+  const disclosure = comparison.getByRole('button', { name: 'Show code' })
+  await disclosure.press('Enter')
+  await expect(comparison.getByRole('button', { name: 'Hide code' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+  await expect(comparison.getByRole('button', { name: 'Copy code' })).toBeVisible()
 })
 
-test('hero gives assistive technology a layout and visual viewport summary', async ({ page }) => {
+test('mobile CTA offers a real device test and desktop offers simulation', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 900 })
   await page.goto('/')
-
-  const summary = page.getByTestId('hero-live-summary')
-  await expect(summary).toBeVisible()
-  await expect(summary).toHaveAccessibleName(/Layout viewport.*Visual viewport/i)
+  await expect(page.getByRole('link', { name: 'Try the simulation', exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Test the real keyboard', exact: true }),
+  ).not.toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(
+    page.getByRole('link', { name: 'Test the real keyboard', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Try the simulation', exact: true }),
+  ).not.toBeVisible()
+  await page.getByRole('link', { name: 'Test the real keyboard', exact: true }).click()
+  await expect(page).toHaveURL(/\/lab$/)
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
 })
 
 for (const size of responsiveSizes) {
@@ -220,7 +235,7 @@ for (const size of responsiveSizes) {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Know what part of the screen is actually usable.',
+        name: 'Keep mobile UI above the software keyboard.',
       }),
     ).toBeVisible()
     const homepageDimensions = await page.evaluate(() => ({
@@ -292,6 +307,7 @@ test('has no serious accessibility violations on every documentation route', asy
     '/project',
     '/imprint',
     '/privacy',
+    '/lab',
   ]) {
     await page.goto(route)
     const results = await new AxeBuilder({ page })
@@ -314,7 +330,7 @@ test('labels live geometry and keeps deterministic simulation separate', async (
   await page.goto('/concepts')
 
   const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
-  await expect(geometry.getByText('Live browser geometry')).toBeVisible()
+  await expect(geometry.getByText('Live browser geometry', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Layout viewport', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Visual viewport', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Safe area', { exact: true })).toBeVisible()
@@ -669,3 +685,113 @@ async function setWebsiteGeometry(
     fixture.setGeometry(nextGeometry)
   }, geometry)
 }
+
+test('device lab is live, viewport fixed, and copies geometry without message text', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/lab')
+  await expect(page.getByRole('heading', { name: 'Live Device Lab' })).toBeVisible()
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  await expect(page.locator('[data-simulated-keyboard]')).toHaveCount(0)
+  const composer = page.getByTestId('lab-composer')
+  await expect(composer).toHaveCSS('position', 'fixed')
+  await page.getByRole('textbox', { name: 'Message', exact: true }).fill('private-test-message')
+  await page.getByRole('button', { name: 'Show geometry', exact: true }).click()
+  await expect(page.getByTestId('lab-geometry')).toContainText('effectiveBottom')
+  await expect(page.getByTestId('lab-geometry')).toContainText('visual.offsetTop')
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          document.documentElement.dataset.copiedDiagnostics = text
+        },
+      },
+    })
+  })
+  await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
+  const diagnostics = await page.locator('html').getAttribute('data-copied-diagnostics')
+  expect(diagnostics).not.toContain('private-test-message')
+  expect(diagnostics).not.toContain('userAgent')
+  expect(JSON.parse(diagnostics ?? '{}').viewport.ready).toBe(true)
+  const dimensions = await page.evaluate(() => ({
+    width: innerWidth,
+    content: document.documentElement.scrollWidth,
+  }))
+  expect(dimensions.content).toBeLessThanOrEqual(dimensions.width)
+})
+
+test('unknown routes return a real not-found page', async ({ page }) => {
+  const response = await page.goto('/this-route-does-not-exist')
+  expect(response?.status()).toBe(404)
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Open the Device Lab' })).toBeVisible()
+})
+
+test('lab follows shared-store keyboard geometry through scroll and restoration', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/lab')
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  const composer = page.getByTestId('lab-composer')
+  const input = composer.getByRole('textbox')
+  await input.focus()
+  await setWebsiteGeometry(page, { visualHeight: 500, safeAreaBottom: 34 })
+  await expect(composer).toHaveCSS('bottom', '316px')
+  expect((await boxOf(composer)).y + (await boxOf(composer)).height).toBeLessThan(500)
+  await page.evaluate(() => window.scrollTo(0, 450))
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(100)
+  await expect(composer).toHaveCSS('bottom', '316px')
+  expect((await boxOf(composer)).y + (await boxOf(composer)).height).toBeLessThan(500)
+  await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 34 })
+  await expect(composer).toHaveCSS('bottom', '50px')
+  await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 0 })
+  await expect(composer).toHaveCSS('bottom', '16px')
+})
+
+test('lab responds to rotation and keeps keyboard focus usable with debug overlays', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/lab')
+  await page.getByRole('button', { name: 'Show geometry', exact: true }).click()
+  await expect(page.getByTestId('lab-geometry')).toContainText('portrait')
+  await page.setViewportSize({ width: 844, height: 390 })
+  await expect(page.getByTestId('lab-geometry')).toContainText('landscape')
+  const composer = page.getByTestId('lab-composer')
+  await composer.getByRole('textbox').focus()
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  )
+  await expect(composer.getByRole('button', { name: 'Send' })).toBeFocused()
+  expect((await boxOf(composer)).y).toBeGreaterThanOrEqual(0)
+  await expect(page.locator('.lab-overlays')).toHaveCSS('pointer-events', 'none')
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(results.violations).toEqual([])
+})
+
+test('clipboard failure gives a manual recording fallback without collecting input', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new Error('Denied')
+        },
+      },
+    })
+  })
+  await page.getByRole('button', { name: 'Copy diagnostics' }).click()
+  await expect(page.getByRole('status')).toContainText('Clipboard unavailable')
+  await expect(page.getByTestId('lab-geometry')).toBeVisible()
+})

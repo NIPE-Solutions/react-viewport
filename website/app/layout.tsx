@@ -29,6 +29,7 @@ export const metadata: Metadata = {
     template: `%s | ${site.title}`,
   },
   description: site.description,
+  other: { 'build-sha': process.env.NEXT_PUBLIC_BUILD_SHA ?? 'local' },
   alternates: { canonical: '/' },
   icons: { icon: '/icon.svg' },
   openGraph: {
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
             <nav aria-label="Footer navigation">
               <Link href="/">Overview</Link>
               <Link href="/examples">Examples</Link>
+              <Link href="/lab">Device Lab</Link>
               <Link href="/concepts">Concepts</Link>
               <Link href="/api">API</Link>
               <Link href="/browser-behavior">Browser behavior</Link>

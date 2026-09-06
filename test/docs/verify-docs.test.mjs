@@ -23,6 +23,7 @@ const documentPaths = [
   'docs/RELEASING.md',
   'docs/releases/0.1.0-alpha.0-readiness.md',
   'docs/releases/2026-09-06-product-hardening-readiness.md',
+  'docs/releases/2026-09-06-device-lab-readiness.md',
   'website/app/api/page.tsx',
   'website/app/browser-behavior/page.tsx',
   'website/app/concepts/page.tsx',
@@ -99,9 +100,7 @@ test('rejects a quick start fence that names but does not call useViewport', asy
 test('rejects a README opening that does not lead with product utility', async () => {
   await withMutatedDocuments(
     'README.md',
-    `Know what part of the screen is actually usable.
-
-Reliable mobile viewport state for React.`,
+    `Know what part of the screen is actually usable.`,
     `Reliable mobile viewport state for React.
 
 Know what part of the screen is actually usable.`,
@@ -213,8 +212,8 @@ test('rejects nested state keyboard and safe-area addition', async () => {
 test('rejects component-local keyboardOcclusion and safeAreaBottom addition', async () => {
   await withMutatedDocuments(
     'website/components/GeometryDemo.tsx',
-    'export function GeometryDemo()',
-    'const bottomInset = keyboardOcclusion + safeAreaBottom\n\nexport function GeometryDemo()',
+    'export function GeometryDemo(',
+    'const bottomInset = keyboardOcclusion + safeAreaBottom\n\nexport function GeometryDemo(',
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not add.*safe area/i),
   )
 })
@@ -266,10 +265,10 @@ test('rejects a stale automated QA baseline', async () => {
     'docs/REAL_DEVICE_QA.md',
     (qa) =>
       qa.replace(
-        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 78\ndocumentation-site scenarios',
+        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 93\ndocumentation-site scenarios',
         'The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42\ndocumentation-site scenarios',
       ),
-    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*78/is),
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*93/is),
   )
 })
 

@@ -1,10 +1,11 @@
-# @nipe-solutions/react-viewport
+# React Viewport
 
 Know what part of the screen is actually usable.
 
-Reliable mobile viewport state for React. `useViewport()` keeps layout viewport,
-visual viewport, keyboard occlusion, and safe-area geometry separate so a React
-interface can respond to the measurements CSS cannot coordinate by itself.
+Keep chat composers, modal actions and viewport-aware UI above the software keyboard.
+Reactive visual viewport, software-keyboard occlusion and safe-area geometry for React.
+
+Reliable mobile viewport state for React.
 
 ```tsx
 const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()
@@ -12,12 +13,9 @@ const { ready, layout, visual, keyboard, safeArea, orientation, supported } = us
 
 Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe area](#keyboard-and-safe-area) and [Browser behavior](#browser-terminology-and-limitations).
 
-> **Alpha software:** `0.1.0-alpha.0` is an early release. Its API and browser
-> behavior may change. Physical iPhone Safari and Android Chrome testing is
-> pending. Read the early [browser limitations](#browser-terminology-and-limitations)
-> and [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md) before making a support
-> claim. Measured automated-release evidence and deployment status are recorded in the
-> [2026-09-06 product-hardening readiness report](docs/releases/2026-09-06-product-hardening-readiness.md).
+> **Alpha software:** `0.1.0-alpha.0` may change. Physical iPhone Safari and Android
+> Chrome testing is pending. Read [browser limitations](#browser-terminology-and-limitations)
+> and [real-device QA](docs/REAL_DEVICE_QA.md) before making a support claim.
 
 ## Installation
 
@@ -50,19 +48,49 @@ export function ViewportReadout() {
 }
 ```
 
-No provider is required for normal use. Use `ViewportProvider` only to scope a
-subtree to an accessible, same-origin `Window`, such as an iframe or test
-window. A cross-origin window cannot expose the document APIs this package
-measures. Passing `targetWindow={null}` intentionally supplies the stable server
-snapshot (`ready: false`) to descendants.
+No provider is required. Use `ViewportProvider` only for a same-origin window scope;
+see the [API reference](https://react-viewport.nipesolutions.com/api).
+
+## Chat composer
 
 ```tsx
-import { ViewportProvider } from '@nipe-solutions/react-viewport'
+import { useViewport } from '@nipe-solutions/react-viewport'
 
-export function EmbeddedViewport({ childWindow }: { childWindow: Window | null }) {
-  return <ViewportProvider targetWindow={childWindow}>{/* descendants */}</ViewportProvider>
+export function ChatComposer() {
+  const { keyboard, safeArea } = useViewport()
+  const bottomInset = Math.max(keyboard.height, safeArea.bottom)
+  return (
+    <form
+      style={{ position: 'fixed', left: 16, right: 16, bottom: bottomInset + 16 }}
+      onSubmit={(event) => event.preventDefault()}
+    >
+      <label>
+        Message <input placeholder="Type a message…" />
+      </label>
+      <button type="submit">Send</button>
+    </form>
+  )
 }
 ```
+
+React Viewport measures the browser. Your application decides what to do with the measurements.
+It does not move UI automatically, manage focus, render a keyboard, replace CSS, or guarantee the physical keyboard rectangle.
+
+## CSS first
+
+Need full-screen height? Use `100dvh`. Need protected-edge padding? Use
+`env(safe-area-inset-bottom)`. Need responsive styling? Use media/container queries.
+React Viewport is useful when JavaScript must inspect visual dimensions, offsets,
+keyboard bottom occlusion or safe-area values. See [When CSS is enough](#when-css-is-enough).
+
+## Live Device Lab
+
+[Test React Viewport on your phone →](https://react-viewport.nipesolutions.com/lab)
+
+Open the real keyboard, scroll, rotate, then close it. **Show geometry** separates
+raw readings from the effective inset. **Copy diagnostics** copies geometry only
+on click, with no input text, UA, uploads or storage. Physical QA remains pending:
+follow the [device protocol](docs/REAL_DEVICE_QA.md) and [browser notes](docs/browser-notes.md).
 
 ## Reading `ViewportState`
 
@@ -176,11 +204,8 @@ The hook writes these client-side variables: layout and visual width/height,
 visual offsets/page positions/scale, keyboard height, and four safe-area inset
 lengths. Dimensional variables such as `--react-viewport-layout-height` are
 removed until the first measurement, rather than populated with made-up server
-values. Multiple live hooks coordinate ownership per target property: the
-last-mounted owner supplies values, and the last owner to leave restores the
-latest consumer value observed before a library write. A stable ref target may
-start null, be replaced, or detach; ownership and subscriptions migrate after
-the corresponding React commit without stale writes to the previous element.
+values. Consumers share one store per window. CSS-variable ownership is restored on cleanup;
+see [Concepts](https://react-viewport.nipesolutions.com/concepts#performance).
 
 Non-zero `env(safe-area-inset-*)` values generally require the page viewport to
 opt into `viewport-fit=cover`. Configure that metadata before relying on the
@@ -189,11 +214,8 @@ truthfully report zero.
 
 ## SSR and hydration
 
-Server rendering is safe: importing the package and calling `useViewport` do not
-access browser globals. The stable server snapshot has `ready: false`, null
-layout and visual values, a closed zero-height keyboard, zero safe-area insets,
-and false support flags. Render a safe placeholder for geometry-dependent UI
-until `ready` is true to avoid assumptions during SSR and hydration.
+SSR uses a stable, geometry-neutral snapshot without accessing browser globals.
+Render a placeholder until `ready` becomes true after hydration.
 
 ## When CSS is enough
 

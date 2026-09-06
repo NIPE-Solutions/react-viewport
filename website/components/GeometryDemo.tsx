@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { CodeBlock } from './CodeBlock'
 import { useViewport, type ViewportState } from '@nipe-solutions/react-viewport'
 import {
   createScenarioGeometry,
@@ -42,7 +43,7 @@ const customFields: ReadonlyArray<{
   { key: 'safeLeft', label: 'Safe area left', min: 0 },
 ]
 
-export function GeometryDemo() {
+export function GeometryDemo({ code }: { readonly code: string }) {
   const viewport = useViewport()
   const [mode, setMode] = useState<DemoMode>('live')
   const [custom, setCustom] = useState<CustomGeometryInput>(defaultCustomGeometry)
@@ -76,6 +77,7 @@ export function GeometryDemo() {
     <section className="geometry-demo" aria-labelledby="geometry-heading">
       <header className="geometry-demo__header">
         <div>
+          <span className="mode-badge">{mode === 'live' ? 'LIVE BROWSER' : 'SIMULATION'}</span>
           <h2 id="geometry-heading">One screen, four measured regions</h2>
           <p>
             Compare what changes in each browser state and why. Layout, visual viewport, keyboard
@@ -154,6 +156,7 @@ export function GeometryDemo() {
           </p>
         )}
       </fieldset>
+      <CodeBlock collapsible label="GeometryDemo.tsx · actual source" code={code} />
     </section>
   )
 }
