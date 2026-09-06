@@ -67,6 +67,10 @@ export function GeometryDemo() {
         ? 'Initializing viewport measurement'
         : 'Live browser geometry'
       : `Geometry simulator · ${mode === 'custom' ? 'Custom' : geometryScenarios[mode].label}`
+  const keyboardStatus =
+    geometry === null
+      ? 'Keyboard status: pending'
+      : `Keyboard status: ${geometry.keyboard.open ? 'open' : 'closed'}`
 
   return (
     <section className="geometry-demo" aria-labelledby="geometry-heading">
@@ -74,8 +78,8 @@ export function GeometryDemo() {
         <div>
           <h2 id="geometry-heading">One screen, four measured regions</h2>
           <p>
-            Layout, visual viewport, keyboard occlusion, and safe area stay separate. The drawing is
-            a coordinate plane, not a device mockup.
+            Compare what changes in each browser state and why. Layout, visual viewport, keyboard
+            occlusion, and safe area stay separate.
           </p>
         </div>
         <output
@@ -119,7 +123,8 @@ export function GeometryDemo() {
             ? 'Measured by the library in your current browser. Simulator controls do not change it.'
             : mode === 'custom'
               ? 'Custom geometry can represent states that do not correspond to a typical real browser configuration.'
-              : geometryScenarios[mode].description}
+              : geometryScenarios[mode].description}{' '}
+          <strong data-testid="scenario-keyboard-status">{keyboardStatus}</strong>
         </p>
         {mode === 'custom' ? (
           <div className="custom-geometry-controls">

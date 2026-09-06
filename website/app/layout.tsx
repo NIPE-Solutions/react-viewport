@@ -67,10 +67,11 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
               <p>Focused geometry for interface behavior that CSS cannot express alone.</p>
             </div>
             <nav aria-label="Footer navigation">
+              <Link href="/">Overview</Link>
+              <Link href="/examples">Examples</Link>
+              <Link href="/concepts">Concepts</Link>
               <Link href="/api">API</Link>
               <Link href="/browser-behavior">Browser behavior</Link>
-              <Link href="/examples">Examples</Link>
-              <Link href="/guides">Guides</Link>
               <Link href="/project">Project</Link>
               <Link href="/imprint">Imprint</Link>
               <Link href="/privacy">Privacy</Link>

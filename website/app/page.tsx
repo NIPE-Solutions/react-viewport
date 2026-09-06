@@ -1,9 +1,8 @@
 import Link from 'next/link'
 
 import { CodeBlock } from '../components/CodeBlock'
-import { GeometryDemo } from '../components/GeometryDemo'
 import { ViewportHero } from '../components/ViewportHero'
-import { quickStart, site } from '../content/docs'
+import { quickStart } from '../content/docs'
 
 export default function HomePage() {
   return (
@@ -59,10 +58,11 @@ export default function HomePage() {
 
       <section className="mental-model site-frame" aria-labelledby="mental-model-title">
         <div className="section-heading">
-          <h2 id="mental-model-title">Keep the coordinate systems separate</h2>
+          <h2 id="mental-model-title">Preview the coordinate model</h2>
           <p>
             A browser can lay out one rectangle while showing only part of it. That distinction is
-            the center of the API, not an implementation detail.
+            the center of the API. The Concepts page explains why each region changes and lets you
+            compare deterministic scenarios.
           </p>
         </div>
         <div className="concept-list">
@@ -89,27 +89,7 @@ export default function HomePage() {
           </article>
         </div>
         <p className="section-link">
-          <Link href="/browser-behavior">Read the evidence and browser limits</Link>
-        </p>
-      </section>
-
-      <section
-        className="simulator-section site-frame"
-        id="simulator"
-        aria-labelledby="simulator-title"
-      >
-        <div className="section-heading">
-          <h2 id="simulator-title">Viewport geometry you can reason about.</h2>
-          <p>
-            Compare the coordinate systems after seeing where they matter. The simulator is a
-            teaching tool; its scenarios never replace the live browser snapshot.
-          </p>
-        </div>
-        <GeometryDemo />
-        <p className="section-link">
-          <a href={site.repository} rel="noreferrer">
-            View source on GitHub
-          </a>
+          <Link href="/concepts">Explore the concepts and simulator</Link>
         </p>
       </section>
     </main>

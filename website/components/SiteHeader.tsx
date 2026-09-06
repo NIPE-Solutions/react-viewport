@@ -1,10 +1,11 @@
 import Link from 'next/link'
 
 const navigation = [
+  { href: '/', label: 'Overview' },
+  { href: '/examples', label: 'Examples' },
+  { href: '/concepts', label: 'Concepts' },
   { href: '/api', label: 'API' },
   { href: '/browser-behavior', label: 'Browser behavior' },
-  { href: '/examples', label: 'Examples' },
-  { href: '/guides', label: 'Guides' },
   { href: '/project', label: 'Project' },
 ] as const
 
@@ -27,9 +28,6 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <a href="https://github.com/NIPE-Solutions/react-viewport" rel="noreferrer">
-            GitHub
-          </a>
         </nav>
       </div>
     </header>

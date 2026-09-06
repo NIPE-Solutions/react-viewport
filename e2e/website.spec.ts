@@ -8,6 +8,53 @@ const responsiveSizes = [
   { name: 'wide', width: 1440, height: 1000 },
 ] as const
 
+test('navigation follows the product learning path', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(
+    page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link'),
+  ).toHaveText(['Overview', 'Examples', 'Concepts', 'API', 'Browser behavior', 'Project'])
+})
+
+test('concepts explains viewport changes before the geometry controls', async ({ page }) => {
+  const response = await page.goto('/concepts')
+
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole('heading', { level: 1, name: 'Concepts' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'What changes, and why' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Keyboard status' })).toBeVisible()
+
+  const contextTop = await page
+    .getByTestId('geometry-context')
+    .evaluate((element) => element.getBoundingClientRect().top + window.scrollY)
+  const controlsTop = await page
+    .getByRole('group', { name: 'View' })
+    .evaluate((element) => element.getBoundingClientRect().top + window.scrollY)
+  expect(contextTop).toBeLessThan(controlsTop)
+})
+
+test('homepage concepts preview links to the sole geometry simulator', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(
+    page.getByRole('link', { name: 'Explore the concepts and simulator' }),
+  ).toHaveAttribute('href', '/concepts')
+  await expect(page.getByRole('group', { name: 'View' })).toHaveCount(0)
+})
+
+test('guides is removed from routes, rendered navigation, and the sitemap', async ({ page }) => {
+  const response = await page.goto('/guides')
+
+  expect(response?.status()).toBe(404)
+
+  await page.goto('/concepts')
+  await expect(page.locator('nav a[href="/guides"]')).toHaveCount(0)
+
+  await page.goto('/sitemap.xml')
+  await expect(page.locator('body')).not.toContainText('/guides')
+  await expect(page.locator('body')).toContainText('/concepts')
+})
+
 test('hero leads with a usable composer and separates live browser state from simulation', async ({
   page,
 }) => {
@@ -49,7 +96,7 @@ for (const size of responsiveSizes) {
     page,
   }) => {
     await page.setViewportSize(size)
-    await page.goto('/')
+    await page.goto('/concepts')
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
@@ -96,7 +143,7 @@ test('has no serious accessibility violations on every documentation route', asy
     '/api',
     '/browser-behavior',
     '/examples',
-    '/guides',
+    '/concepts',
     '/project',
     '/imprint',
     '/privacy',
@@ -119,7 +166,7 @@ test('does not create decorative animation for reduced-motion visitors', async (
 
 test('labels live geometry and keeps deterministic simulation separate', async ({ page }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
-  await page.goto('/')
+  await page.goto('/concepts')
 
   const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
   await expect(geometry.getByText('Live browser geometry')).toBeVisible()
@@ -139,7 +186,7 @@ test('labels live geometry and keeps deterministic simulation separate', async (
 test('keeps initialization honest and reserves the plane before measurement', async ({ page }) => {
   await holdAnimationFrames(page)
   await page.setViewportSize({ width: 1200, height: 900 })
-  await page.goto('/')
+  await page.goto('/concepts')
 
   const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
   await expect(geometry.getByTestId('geometry-mode')).toHaveText(
@@ -165,7 +212,7 @@ test('renders zero safe-area and keyboard geometry without painted minimum bands
   page,
 }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
-  await page.goto('/')
+  await page.goto('/concepts')
   await expect(page.getByTestId('geometry-mode')).toHaveText('Live browser geometry')
 
   expect(await renderedThickness(page.getByTestId('safe-top'), 'height')).toBe(0)
@@ -175,18 +222,22 @@ test('renders zero safe-area and keyboard geometry without painted minimum bands
   await expect(page.getByTestId('keyboard-region')).toHaveCount(0)
 })
 
-test('teaches coherent chrome, shifted keyboard, and zoom scenarios', async ({ page }) => {
-  await page.goto('/')
+test('geometry scenarios teach coherent chrome, shifted keyboard, and zoom states', async ({
+  page,
+}) => {
+  await page.goto('/concepts')
   const views = page.getByRole('group', { name: 'View' })
 
   await views.getByRole('button', { name: 'Browser chrome' }).click()
   await expect(page.getByTestId('visual-height')).toHaveText('720 px')
   await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
+  await expect(page.getByTestId('scenario-keyboard-status')).toHaveText('Keyboard status: closed')
 
   await views.getByRole('button', { name: 'Shifted keyboard' }).click()
   await expect(page.getByTestId('visual-height')).toHaveText('472 px')
   await expect(page.getByTestId('bottom-occlusion')).toHaveText('300 px')
   await expect(page.getByTestId('keyboard-height')).toHaveText('300 px')
+  await expect(page.getByTestId('scenario-keyboard-status')).toHaveText('Keyboard status: open')
 
   await views.getByRole('button', { name: 'Zoom' }).click()
   await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
@@ -194,7 +245,7 @@ test('teaches coherent chrome, shifted keyboard, and zoom scenarios', async ({ p
 })
 
 test('warns when custom keyboard occlusion contradicts visual geometry', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/concepts')
   const views = page.getByRole('group', { name: 'View' })
   await views.getByRole('button', { name: 'Custom' }).click()
   await page.getByRole('spinbutton', { name: 'Keyboard occlusion' }).fill('180')
@@ -206,7 +257,7 @@ test('warns when custom keyboard occlusion contradicts visual geometry', async (
 })
 
 test('renders critical geometry and status labels at a legible size', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/concepts')
   for (const locator of [
     page.getByTestId('geometry-mode'),
     page.locator('.plane-label--layout'),
@@ -221,7 +272,7 @@ test('renders critical geometry and status labels at a legible size', async ({ p
 
 test('draws the live layout plane with the measured aspect ratio', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.goto('/')
+  await page.goto('/concepts')
 
   const box = await boxOf(page.locator('.layout-plane'))
 
