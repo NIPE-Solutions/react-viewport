@@ -130,11 +130,12 @@ The fallback infers an occluding software keyboard only when an
 editable element is focused, zoom is not active, and visual-bottom occlusion
 crosses `max(80 CSS px, 15% of layout height)`. The keyboard-closed baseline is
 only an evidence gate: reported fallback height is always the current
-`max(0, layout.height - (visual.height + visual.offsetTop))`. If layout and visual
-height shrink together with no current bottom occlusion, the keyboard remains
-closed. Focus alone never means that a software keyboard is open. This deliberate
-heuristic can miss small, floating, or split keyboards; treat `keyboard` as
-measured or inferred geometry, not a device-level keyboard guarantee.
+`Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))`. If layout and
+visual height shrink together with no current bottom occlusion, the keyboard
+remains closed. Focus alone never means that a software keyboard is open. This
+deliberate heuristic can miss small, floating, or split keyboards; treat
+`keyboard` as measured or inferred geometry, not a device-level keyboard
+guarantee.
 
 ## CSS variables
 

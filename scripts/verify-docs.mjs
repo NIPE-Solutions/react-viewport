@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { readdir, readFile } from 'node:fs/promises'
+import { extname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -15,6 +15,7 @@ const textRequirements = [
     'const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()',
   ],
   ['README.md', 'Math.max(keyboard.height, safeArea.bottom)'],
+  ['README.md', 'Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))'],
   ['README.md', 'npm install @nipe-solutions/react-viewport'],
   ['README.md', 'Layout viewport'],
   ['README.md', 'Visual viewport'],
@@ -94,15 +95,26 @@ const browserNoteFields = [
   'Decision',
 ]
 
-const keyboardGuidancePaths = [
-  'README.md',
-  'docs/browser-notes.md',
-  'docs/REAL_DEVICE_QA.md',
-  'website/app/api/page.tsx',
-  'website/app/browser-behavior/page.tsx',
-  'website/app/concepts/page.tsx',
-  'website/content/docs.ts',
+const publicGuidanceRoots = [
+  'docs',
+  'website/app',
+  'website/components',
+  'website/content',
+  'website/public',
 ]
+const publicGuidanceExtensions = new Set([
+  '.css',
+  '.html',
+  '.js',
+  '.jsx',
+  '.md',
+  '.mdx',
+  '.mjs',
+  '.svg',
+  '.ts',
+  '.tsx',
+])
+const excludedGuidanceDirectories = new Set(['superpowers'])
 
 const contents = new Map()
 
@@ -112,6 +124,35 @@ async function readDocument(path) {
   }
 
   return contents.get(path)
+}
+
+async function discoverPublicGuidancePaths() {
+  const paths = ['README.md']
+
+  for (const root of publicGuidanceRoots) {
+    await collectPublicGuidancePaths(root, paths)
+  }
+
+  return paths.toSorted()
+}
+
+async function collectPublicGuidancePaths(directory, paths) {
+  const entries = await readdir(resolve(packageRoot, directory), { withFileTypes: true })
+
+  for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
+    const path = `${directory}/${entry.name}`
+
+    if (entry.isDirectory()) {
+      if (!excludedGuidanceDirectories.has(entry.name)) {
+        await collectPublicGuidancePaths(path, paths)
+      }
+      continue
+    }
+
+    if (entry.isFile() && publicGuidanceExtensions.has(extname(entry.name))) {
+      paths.push(path)
+    }
+  }
 }
 
 function getSection(content, heading) {
@@ -320,24 +361,38 @@ function assertSecurityPolicy(securityPolicy) {
 }
 
 async function assertNoMisleadingKeyboardGuidance() {
+  const memberPrefix = String.raw`(?:[$A-Z_a-z][\w$]*(?:\?\.|\.))*`
+  const keyboardOperand = String.raw`\b${memberPrefix}keyboard(?:(?:\?\.|\.)height|Height|Occlusion|BottomOcclusion|Inset|InsetBottom|BottomInset)\b`
+  const safeAreaOperand = String.raw`(?:\b${memberPrefix}safeArea(?:(?:\?\.|\.)bottom|Bottom|InsetBottom)\b|\bbottomSafeArea(?:Inset)?\b)`
+  const addition = String.raw`\s*\)?\s*\+\s*\(?\s*`
   const additiveInsetPatterns = [
-    /keyboard\.height\s*\+\s*safeArea\.bottom/i,
-    /safeArea\.bottom\s*\+\s*keyboard\.height/i,
-    /var\(--react-viewport-keyboard-height[^)]*\)\s*\+\s*var\(--react-viewport-safe-area-bottom/i,
-    /var\(--react-viewport-safe-area-bottom[^)]*\)\s*\+\s*var\(--react-viewport-keyboard-height/i,
+    new RegExp(`${keyboardOperand}${addition}${safeAreaOperand}`, 'i'),
+    new RegExp(`${safeAreaOperand}${addition}${keyboardOperand}`, 'i'),
+    /(?:var|env)\(\s*(?:--)?[^)]*keyboard[^)]*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)]*safe-area[^)]*\)/i,
+    /(?:var|env)\(\s*(?:--)?[^)]*safe-area[^)]*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)]*keyboard[^)]*\)/i,
   ]
   const universalDetectionPatterns = [
     /\b(?:detects?|reports?|recognizes?|identifies?)\s+every\b[^.\n]{0,80}\bkeyboard\b/i,
     /\bevery\b[^.\n]{0,80}\bkeyboard\b[^.\n]{0,40}\b(?:is|are)\s+(?:reliably\s+)?detected\b/i,
   ]
+  const nonCanonicalFormulaPatterns = [
+    /\bmax\(0,\s*layout\.height\s*-\s*\(visual\.height\s*\+\s*visual\.offsetTop\)\)/,
+  ]
 
-  for (const path of keyboardGuidancePaths) {
+  for (const path of await discoverPublicGuidancePaths()) {
     const content = await readDocument(path)
     for (const pattern of additiveInsetPatterns) {
       assert.doesNotMatch(content, pattern, `${path} must not add keyboard and safe area insets`)
     }
     for (const pattern of universalDetectionPatterns) {
       assert.doesNotMatch(content, pattern, `${path} must not claim every keyboard is detected`)
+    }
+    for (const pattern of nonCanonicalFormulaPatterns) {
+      assert.doesNotMatch(
+        content,
+        pattern,
+        `${path} must use the canonical Math.max bottom-occlusion formula`,
+      )
     }
   }
 }

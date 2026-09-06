@@ -21,10 +21,14 @@ const documentPaths = [
   'docs/browser-notes.md',
   'docs/REAL_DEVICE_QA.md',
   'docs/RELEASING.md',
+  'docs/releases/0.1.0-alpha.0-readiness.md',
   'website/app/api/page.tsx',
   'website/app/browser-behavior/page.tsx',
   'website/app/concepts/page.tsx',
+  'website/app/examples/page.tsx',
+  'website/components/GeometryDemo.tsx',
   'website/content/docs.ts',
+  'website/public/og.svg',
   '.github/ISSUE_TEMPLATE/bug-report.yml',
   '.github/ISSUE_TEMPLATE/config.yml',
   '.github/pull_request_template.md',
@@ -160,6 +164,51 @@ test('rejects additive keyboard and safe-area guidance', async () => {
     var(--react-viewport-safe-area-bottom, 0px)
   );`,
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not add.*safe area/i),
+  )
+})
+
+test('rejects nested state keyboard and safe-area addition', async () => {
+  await withMutatedDocuments(
+    'website/app/examples/page.tsx',
+    'export const metadata',
+    'const bottomInset = state.keyboard.height + state.safeArea.bottom\n\nexport const metadata',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not add.*safe area/i),
+  )
+})
+
+test('rejects component-local keyboardOcclusion and safeAreaBottom addition', async () => {
+  await withMutatedDocuments(
+    'website/components/GeometryDemo.tsx',
+    'export function GeometryDemo()',
+    'const bottomInset = keyboardOcclusion + safeAreaBottom\n\nexport function GeometryDemo()',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not add.*safe area/i),
+  )
+})
+
+test('rejects additive guidance in a public website asset', async () => {
+  await withMutatedDocuments(
+    'website/public/og.svg',
+    '<svg',
+    '<text>keyboardOcclusion + safeAreaBottom</text>\n<svg',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not add.*safe area/i),
+  )
+})
+
+test('rejects a universal keyboard claim in a nested public document', async () => {
+  await withMutatedDocuments(
+    'docs/releases/0.1.0-alpha.0-readiness.md',
+    'Physical-device results are deliberately excluded because no human',
+    'The package detects every software keyboard.\n\nPhysical-device results are deliberately excluded because no human',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not claim.*every.*keyboard/i),
+  )
+})
+
+test('rejects the noncanonical README bottom-occlusion formula', async () => {
+  await withMutatedDocuments(
+    'README.md',
+    'The fallback infers an occluding software keyboard only when an',
+    'Use `max(0, layout.height - (visual.height + visual.offsetTop))`.\n\nThe fallback infers an occluding software keyboard only when an',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /canonical.*Math\.max/i),
   )
 })
 
