@@ -12,7 +12,6 @@ const commit = 'a'.repeat(40)
 const marker = {
   commit,
   builtAt: '2026-09-06T00:00:00.000Z',
-  dirty: false,
   version: '0.1.0-alpha.0',
 }
 const origins = ['https://custom.example', 'https://origin.example']
@@ -51,11 +50,6 @@ for (const [name, changes, message] of [
     { '/__deployment-smoke-missing__': { status: 200 } },
     /must return 404/,
   ],
-  [
-    'dirty production source',
-    { '/build.json': { json: { ...marker, dirty: true } } },
-    /clean checkout/,
-  ],
 ]) {
   test(`production verifier rejects ${name}`, async () => {
     await assert.rejects(
@@ -65,20 +59,11 @@ for (const [name, changes, message] of [
   })
 }
 
-test('source snapshots may explicitly report unknown worktree cleanliness', async () => {
-  await verifyProduction(commit, {
-    origins,
-    fetch: fixture({ '/build.json': { json: { ...marker, dirty: null } } }),
-    report: () => {},
-  })
-})
-
-test('hosted build identity works without .git and never fabricates a clean state', async () => {
+test('hosted build identity works without .git and validates deployment provenance', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'viewport-build-identity-'))
   try {
     const identity = getBuildIdentity({ cwd, env: { VERCEL_GIT_COMMIT_SHA: commit } })
     assert.equal(identity.commit, commit)
-    assert.equal(identity.dirty, null)
     assert.ok(Number.isFinite(Date.parse(identity.builtAt)))
     assert.throws(() => getBuildIdentity({ cwd, env: {} }))
     assert.throws(
