@@ -174,6 +174,11 @@ test('labels live geometry and keeps deterministic simulation separate', async (
   await expect(geometry.getByText('Visual viewport', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Safe area', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Keyboard occlusion', { exact: true })).toBeVisible()
+  await expect(
+    geometry.getByText('Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))', {
+      exact: true,
+    }),
+  ).toBeVisible()
 
   const views = page.getByRole('group', { name: 'View' })
   await views.getByRole('button', { name: 'Soft keyboard' }).click()
@@ -241,7 +246,9 @@ test('geometry scenarios teach coherent chrome, shifted keyboard, and zoom state
 
   await views.getByRole('button', { name: 'Zoom' }).click()
   await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
-  await expect(page.getByTestId('scenario-description')).toContainText('scale, not keyboard')
+  await expect(page.getByTestId('scenario-description')).toContainText(
+    'Scale reduces the visible region without keyboard occlusion',
+  )
 })
 
 test('warns when custom keyboard occlusion contradicts visual geometry', async ({ page }) => {

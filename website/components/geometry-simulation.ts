@@ -92,7 +92,7 @@ export const geometryScenarios: Readonly<
   },
   zoom: {
     label: 'Zoom',
-    description: 'The visual viewport shrinks because of scale, not keyboard occlusion.',
+    description: 'Scale reduces the visible region without keyboard occlusion.',
     keyboardSource: 'fixed',
     geometry: preset(
       { width: 195, height: 400, offsetTop: 24, offsetLeft: 18, scale: 2 },

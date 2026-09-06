@@ -21,6 +21,10 @@ const documentPaths = [
   'docs/browser-notes.md',
   'docs/REAL_DEVICE_QA.md',
   'docs/RELEASING.md',
+  'website/app/api/page.tsx',
+  'website/app/browser-behavior/page.tsx',
+  'website/app/concepts/page.tsx',
+  'website/content/docs.ts',
   '.github/ISSUE_TEMPLATE/bug-report.yml',
   '.github/ISSUE_TEMPLATE/config.yml',
   '.github/pull_request_template.md',
@@ -77,6 +81,19 @@ test('rejects a quick start fence that names but does not call useViewport', asy
   )
 })
 
+test('rejects a README opening that does not lead with product utility', async () => {
+  await withMutatedDocuments(
+    'README.md',
+    `Know what part of the screen is actually usable.
+
+Reliable mobile viewport state for React.`,
+    `Reliable mobile viewport state for React.
+
+Know what part of the screen is actually usable.`,
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must lead with product utility/i),
+  )
+})
+
 test('rejects a physical platform status mutation', async () => {
   await withMutatedDocuments(
     'docs/REAL_DEVICE_QA.md',
@@ -128,6 +145,30 @@ test('rejects a browser-note registry without its Evidence field', async () => {
     '| Evidence | Test path, issue, screenshot, trace, or device record |',
     '| Proof | Test path, issue, screenshot, trace, or device record |',
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /Evidence/),
+  )
+})
+
+test('rejects additive keyboard and safe-area guidance', async () => {
+  await withMutatedDocuments(
+    'README.md',
+    `  --bottom-inset: max(
+    var(--react-viewport-keyboard-height, 0px),
+    var(--react-viewport-safe-area-bottom, 0px)
+  );`,
+    `  --bottom-inset: calc(
+    var(--react-viewport-keyboard-height, 0px) +
+    var(--react-viewport-safe-area-bottom, 0px)
+  );`,
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not add.*safe area/i),
+  )
+})
+
+test('rejects a universal keyboard-detection claim', async () => {
+  await withMutatedDocuments(
+    'README.md',
+    'The project does not claim universal browser support.',
+    'The project does not claim universal browser support. However, the package detects every software keyboard.',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must not claim.*every.*keyboard/i),
   )
 })
 

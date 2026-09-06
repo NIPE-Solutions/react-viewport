@@ -9,6 +9,12 @@ const packageRoot = resolve(process.env.REACT_VIEWPORT_DOCS_ROOT ?? defaultPacka
 
 const textRequirements = [
   ['README.md', 'Reliable mobile viewport state for React.'],
+  ['README.md', 'Know what part of the screen is actually usable.'],
+  [
+    'README.md',
+    'const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()',
+  ],
+  ['README.md', 'Math.max(keyboard.height, safeArea.bottom)'],
   ['README.md', 'npm install @nipe-solutions/react-viewport'],
   ['README.md', 'Layout viewport'],
   ['README.md', 'Visual viewport'],
@@ -24,6 +30,15 @@ const textRequirements = [
   ['README.md', 'viewport-fit=cover'],
   ['README.md', 'limitations'],
   ['docs/browser-notes.md', 'max(80 CSS px, 15% of layout height)'],
+  ['docs/browser-notes.md', 'https://w3c.github.io/virtual-keyboard/'],
+  ['docs/browser-notes.md', 'https://bugs.webkit.org/show_bug.cgi?id=217754'],
+  ['docs/browser-notes.md', 'Math.max(keyboard.height, safeArea.bottom)'],
+  ['docs/REAL_DEVICE_QA.md', 'Physical iPhone Safari and Android Chrome testing is pending.'],
+  ['website/app/api/page.tsx', 'supported.virtualKeyboard means API availability'],
+  ['website/app/api/page.tsx', 'Math.max(keyboard.height, safeArea.bottom)'],
+  ['website/app/browser-behavior/page.tsx', 'https://w3c.github.io/virtual-keyboard/'],
+  ['website/app/browser-behavior/page.tsx', 'https://bugs.webkit.org/show_bug.cgi?id=217754'],
+  ['website/content/docs.ts', 'open: true, height: 0'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],
   ['SECURITY.md', 'Security Policy'],
@@ -77,6 +92,16 @@ const browserNoteFields = [
   'Observation',
   'Evidence',
   'Decision',
+]
+
+const keyboardGuidancePaths = [
+  'README.md',
+  'docs/browser-notes.md',
+  'docs/REAL_DEVICE_QA.md',
+  'website/app/api/page.tsx',
+  'website/app/browser-behavior/page.tsx',
+  'website/app/concepts/page.tsx',
+  'website/content/docs.ts',
 ]
 
 const contents = new Map()
@@ -155,6 +180,28 @@ function assertQuickStart(readme) {
     'Quick start must call useViewport()',
   )
   assert.match(example, /export function \w+\(\)/, 'Quick start must export a runnable component')
+}
+
+function assertReadmeOpening(readme) {
+  const firstCopyLine = readme
+    .split('\n')
+    .slice(1)
+    .find((line) => line.trim().length > 0)
+  assert.equal(
+    firstCopyLine,
+    'Know what part of the screen is actually usable.',
+    'README must lead with product utility',
+  )
+
+  const installationIndex = readme.indexOf('\n## Installation')
+  assert.ok(installationIndex > 0, 'README must contain Installation after its opening')
+  const opening = readme.slice(0, installationIndex)
+  assert.ok(opening.includes('= useViewport()'), 'README opening must show the useViewport shape')
+  assert.ok(opening.includes('**Alpha software:**'), 'README opening must keep the alpha caveat')
+  assert.ok(
+    opening.includes('[browser limitations](#browser-terminology-and-limitations)'),
+    'README opening must link to browser limitations',
+  )
 }
 
 async function assertQaMatrix(qa) {
@@ -272,9 +319,34 @@ function assertSecurityPolicy(securityPolicy) {
   }
 }
 
+async function assertNoMisleadingKeyboardGuidance() {
+  const additiveInsetPatterns = [
+    /keyboard\.height\s*\+\s*safeArea\.bottom/i,
+    /safeArea\.bottom\s*\+\s*keyboard\.height/i,
+    /var\(--react-viewport-keyboard-height[^)]*\)\s*\+\s*var\(--react-viewport-safe-area-bottom/i,
+    /var\(--react-viewport-safe-area-bottom[^)]*\)\s*\+\s*var\(--react-viewport-keyboard-height/i,
+  ]
+  const universalDetectionPatterns = [
+    /\b(?:detects?|reports?|recognizes?|identifies?)\s+every\b[^.\n]{0,80}\bkeyboard\b/i,
+    /\bevery\b[^.\n]{0,80}\bkeyboard\b[^.\n]{0,40}\b(?:is|are)\s+(?:reliably\s+)?detected\b/i,
+  ]
+
+  for (const path of keyboardGuidancePaths) {
+    const content = await readDocument(path)
+    for (const pattern of additiveInsetPatterns) {
+      assert.doesNotMatch(content, pattern, `${path} must not add keyboard and safe area insets`)
+    }
+    for (const pattern of universalDetectionPatterns) {
+      assert.doesNotMatch(content, pattern, `${path} must not claim every keyboard is detected`)
+    }
+  }
+}
+
 function escapeRegularExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
+
+await assertNoMisleadingKeyboardGuidance()
 
 for (const [path, requiredText] of textRequirements) {
   const content = await readDocument(path)
@@ -282,11 +354,12 @@ for (const [path, requiredText] of textRequirements) {
   assert.ok(normalizedContent.includes(requiredText), `${path} must include: ${requiredText}`)
 }
 
+assertReadmeOpening(await readDocument('README.md'))
 assertQuickStart(await readDocument('README.md'))
 await assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
 assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))
 assertSecurityPolicy(await readDocument('SECURITY.md'))
 
 process.stdout.write(
-  `Documentation verification passed (${textRequirements.length} text checks and 4 structural checks).\n`,
+  `Documentation verification passed (${textRequirements.length} text checks and 5 structural checks).\n`,
 )

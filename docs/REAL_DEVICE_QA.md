@@ -10,6 +10,10 @@ browser/app version, date, scenarios, and evidence.
 
 There are no `MANUAL VERIFIED` rows in the initial alpha.
 
+Physical iPhone Safari and Android Chrome testing is pending. Nothing in this
+matrix, the desktop browser suites, or the upstream issue links records a
+physical-device pass.
+
 The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42
 documentation-site scenarios: 14 library and 14 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
@@ -20,9 +24,9 @@ not change any physical row below from `MANUAL PENDING`.
 
 | Platform / context | Status | Required scenarios | Evidence |
 | --- | --- | --- | --- |
-| iPhone Safari | MANUAL PENDING | normal; URL bar changes; keyboard open/close; page scroll; orientation; rapid input switching; modal input; fixed-bottom composer; safe areas; zoom; hardware keyboard if available; restoration after blur | — |
+| iPhone Safari | MANUAL PENDING | normal; URL bar changes; keyboard open/close; WebKit 217754 stale safe-area reproduction; page scroll; orientation; rapid input switching; modal input; fixed-bottom composer; safe areas; zoom; external keyboard if available; restoration after blur | — |
 | iPad Safari | MANUAL PENDING | software keyboard; hardware keyboard; floating/split keyboard if available; keyboard open/close; page scroll; orientation; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
-| Android Chrome | MANUAL PENDING | normal; address-bar collapse; keyboard open/close; page scroll; orientation; rapid input switching; modal input; fixed-bottom composer; safe areas; zoom; restoration after blur | — |
+| Android Chrome | MANUAL PENDING | normal; address-bar collapse; keyboard open/close; VirtualKeyboard capability and overlay-mode state; page scroll; orientation; rapid input switching; modal input; fixed-bottom composer; safe areas; zoom; external keyboard if available; restoration after blur | — |
 | PWA (standalone, where available) | MANUAL PENDING | launch, keyboard open/close, rotation, safe areas, fixed-bottom composer, restoration after blur | — |
 | Embedded WebView | MANUAL PENDING | host integration, keyboard open/close, scrolling with and without the keyboard, modal input, safe areas, restoration after blur | — |
 | external keyboard (where available) | MANUAL PENDING | focus without soft keyboard, rotation, scrolling, keyboard fallback remains closed, restoration after blur | — |
@@ -52,6 +56,51 @@ actually proves.
 Desktop Safari / WebKit automation is not proof of physical iPhone or iPad
 Safari behavior. Automated fixtures cannot reproduce physical mobile browser
 chrome, keyboard animation, floating keyboards, or every WebView integration.
+
+## Pending manual procedures
+
+These procedures define evidence to collect; they do not record results.
+
+### iPhone Safari stale-inset reproduction
+
+Status: `MANUAL PENDING`.
+
+1. On a physical iPhone, open a `viewport-fit=cover` page that displays the raw
+   bottom safe-area inset, keyboard state, visual geometry, and effective bottom
+   constraint.
+2. Record the values with the input blurred, then focus the fixed-bottom composer
+   and wait for the software keyboard animation to settle.
+3. Record whether `safe-area-inset-bottom` remains non-zero, the behavior reported
+   by [WebKit bug 217754](https://bugs.webkit.org/show_bug.cgi?id=217754). This
+   upstream report is the reason for the check, not proof of the device result.
+4. Scroll the page and a modal, rotate in both directions, dismiss and reopen the
+   keyboard, and confirm the composer uses the larger raw constraint rather than
+   adding keyboard and safe-area values.
+5. Attach the device model, iOS and Safari versions, date, values, screenshots or
+   trace, and pass/fail result before changing the status.
+
+### Android Chrome keyboard geometry
+
+Status: `MANUAL PENDING`.
+
+1. On a physical Android device, record the Chrome version and whether
+   `visualViewport` and `navigator.virtualKeyboard` are present. Record
+   `navigator.virtualKeyboard.overlaysContent` separately; API presence is not
+   proof that overlay mode is active.
+2. Exercise keyboard open/close, address-bar collapse, page and modal scrolling,
+   portrait/landscape changes, rapid input switching, zoom, and the fixed-bottom
+   composer.
+3. Capture layout and visual geometry, native/fallback source, keyboard
+   `{ open, height }`, safe areas, and screenshots or a trace for each failure.
+
+### External-keyboard focus
+
+Status: `MANUAL PENDING` on both platforms where hardware is available. Focus
+editable content without opening a software keyboard, scroll and rotate, and
+confirm that focus alone does not create inferred keyboard occlusion. Then
+disconnect the external keyboard, open the software keyboard, and record whether
+normal measurement resumes. Record platform, hardware, versions, date, and
+evidence before changing the status.
 
 ## Recording a manual verification
 

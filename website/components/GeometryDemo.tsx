@@ -98,7 +98,7 @@ export function GeometryDemo() {
 
       <div className="geometry-formula">
         <span>Bottom occlusion</span>
-        <code>layoutHeight - (visualOffsetTop + visualHeight)</code>
+        <code>Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))</code>
       </div>
 
       <fieldset className="scenario-controls">
