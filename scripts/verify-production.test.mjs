@@ -26,12 +26,19 @@ function fixture(overrides = {}) {
         ? 'Page not found'
         : `
       <meta name="build-sha" content="${commit}">
-      Keep mobile UI above the software keyboard. Live Device Lab Chat composer
-      <script src="/asset.js"></script>`
+      Know what part of the screen is actually usable. Live Device Lab Chat composer Browser + CSS baseline
+      <script src="/asset.js"></script><link rel="stylesheet" href="/asset.css">`
     let json = { ...marker }
+    let contentType = route.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html'
+    if (route.endsWith('.css')) text = 'body { color: black }'
     const change = overrides[route] ?? overrides[url.origin]
-    if (change) ({ status = status, text = text, json = json } = change)
-    return { status, text: async () => text, json: async () => json }
+    if (change) ({ status = status, text = text, json = json, contentType = contentType } = change)
+    return {
+      status,
+      headers: { get: (name) => (name.toLowerCase() === 'content-type' ? contentType : null) },
+      text: async () => text,
+      json: async () => json,
+    }
   }
 }
 
@@ -45,6 +52,9 @@ for (const [name, changes, message] of [
   ['mixed HTML and marker', { '/lab': { text: 'Live Device Lab' } }, /HTML\/marker mismatch/],
   ['wrong root', { '/': { text: 'unrelated website' } }, /wrong website artifact/],
   ['missing asset', { '/asset.js': { status: 404 } }, /missing asset/],
+  ['missing stylesheet', { '/asset.css': { status: 404 } }, /stylesheet/],
+  ['HTML served as stylesheet', { '/asset.css': { contentType: 'text/html' } }, /stylesheet/],
+  ['empty stylesheet', { '/asset.css': { text: '' } }, /stylesheet/],
   [
     'homepage fallback on unknown route',
     { '/__deployment-smoke-missing__': { status: 200 } },

@@ -14,9 +14,9 @@ const routes = [
     route: '/',
     file: 'index.html',
     copy: [
-      'Keep mobile UI above the software keyboard.',
-      'Without React Viewport',
-      'With React Viewport',
+      'Know what part of the screen is actually usable.',
+      'Fixed offset only',
+      'Viewport-aware offset',
       'Layout viewport',
       'Visual viewport',
     ],
@@ -25,6 +25,11 @@ const routes = [
     route: '/lab',
     file: 'lab.html',
     copy: ['Live Device Lab', 'Show geometry', 'Copy diagnostics'],
+  },
+  {
+    route: '/lab/css',
+    file: 'lab/css.html',
+    copy: ['Browser + CSS baseline', 'Requested, not detected.'],
   },
   { route: '/api', file: 'api.html', copy: ['API reference', 'useViewport()', 'ViewportState'] },
   {
@@ -97,6 +102,14 @@ assert.match(
   /<meta[^>]+name="viewport"[^>]+content="[^"]*viewport-fit=cover[^"]*"/,
   'The site viewport metadata must opt into safe-area coverage',
 )
+for (const file of ['lab.html', 'lab/css.html']) {
+  const html = await readFile(path.join(outputRoot, file), 'utf8')
+  assert.match(
+    html,
+    /<meta[^>]+name="viewport"[^>]+content="[^"]*interactive-widget=resizes-content[^"]*"/,
+    `${file}: browser-managed resizing must be requested in the HTML`,
+  )
+}
 const marker = JSON.parse(await readFile(path.join(outputRoot, 'build.json'), 'utf8'))
 assert.match(marker.commit, /^[a-f0-9]{40}$/)
 assert.ok(Number.isFinite(Date.parse(marker.builtAt)))

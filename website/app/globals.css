@@ -2387,3 +2387,23 @@ body:has(.device-lab[data-page-scroll='false']) {
     height: 350px;
   }
 }
+
+.lab-policy {
+  font-size: 0.9rem;
+}
+.result-budget {
+  border: 1px solid var(--coordinate);
+  padding: 1rem;
+  background: var(--paper-raised);
+}
+.result-budget ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.result-budget li {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--grid);
+}

@@ -55,6 +55,7 @@ export function DeviceLab({
       effectiveBottom,
       composerAnchorBottom,
       scrollMode: pageScroll ? 'page' : 'contained',
+      requestedKeyboardPolicy: 'resizes-content',
     }
     try {
       await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2))
@@ -83,6 +84,14 @@ export function DeviceLab({
               Test React Viewport against your actual browser, software keyboard and screen
               geometry.
             </p>
+            <p className="lab-policy">
+              Browser policy: <code>interactive-widget=resizes-content</code>.{' '}
+              <strong>Requested, not detected.</strong> Browsers that honor it resize the layout;
+              this page uses measured geometry as a fallback. iOS may ignore the request.
+            </p>
+            <p>
+              <a href="/lab/css">Compare the browser + CSS baseline →</a>
+            </p>
             <ol className="lab-instructions">
               <li>Tap the input.</li>
               <li>Let the software keyboard open.</li>
@@ -91,8 +100,9 @@ export function DeviceLab({
               <li>Close the keyboard.</li>
             </ol>
             <p className="lab-expected">
-              <strong>Expected behavior (check yourself):</strong> composer stays visible; geometry
-              changes on open and returns on close.
+              <strong>Expected behavior (check yourself):</strong> composer stays visible; viewport
+              geometry changes on open and returns on close. If both viewports shrink together,
+              keyboard occlusion can stay zero—the browser has already made room.
             </p>
             <div className="lab-controls">
               <button

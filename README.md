@@ -51,7 +51,9 @@ export function ViewportReadout() {
 No provider is required. Use `ViewportProvider` only for a same-origin window scope;
 see the [API reference](https://react-viewport.nipesolutions.com/api).
 
-## Chat composer
+## Chat composer fallback
+
+For layout alone, try `interactive-widget=resizes-content` and CSS first where supported.
 
 ```tsx
 import { useViewport } from '@nipe-solutions/react-viewport'
@@ -78,19 +80,18 @@ It does not move UI automatically, manage focus, render a keyboard, replace CSS,
 
 ## CSS first
 
-Need full-screen height? Use `100dvh`. Need protected-edge padding? Use
-`env(safe-area-inset-bottom)`. Need responsive styling? Use media/container queries.
-React Viewport is useful when JavaScript must inspect visual dimensions, offsets,
-keyboard bottom occlusion or safe-area values. See [When CSS is enough](#when-css-is-enough).
+Use `100dvh`, safe-area `env()` and media/container queries for styling. React
+Viewport supplies geometry for JavaScript decisions such as rendering budgets.
+See [When CSS is enough](#when-css-is-enough).
 
 ## Live Device Lab
 
 [Test React Viewport on your phone →](https://react-viewport.nipesolutions.com/lab)
 
-Open the real keyboard, scroll, rotate, then close it. **Show geometry** separates
-raw readings from the effective inset. **Copy diagnostics** copies geometry only
-on click, with no input text, UA, uploads or storage. Physical QA remains pending:
-follow the [device protocol](docs/REAL_DEVICE_QA.md) and [browser notes](docs/browser-notes.md).
+Compare the [CSS baseline](https://react-viewport.nipesolutions.com/lab/css) with
+the measured fallback. The site requests browser resizing; the library does not.
+Copy diagnostics excludes input text. Physical QA remains pending; follow the
+[device protocol](docs/REAL_DEVICE_QA.md).
 
 ## Reading `ViewportState`
 

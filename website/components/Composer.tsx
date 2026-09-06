@@ -7,7 +7,7 @@ interface ComposerProps {
   readonly keyboardHeight: number
   readonly safeAreaBottom: number
   readonly aware?: boolean
-  readonly position?: 'fixed' | 'absolute'
+  readonly position?: 'fixed' | 'absolute' | 'static'
   readonly testId?: string
   readonly layout?: LayoutViewport | null
   readonly visual?: VisualViewportState | null

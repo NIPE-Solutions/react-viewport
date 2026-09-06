@@ -14,8 +14,8 @@ Physical iPhone Safari and Android Chrome testing is pending. Nothing in this
 matrix, the desktop browser suites, or the upstream issue links records a
 physical-device pass.
 
-The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102
-documentation-site scenarios: 18 library and 34 site scenarios in each of
+The latest automated baseline on 2026-09-06 passed 54 library scenarios and 117
+documentation-site scenarios: 18 library and 39 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
 [`2026-09-06` Device Lab readiness report](releases/2026-09-06-device-lab-readiness.md)
 and do not change any physical row below from `MANUAL PENDING`.
@@ -196,3 +196,29 @@ and rotate. Record both docked and page-scroll modes, OS/Chrome versions, build
 SHA, `composerAnchorBottom`, and the existing numeric geometry. A page-scroll
 fling may still be limited by browser-delayed viewport updates; see
 [WebKit 218465](https://bugs.webkit.org/show_bug.cgi?id=218465).
+
+
+## Browser-managed resizing and CSS comparison — 2026-09-06
+
+Both labs now request `interactive-widget=resizes-content` through the website's
+initial viewport metadata. This is site/application policy; the library does not
+mutate metadata or enable VirtualKeyboard overlay mode. The flag is **requested,
+not detected**. A shrinking layout may result in zero keyboard occlusion even
+with a real keyboard visible. Do not treat that alone as failed detection.
+
+1. Open `/lab/css` directly. It uses the same composer in normal CSS grid flow;
+   no `useViewport()` subscription positions it. Check keyboard opening, closing,
+   scroll boundaries, safe-area padding and rotation. Record whether CSS suffices.
+2. Open `/lab` directly. Compare the measured fallback with the CSS baseline.
+   Check that layout resizing does not cause an extra keyboard offset.
+3. On iPhone, document whether the resize request is ignored. The existing
+   page-scroll stress-mode gap remains unresolved; no native-policy fix is claimed
+   for iOS. Record OS/browser versions and numeric geometry before assigning cause.
+4. Try `/examples#result-budget`. Its JavaScript rendering budget changes with
+   actual visual height. It renders local items, performs no network requests,
+   and uses explicit example constants rather than claiming to measure the card.
+
+Physical iPhone Safari/Chrome and Android Chrome comparison: **MANUAL PENDING**.
+The automated matrix covers metadata, CSS layout without JavaScript, visual-only
+versus layout resizing, and actual rendered result counts. Desktop tests do not
+prove that a mobile browser honors the keyboard policy.
