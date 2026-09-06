@@ -1,54 +1,22 @@
 import Link from 'next/link'
 
 import { CodeBlock } from '../components/CodeBlock'
-import { GeometryDemo } from '../components/GeometryDemo'
-import { quickStart, site } from '../content/docs'
+import { ViewportHero } from '../components/ViewportHero'
+import { quickStart } from '../content/docs'
 
 export default function HomePage() {
   return (
     <main id="main-content" tabIndex={-1}>
-      <section className="hero site-frame" aria-labelledby="hero-title">
-        <div className="hero__copy">
-          <h1 id="hero-title">Viewport geometry you can reason about.</h1>
-          <p className="hero__introduction">
-            Read the layout viewport, visual viewport, keyboard occlusion, and safe area as one
-            typed React state—without pretending they are one rectangle.
-          </p>
-          <div className="hero__actions">
-            <a className="primary-action" href="#install">
-              Start with the API
-            </a>
-            <a href={site.repository} rel="noreferrer">
-              View source on GitHub
-            </a>
-          </div>
-          <dl className="hero__facts">
-            <div>
-              <dt>Runtime dependencies</dt>
-              <dd>0</dd>
-            </div>
-            <div>
-              <dt>Server import</dt>
-              <dd>Safe</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>Alpha</dd>
-            </div>
-          </dl>
-        </div>
-        <div className="hero__demo">
-          <GeometryDemo />
-        </div>
-      </section>
+      <ViewportHero />
 
-      <section className="install-section" id="install" aria-labelledby="install-title">
+      <section className="install-section" id="decision" aria-labelledby="install-title">
         <div className="site-frame split-section">
           <div className="section-heading">
-            <h2 id="install-title">Measure only when CSS stops being enough</h2>
+            <h2 id="install-title">Do I need React Viewport?</h2>
             <p>
-              Use dynamic viewport units and environment insets first. Reach for JavaScript when
-              interface behavior needs measured geometry.
+              Start with <code>100dvh</code>, <code>env(safe-area-inset-bottom)</code>, media
+              queries, and container queries. Reach for JavaScript only when behavior needs the
+              measured relationship between browser regions.
             </p>
             <p className="install-command">
               <code>npm install @nipe-solutions/react-viewport</code>
@@ -58,12 +26,45 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="use-cases site-frame" aria-labelledby="use-cases-title">
+        <div className="section-heading">
+          <h2 id="use-cases-title">Use it where geometry changes behavior</h2>
+          <p>
+            React Viewport supplies measurements. Your interface decides what those measurements
+            should do.
+          </p>
+        </div>
+        <div className="use-case-list">
+          <article>
+            <h3>Chat composers</h3>
+            <p>Keep the input above bottom occlusion without double-counting the safe area.</p>
+            <code>keyboard.height</code>
+          </article>
+          <article>
+            <h3>Modal actions</h3>
+            <p>
+              Keep the action row above the larger of keyboard occlusion and the safe-area bottom.
+            </p>
+            <code>Math.max(…)</code>
+          </article>
+          <article>
+            <h3>Zoom-aware tools</h3>
+            <p>Distinguish a shifted or scaled visible region from a smaller layout viewport.</p>
+            <code>visual.scale</code>
+          </article>
+        </div>
+        <p className="section-link">
+          <Link href="/examples">See working examples</Link>
+        </p>
+      </section>
+
       <section className="mental-model site-frame" aria-labelledby="mental-model-title">
         <div className="section-heading">
-          <h2 id="mental-model-title">Keep the coordinate systems separate</h2>
+          <h2 id="mental-model-title">Preview the coordinate model</h2>
           <p>
             A browser can lay out one rectangle while showing only part of it. That distinction is
-            the center of the API, not an implementation detail.
+            the center of the API. The Concepts page explains why each region changes and lets you
+            compare deterministic scenarios.
           </p>
         </div>
         <div className="concept-list">
@@ -90,8 +91,32 @@ export default function HomePage() {
           </article>
         </div>
         <p className="section-link">
-          <Link href="/browser-behavior">Read the evidence and browser limits</Link>
+          <Link href="/concepts">Explore the concepts and simulator</Link>
         </p>
+      </section>
+
+      <section className="evidence-handoff" aria-labelledby="evidence-handoff-title">
+        <div className="site-frame split-section">
+          <div className="section-heading evidence-handoff__copy">
+            <h2 id="evidence-handoff-title">Browser evidence has boundaries</h2>
+            <p>
+              <strong>Automated evidence.</strong> The current deterministic desktop matrix covers
+              54 library scenarios and 78 documentation-site scenarios across Chromium, Firefox, and
+              WebKit.
+            </p>
+            <p>
+              <strong>Physical-device status.</strong> iPhone Safari and Android Chrome testing is
+              still pending; automation does not turn those rows into device passes.
+            </p>
+          </div>
+          <nav className="reference-handoff" aria-label="Evidence and reference">
+            <strong>Continue with</strong>
+            <Link href="/examples#css-first-title">CSS alternatives</Link>
+            <Link href="/concepts#keyboard-and-safe-area">Keyboard and safe area</Link>
+            <Link href="/api">API reference</Link>
+            <Link href="/browser-behavior">Browser behavior</Link>
+          </nav>
+        </div>
       </section>
     </main>
   )

@@ -1,17 +1,23 @@
 # @nipe-solutions/react-viewport
 
-Reliable mobile viewport state for React.
+Know what part of the screen is actually usable.
 
-`@nipe-solutions/react-viewport` exposes reactive layout viewport, visual
-viewport, keyboard-occlusion, and safe-area geometry. It is intended for the
-application behavior that CSS cannot express by itself, such as a composer that
-must respond to a measured keyboard occlusion.
+Reliable mobile viewport state for React. `useViewport()` keeps layout viewport,
+visual viewport, keyboard occlusion, and safe-area geometry separate so a React
+interface can respond to the measurements CSS cannot coordinate by itself.
+
+```tsx
+const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()
+```
+
+Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe area](#keyboard-and-safe-area) and [Browser behavior](#browser-terminology-and-limitations).
 
 > **Alpha software:** `0.1.0-alpha.0` is an early release. Its API and browser
-> behavior may change. Physical-device QA is still pending; see
-> [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md). Measured automated-release
-> evidence and deployment status are recorded in the
-> [`0.1.0-alpha.0` readiness report](docs/releases/0.1.0-alpha.0-readiness.md).
+> behavior may change. Physical iPhone Safari and Android Chrome testing is
+> pending. Read the early [browser limitations](#browser-terminology-and-limitations)
+> and [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md) before making a support
+> claim. Measured automated-release evidence and deployment status are recorded in the
+> [2026-09-06 product-hardening readiness report](docs/releases/2026-09-06-product-hardening-readiness.md).
 
 ## Installation
 
@@ -58,6 +64,31 @@ export function EmbeddedViewport({ childWindow }: { childWindow: Window | null }
 }
 ```
 
+## Reading `ViewportState`
+
+- `ready` becomes true after the first client measurement. Before then,
+  `layout`, `visual`, and `orientation` are null; false does not mean the browser
+  APIs are unsupported.
+- `layout` is the layout viewport width and height from `window.innerWidth` and
+  `window.innerHeight`, in CSS pixels. It is the page's reference plane, not a
+  promise that every point is visible or unobstructed.
+- `visual` is the visible viewport's size, layout-relative offsets,
+  document-relative page coordinates, and scale. It comes from
+  `window.visualViewport` when available; otherwise documented layout geometry
+  is used. A visual change does not, by itself, identify its cause as a keyboard.
+- `keyboard.open` records sufficient native or fallback evidence of an on-screen
+  keyboard. `keyboard.height` is only bottom-edge occlusion in CSS pixels, not
+  the on-screen keyboard's full rectangle. Native floating geometry can therefore
+  be open with a zero height.
+- `safeArea` contains the four raw CSS `env(safe-area-inset-*)` measurements. It
+  does not automatically become zero while a keyboard is visible. For a bottom
+  constraint, use `Math.max(keyboard.height, safeArea.bottom)`; do not add them.
+- `orientation` is derived from the layout viewport aspect ratio. It is not a
+  device-orientation sensor reading.
+- `supported.visualViewport` and `supported.virtualKeyboard` report runtime API
+  availability. They do not prove a behavior was physically tested, that overlay
+  mode is active, or that a keyboard will be detected in every configuration.
+
 ## Layout viewport versus visual viewport
 
 The **Layout viewport** is `window.innerWidth` and `window.innerHeight`: the
@@ -77,7 +108,7 @@ geometry with zero offsets, page coordinates from window scroll, and scale `1`.
 `supported.visualViewport` records that this is fallback geometry rather than a
 native VisualViewport reading.
 
-### Keyboard state is conservative
+## Keyboard and safe area
 
 `keyboard.height` is the estimated or reported bottom viewport occlusion caused
 by the software keyboard. It is not the physical keyboard's full rectangular
@@ -85,19 +116,34 @@ height.
 
 Detection follows a deliberately short hierarchy:
 
-1. Native Virtual Keyboard geometry is authoritative when available.
+1. Native Virtual Keyboard intersection geometry is authoritative when available.
 2. Otherwise, conservative VisualViewport inference can report an occlusion.
 3. When the evidence is insufficient, the library reports no keyboard.
+
+The W3C [VirtualKeyboard API](https://w3c.github.io/virtual-keyboard/) defines
+`boundingRect` as the intersection of the virtual keyboard with the document
+viewport in client coordinates. `supported.virtualKeyboard` means that API is
+present; it does not mean `overlaysContent` mode is active. This library observes
+geometry and never enables overlay mode. A non-empty native intersection sets
+`open: true`; if floating geometry does not touch the layout viewport's bottom
+edge, bottom occlusion remains `height: 0`.
+
+A bottom-attached partial-width rectangle still yields a scalar bottom inset. That scalar cannot represent segmented or arbitrary-shape avoidance.
 
 The fallback infers an occluding software keyboard only when an
 editable element is focused, zoom is not active, and visual-bottom occlusion
 crosses `max(80 CSS px, 15% of layout height)`. The keyboard-closed baseline is
 only an evidence gate: reported fallback height is always the current
-`max(0, layout.height - (visual.height + visual.offsetTop))`. If layout and visual
-height shrink together with no current bottom occlusion, the keyboard remains
-closed. Focus alone never means that a software keyboard is open. This deliberate
-heuristic can miss small, floating, or split keyboards; treat `keyboard` as
-measured or inferred geometry, not a device-level keyboard guarantee.
+`Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))`. If layout and
+visual height shrink together with no current bottom occlusion, the keyboard
+remains closed. Focus alone never means that a software keyboard is open. This
+deliberate heuristic can miss small, floating, or split keyboards; treat
+`keyboard` as measured or inferred geometry, not a device-level keyboard
+guarantee.
+
+Keyboard occlusion and the raw bottom safe-area inset can describe the same
+covered edge. When an application needs one bottom constraint, use
+`Math.max(keyboard.height, safeArea.bottom)` rather than adding them.
 
 ## CSS variables
 
@@ -117,10 +163,11 @@ export function App() {
 .composer {
   position: fixed;
   right: max(1rem, var(--react-viewport-safe-area-right, 0px));
-  bottom: calc(
-    var(--react-viewport-keyboard-height, 0px) +
-      max(1rem, var(--react-viewport-safe-area-bottom, 0px))
+  --bottom-inset: max(
+    var(--react-viewport-keyboard-height, 0px),
+    var(--react-viewport-safe-area-bottom, 0px)
   );
+  bottom: calc(var(--bottom-inset) + 1rem);
   left: max(1rem, var(--react-viewport-safe-area-left, 0px));
 }
 ```
@@ -167,7 +214,8 @@ are different from physical-device verification.
 
 The project does not claim universal browser support. In particular:
 
-- Browser APIs cannot reliably distinguish every floating or split keyboard.
+- Browser APIs cannot reliably distinguish all floating or split software-keyboard
+  arrangements.
 - The fallback inference intentionally favors false negatives over moving UI for
   ordinary browser chrome changes.
 - Desktop automation cannot reproduce physical mobile browser chrome or keyboard

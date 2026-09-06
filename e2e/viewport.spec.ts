@@ -45,6 +45,11 @@ async function openReadyFixture(page: Page, search = ''): Promise<void> {
   await expect.poll(async () => (await readState(page)).ready).toBe(true)
 }
 
+async function expectKeyboard(page: Page, open: boolean, height: number): Promise<void> {
+  await expect.poll(async () => (await readState(page)).keyboard.open).toBe(open)
+  await expect.poll(async () => (await readState(page)).keyboard.height).toBe(height)
+}
+
 test('observes actual layout resizes and the real VisualViewport when available', async ({
   page,
 }) => {
@@ -133,7 +138,25 @@ test('updates fallback page coordinates from a window scroll event alone', async
     })
 })
 
-test('infers keyboard occlusion from a focused 800 to 500 visual-height sequence', async ({
+test('reports normal viewport keyboard state as closed', async ({ page }) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+
+  await expectKeyboard(page, false, 0)
+})
+
+test('rejects focused browser chrome below the keyboard threshold', async ({ page }) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+  await page.getByLabel('Editable control').focus()
+
+  await page.evaluate(() => {
+    window.__viewportFixture.setVisualViewport({ height: 720, offsetTop: 56 })
+    window.__viewportFixture.dispatch('visual-resize')
+  })
+
+  await expectKeyboard(page, false, 0)
+})
+
+test('reports soft keyboard occlusion from a focused 800 to 500 visual-height sequence', async ({
   page,
 }) => {
   await openReadyFixture(page, '?layout=mock&visual=mock')
@@ -144,13 +167,30 @@ test('infers keyboard occlusion from a focused 800 to 500 visual-height sequence
     window.__viewportFixture.dispatch('visual-resize')
   })
 
-  await expect
-    .poll(() => readState(page))
-    .toMatchObject({
-      layout: { width: 390, height: 800 },
-      visual: { height: 500, scale: 1 },
-      keyboard: { open: true, height: 300 },
-    })
+  await expectKeyboard(page, true, 300)
+})
+
+test('reports shifted visual viewport keyboard occlusion from the bottom edge', async ({
+  page,
+}) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+  await page.getByLabel('Editable control').focus()
+
+  await page.evaluate(() => {
+    window.__viewportFixture.setVisualViewport({ height: 472, offsetTop: 28 })
+    window.__viewportFixture.dispatch('visual-resize')
+  })
+
+  await expectKeyboard(page, true, 300)
+})
+
+test('keeps hardware-keyboard-like focused viewport closed without a visual reduction', async ({
+  page,
+}) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+  await page.getByLabel('Editable control').focus()
+
+  await expectKeyboard(page, false, 0)
 })
 
 test('does not infer a keyboard when layout and visual geometry shrink together', async ({
@@ -218,7 +258,7 @@ test('publishes controlled offsets and page positions from a VisualViewport scro
     })
 })
 
-test('rejects a zoom resize as a keyboard', async ({ page }) => {
+test('rejects a 2x zoom resize as a keyboard', async ({ page }) => {
   await openReadyFixture(page, '?layout=mock&visual=mock')
   await page.getByLabel('Editable control').focus()
 
@@ -231,16 +271,7 @@ test('rejects a zoom resize as a keyboard', async ({ page }) => {
     window.__viewportFixture.dispatch('visual-resize')
   })
 
-  await expect
-    .poll(() => readState(page))
-    .toMatchObject({
-      visual: {
-        width: 240.5,
-        height: 500,
-        scale: 2,
-      },
-      keyboard: { open: false, height: 0 },
-    })
+  await expectKeyboard(page, false, 0)
 })
 
 test('updates native keyboard intersection from a geometrychange event alone', async ({ page }) => {

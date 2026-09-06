@@ -18,6 +18,14 @@ export default function ProjectPage() {
         <p>Repository policy is part of the product evidence, not an afterthought.</p>
       </header>
       <article className="site-frame prose browser-prose">
+        <section aria-labelledby="source-title">
+          <h2 id="source-title">Source and releases</h2>
+          <p>
+            Browse the <a href={site.repository}>GitHub repository</a>, follow shipped changes in
+            the <a href={site.changelog}>changelog</a>, and review the terms in the{' '}
+            <a href={site.license}>MIT license</a>.
+          </p>
+        </section>
         <section aria-labelledby="contributing-title">
           <h2 id="contributing-title">Contributing</h2>
           <p>
@@ -31,8 +39,8 @@ export default function ProjectPage() {
           <h2 id="security-title">Security</h2>
           <p>
             Report vulnerabilities through the private path documented in the{' '}
-            <a href={repositoryDocument('SECURITY.md')}>security policy</a>. Do not disclose
-            vulnerability details in a public issue.
+            <a href={site.security}>security policy</a>. Do not disclose vulnerability details in a
+            public issue.
           </p>
         </section>
         <section aria-labelledby="qa-title">

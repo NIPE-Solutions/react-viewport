@@ -18,8 +18,8 @@ export function ComposerDemo() {
       <div className="composer-demo__copy">
         <h2 id="composer-demo-heading">CSS-variable composer</h2>
         <p>
-          This real input stays above measured keyboard occlusion and the safe-area inset. The
-          library changes variables; CSS performs the positioning.
+          This real input stays above whichever is larger: measured keyboard occlusion or the
+          safe-area inset. The library changes raw variables; CSS performs the positioning.
         </p>
       </div>
       <div className="composer-stage">

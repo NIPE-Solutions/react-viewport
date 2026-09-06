@@ -8,12 +8,229 @@ const responsiveSizes = [
   { name: 'wide', width: 1440, height: 1000 },
 ] as const
 
+test('navigation follows the product learning path', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(
+    page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link'),
+  ).toHaveText(['Overview', 'Examples', 'Concepts', 'API', 'Browser behavior', 'Project'])
+})
+
+test('concepts explains viewport changes before the geometry controls', async ({ page }) => {
+  const response = await page.goto('/concepts')
+
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole('heading', { level: 1, name: 'Concepts' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'What changes, and why' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Keyboard status' })).toBeVisible()
+
+  const contextTop = await page
+    .getByTestId('geometry-context')
+    .evaluate((element) => element.getBoundingClientRect().top + window.scrollY)
+  const controlsTop = await page
+    .getByRole('group', { name: 'View' })
+    .evaluate((element) => element.getBoundingClientRect().top + window.scrollY)
+  expect(contextTop).toBeLessThan(controlsTop)
+})
+
+test('homepage hands off to concepts, references, and bounded browser evidence', async ({
+  page,
+}) => {
+  await page.goto('/')
+
+  await expect(
+    page.getByRole('link', { name: 'Explore the concepts and simulator' }),
+  ).toHaveAttribute('href', '/concepts')
+  await expect(page.getByRole('group', { name: 'View' })).toHaveCount(0)
+
+  const modalPreview = page.locator('.use-case-list article').filter({ hasText: 'Modal actions' })
+  await expect(modalPreview).toContainText('larger of keyboard occlusion and the safe-area bottom')
+  await expect(modalPreview).not.toContainText(
+    'inside the visual viewport while browser chrome changes',
+  )
+
+  const homepageEvidence = page.getByRole('region', {
+    name: 'Browser evidence has boundaries',
+  })
+  await expect(homepageEvidence).toContainText(/Automated evidence.*54.*78/s)
+  await expect(homepageEvidence).toContainText(/Physical-device status.*pending/is)
+
+  const referenceLinks = [
+    ['CSS alternatives', '/examples#css-first-title'],
+    ['Keyboard and safe area', '/concepts#keyboard-and-safe-area'],
+    ['API reference', '/api'],
+    ['Browser behavior', '/browser-behavior'],
+  ] as const
+  for (const [name, href] of referenceLinks) {
+    await expect(homepageEvidence.getByRole('link', { name, exact: true })).toHaveAttribute(
+      'href',
+      href,
+    )
+  }
+
+  await homepageEvidence.getByRole('link', { name: 'Browser behavior', exact: true }).click()
+  await expect(page).toHaveURL(/\/browser-behavior$/)
+
+  const automatedEvidence = page.getByRole('region', { name: 'Automated evidence' })
+  await expect(automatedEvidence).toContainText('54 library scenarios')
+  await expect(automatedEvidence).toContainText('78 documentation-site scenarios')
+  await expect(
+    automatedEvidence.getByRole('link', { name: 'Library browser suite', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/e2e/viewport.spec.ts',
+  )
+  await expect(
+    automatedEvidence.getByRole('link', { name: 'Website browser suite', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/e2e/website.spec.ts',
+  )
+  await expect(
+    automatedEvidence.getByRole('link', { name: 'Current readiness report', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/docs/releases/2026-09-06-product-hardening-readiness.md',
+  )
+  await expect(page.getByRole('complementary', { name: 'Physical-device status' })).toContainText(
+    'pending',
+  )
+})
+
+test('guides is removed from routes, rendered navigation, and the sitemap', async ({ page }) => {
+  const response = await page.goto('/guides')
+
+  expect(response?.status()).toBe(404)
+
+  await page.goto('/concepts')
+  await expect(page.locator('nav a[href="/guides"]')).toHaveCount(0)
+
+  const sitemapResponse = await page.request.get('/sitemap.xml')
+  expect(sitemapResponse.status()).toBe(200)
+
+  const sitemap = await sitemapResponse.text()
+  expect(sitemap).not.toContain('/guides')
+  expect(sitemap).toContain('/concepts')
+})
+
+test('metadata describes measured viewport geometry without universal keyboard claims', async ({
+  page,
+}) => {
+  await page.goto('/')
+
+  await expect(page).toHaveTitle(
+    'React Viewport — Visual viewport, keyboard and safe-area geometry for React',
+  )
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    'Measured React geometry for visual viewports, software-keyboard occlusion, and safe areas, with documented browser fallbacks and limits.',
+  )
+  await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+    'content',
+    /composer.*layout viewport.*visual viewport.*keyboard occlusion/i,
+  )
+})
+
+test('footer makes project and legal trust links discoverable', async ({ page }) => {
+  await page.goto('/')
+
+  const footer = page.locator('footer')
+  const expectedLinks = [
+    ['GitHub', 'https://github.com/NIPE-Solutions/react-viewport'],
+    ['Changelog', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md'],
+    ['Security', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/SECURITY.md'],
+    ['License', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/LICENSE'],
+    ['NIPE Open Source', 'https://opensource.nipesolutions.com'],
+    ['Imprint', '/imprint'],
+    ['Privacy', '/privacy'],
+  ] as const
+
+  for (const [name, href] of expectedLinks) {
+    await expect(footer.getByRole('link', { name, exact: true })).toHaveAttribute('href', href)
+  }
+})
+
+test('trust page links to repository policy and release documents', async ({ page }) => {
+  await page.goto('/project')
+
+  const expectedLinks = [
+    ['GitHub repository', 'https://github.com/NIPE-Solutions/react-viewport'],
+    ['changelog', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md'],
+    ['security policy', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/SECURITY.md'],
+    ['MIT license', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/LICENSE'],
+  ] as const
+
+  for (const [name, href] of expectedLinks) {
+    await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute('href', href)
+  }
+})
+
+test('hero leads with a usable composer and separates live browser state from simulation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1200, height: 900 })
+  await page.goto('/')
+
+  const hero = page.getByRole('region', {
+    name: 'Know what part of the screen is actually usable.',
+  })
+  await expect(
+    hero.getByRole('heading', {
+      name: 'Know what part of the screen is actually usable.',
+    }),
+  ).toBeVisible()
+  await expect(hero.getByText('Live browser', { exact: true })).toBeVisible()
+  await expect(
+    hero.getByText(/const \{ visual, keyboard, safeArea \} = useViewport\(\)/),
+  ).toBeVisible()
+
+  const liveValues = hero.locator('[data-live-viewport-value]')
+  await expect(liveValues).toHaveCount(3)
+  const beforeSimulation = await liveValues.allTextContents()
+
+  const simulationToggle = hero.getByRole('button', { name: 'Simulate keyboard' })
+  await expect(simulationToggle).toHaveAttribute('aria-pressed', 'false')
+  await simulationToggle.click()
+  await expect(simulationToggle).toHaveAttribute('aria-pressed', 'true')
+  await expect(hero.getByText('Simulated keyboard', { exact: true })).toBeVisible()
+  await expect(liveValues).toHaveText(beforeSimulation)
+
+  const geometryLink = hero.getByRole('link', { name: 'Explore the geometry', exact: true })
+  await expect(geometryLink).toHaveAttribute('href', '/concepts#simulator')
+  await geometryLink.click()
+  await expect(page).toHaveURL(/\/concepts#simulator$/)
+  await expect(page.locator('#simulator')).toBeVisible()
+})
+
+test('hero gives assistive technology a layout and visual viewport summary', async ({ page }) => {
+  await page.goto('/')
+
+  const summary = page.getByTestId('hero-live-summary')
+  await expect(summary).toBeVisible()
+  await expect(summary).toHaveAccessibleName(/Layout viewport.*Visual viewport/i)
+})
+
 for (const size of responsiveSizes) {
-  test(`keeps the coordinate model legible without overflow at ${size.width}px`, async ({
+  test(`keeps the homepage hero and coordinate model legible without overflow at ${size.width}px`, async ({
     page,
   }) => {
     await page.setViewportSize(size)
     await page.goto('/')
+
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Know what part of the screen is actually usable.',
+      }),
+    ).toBeVisible()
+    const homepageDimensions = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      content: document.documentElement.scrollWidth,
+    }))
+    expect(homepageDimensions.content).toBeLessThanOrEqual(homepageDimensions.viewport)
+
+    await page.setViewportSize(size)
+    await page.goto('/concepts')
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
@@ -30,6 +247,17 @@ for (const size of responsiveSizes) {
     expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport)
   })
 }
+
+test('keeps live examples within the 320px viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 })
+  await page.goto('/examples')
+
+  const dimensions = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    content: document.documentElement.scrollWidth,
+  }))
+  expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport)
+})
 
 test('supports keyboard navigation with a visible skip-link focus indicator', async ({
   browserName,
@@ -60,7 +288,7 @@ test('has no serious accessibility violations on every documentation route', asy
     '/api',
     '/browser-behavior',
     '/examples',
-    '/guides',
+    '/concepts',
     '/project',
     '/imprint',
     '/privacy',
@@ -83,7 +311,7 @@ test('does not create decorative animation for reduced-motion visitors', async (
 
 test('labels live geometry and keeps deterministic simulation separate', async ({ page }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
-  await page.goto('/')
+  await page.goto('/concepts')
 
   const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
   await expect(geometry.getByText('Live browser geometry')).toBeVisible()
@@ -91,6 +319,11 @@ test('labels live geometry and keeps deterministic simulation separate', async (
   await expect(geometry.getByText('Visual viewport', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Safe area', { exact: true })).toBeVisible()
   await expect(geometry.getByText('Keyboard occlusion', { exact: true })).toBeVisible()
+  await expect(
+    geometry.getByText('Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))', {
+      exact: true,
+    }),
+  ).toBeVisible()
 
   const views = page.getByRole('group', { name: 'View' })
   await views.getByRole('button', { name: 'Soft keyboard' }).click()
@@ -103,7 +336,7 @@ test('labels live geometry and keeps deterministic simulation separate', async (
 test('keeps initialization honest and reserves the plane before measurement', async ({ page }) => {
   await holdAnimationFrames(page)
   await page.setViewportSize({ width: 1200, height: 900 })
-  await page.goto('/')
+  await page.goto('/concepts')
 
   const geometry = page.getByRole('region', { name: 'One screen, four measured regions' })
   await expect(geometry.getByTestId('geometry-mode')).toHaveText(
@@ -129,7 +362,7 @@ test('renders zero safe-area and keyboard geometry without painted minimum bands
   page,
 }) => {
   await page.setViewportSize({ width: 1200, height: 900 })
-  await page.goto('/')
+  await page.goto('/concepts')
   await expect(page.getByTestId('geometry-mode')).toHaveText('Live browser geometry')
 
   expect(await renderedThickness(page.getByTestId('safe-top'), 'height')).toBe(0)
@@ -139,26 +372,32 @@ test('renders zero safe-area and keyboard geometry without painted minimum bands
   await expect(page.getByTestId('keyboard-region')).toHaveCount(0)
 })
 
-test('teaches coherent chrome, shifted keyboard, and zoom scenarios', async ({ page }) => {
-  await page.goto('/')
+test('geometry scenarios teach coherent chrome, shifted keyboard, and zoom states', async ({
+  page,
+}) => {
+  await page.goto('/concepts')
   const views = page.getByRole('group', { name: 'View' })
 
   await views.getByRole('button', { name: 'Browser chrome' }).click()
   await expect(page.getByTestId('visual-height')).toHaveText('720 px')
   await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
+  await expect(page.getByTestId('scenario-keyboard-status')).toHaveText('Keyboard status: closed')
 
   await views.getByRole('button', { name: 'Shifted keyboard' }).click()
   await expect(page.getByTestId('visual-height')).toHaveText('472 px')
   await expect(page.getByTestId('bottom-occlusion')).toHaveText('300 px')
   await expect(page.getByTestId('keyboard-height')).toHaveText('300 px')
+  await expect(page.getByTestId('scenario-keyboard-status')).toHaveText('Keyboard status: open')
 
   await views.getByRole('button', { name: 'Zoom' }).click()
   await expect(page.getByTestId('keyboard-height')).toHaveText('0 px')
-  await expect(page.getByTestId('scenario-description')).toContainText('scale, not keyboard')
+  await expect(page.getByTestId('scenario-description')).toContainText(
+    'Scale reduces the visible region without keyboard occlusion',
+  )
 })
 
 test('warns when custom keyboard occlusion contradicts visual geometry', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/concepts')
   const views = page.getByRole('group', { name: 'View' })
   await views.getByRole('button', { name: 'Custom' }).click()
   await page.getByRole('spinbutton', { name: 'Keyboard occlusion' }).fill('180')
@@ -170,7 +409,7 @@ test('warns when custom keyboard occlusion contradicts visual geometry', async (
 })
 
 test('renders critical geometry and status labels at a legible size', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/concepts')
   for (const locator of [
     page.getByTestId('geometry-mode'),
     page.locator('.plane-label--layout'),
@@ -185,7 +424,7 @@ test('renders critical geometry and status labels at a legible size', async ({ p
 
 test('draws the live layout plane with the measured aspect ratio', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.goto('/')
+  await page.goto('/concepts')
 
   const box = await boxOf(page.locator('.layout-plane'))
 
@@ -238,6 +477,71 @@ test('moves the CSS-variable composer after real fixture geometry changes', asyn
   await expect.poll(() => topOf(composer)).toBeLessThan(initialTop - 250)
 })
 
+test('examples expose concrete viewport-aware interface outputs', async ({ page }) => {
+  await page.goto('/examples')
+
+  for (const heading of ['Chat composer', 'Modal actions', 'Visible area', 'CSS variables']) {
+    await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible()
+  }
+
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText(/\d+px/)
+  await expect(page.getByTestId('visible-area-height')).toHaveText(/\d+px/)
+  await expect(page.getByTestId('css-keyboard-height')).toHaveText(/\d+px/)
+  await expect(page.getByTestId('css-safe-area-bottom')).toHaveText(/\d+px/)
+})
+
+test('examples use the effective inset and keep modal actions inside the visual region', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/examples')
+
+  await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 34 })
+  await expect(page.getByTestId('keyboard-height-output')).toHaveText('0px')
+  await expect(page.getByTestId('safe-area-bottom-output')).toHaveText('34px')
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText('34px')
+
+  await page.getByRole('textbox', { name: 'Message' }).focus()
+  await setWebsiteGeometry(page, { visualHeight: 474, safeAreaBottom: 34 })
+  await expect(page.getByTestId('keyboard-height-output')).toHaveText('326px')
+  await expect(page.getByTestId('safe-area-bottom-output')).toHaveText('34px')
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText('326px')
+  await expect(page.getByTestId('visible-area-height')).toHaveText('474px')
+  expect(await page.locator('output[data-example-output]').allTextContents()).not.toContain('360px')
+
+  const computedComposerPosition = await page.getByTestId('composer-shell').evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      bottom: Number.parseFloat(style.bottom),
+      keyboard: Number.parseFloat(style.getPropertyValue('--react-viewport-keyboard-height')),
+      safeArea: Number.parseFloat(style.getPropertyValue('--react-viewport-safe-area-bottom')),
+      oneRem: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+    }
+  })
+  expect(computedComposerPosition.keyboard).toBe(326)
+  expect(computedComposerPosition.safeArea).toBe(34)
+  expect(computedComposerPosition.bottom).toBeCloseTo(
+    Math.max(computedComposerPosition.keyboard, computedComposerPosition.safeArea) +
+      computedComposerPosition.oneRem,
+    5,
+  )
+  expect(computedComposerPosition.bottom - computedComposerPosition.oneRem).not.toBeCloseTo(360, 5)
+
+  const visualRegion = await boxOf(page.getByTestId('modal-visual-region'))
+  const modalActions = await boxOf(page.getByTestId('modal-action-bar'))
+  expect(modalActions.y).toBeGreaterThanOrEqual(visualRegion.y)
+  expect(modalActions.y + modalActions.height).toBeLessThanOrEqual(
+    visualRegion.y + visualRegion.height + 1,
+  )
+
+  await setWebsiteGeometry(page, { visualHeight: 474, safeAreaBottom: 0 })
+  await expect(page.getByTestId('keyboard-height-output')).toHaveText('326px')
+  await expect(page.getByTestId('safe-area-bottom-output')).toHaveText('0px')
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText('326px')
+  expect(await page.locator('output[data-example-output]').allTextContents()).not.toContain('360px')
+})
+
 async function topOf(locator: ReturnType<Page['getByTestId']>): Promise<number> {
   const box = await locator.boundingBox()
   if (box === null) throw new Error('Composer did not have a layout box')
@@ -286,6 +590,9 @@ async function holdAnimationFrames(page: Page): Promise<void> {
 
 async function installVisualViewportFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
+    let safeAreaBottom = 0
+    const nativeGetComputedStyle = window.getComputedStyle.bind(window)
+
     class ControlledVisualViewport extends EventTarget {
       width = 390
       height = 800
@@ -308,6 +615,26 @@ async function installVisualViewportFixture(page: Page): Promise<void> {
       configurable: true,
       value: undefined,
     })
+    Object.defineProperty(window, 'getComputedStyle', {
+      configurable: true,
+      value(element: Element, pseudoElement?: string | null) {
+        const computed = nativeGetComputedStyle(element, pseudoElement)
+        if (
+          !(element instanceof HTMLElement) ||
+          element.style.paddingBottom !== 'env(safe-area-inset-bottom)'
+        ) {
+          return computed
+        }
+
+        return new Proxy(computed, {
+          get(target, property) {
+            if (property === 'paddingBottom') return `${safeAreaBottom}px`
+            const value = Reflect.get(target, property, target)
+            return typeof value === 'function' ? value.bind(target) : value
+          },
+        })
+      },
+    })
 
     Object.defineProperty(window, '__websiteGeometryFixture', {
       configurable: true,
@@ -316,7 +643,29 @@ async function installVisualViewportFixture(page: Page): Promise<void> {
           controlled.height = height
           controlled.dispatchEvent(new Event('resize'))
         },
+        setGeometry(next: { visualHeight: number; safeAreaBottom: number }) {
+          controlled.height = next.visualHeight
+          safeAreaBottom = next.safeAreaBottom
+          controlled.dispatchEvent(new Event('resize'))
+        },
       },
     })
   })
+}
+
+async function setWebsiteGeometry(
+  page: Page,
+  geometry: { readonly visualHeight: number; readonly safeAreaBottom: number },
+): Promise<void> {
+  await page.evaluate((nextGeometry) => {
+    const fixture = (
+      window as Window & {
+        __websiteGeometryFixture?: {
+          setGeometry(next: { visualHeight: number; safeAreaBottom: number }): void
+        }
+      }
+    ).__websiteGeometryFixture
+    if (fixture === undefined) throw new Error('Geometry fixture was not installed')
+    fixture.setGeometry(nextGeometry)
+  }, geometry)
 }

@@ -39,10 +39,14 @@ export const designPlan = {
 export const site = {
   name: '@nipe-solutions/react-viewport',
   title: 'React Viewport',
+  seoTitle: 'React Viewport — Visual viewport, keyboard and safe-area geometry for React',
   description:
-    'Reactive React geometry for layout viewports, visual viewports, soft keyboards, and safe areas.',
+    'Measured React geometry for visual viewports, software-keyboard occlusion, and safe areas, with documented browser fallbacks and limits.',
   origin: 'https://react-viewport.nipesolutions.com',
   repository: 'https://github.com/NIPE-Solutions/react-viewport',
+  changelog: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md',
+  security: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/SECURITY.md',
+  license: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/LICENSE',
   openSource: 'https://opensource.nipesolutions.com',
 } as const
 
@@ -65,11 +69,28 @@ export function ViewportReadout() {
 export const cssComposer = `.composer {
   position: fixed;
   right: max(1rem, var(--react-viewport-safe-area-right, 0px));
-  bottom: calc(
-    var(--react-viewport-keyboard-height, 0px) +
-      max(1rem, var(--react-viewport-safe-area-bottom, 0px))
+  --bottom-inset: max(
+    var(--react-viewport-keyboard-height, 0px),
+    var(--react-viewport-safe-area-bottom, 0px)
   );
+  bottom: calc(var(--bottom-inset) + 1rem);
   left: max(1rem, var(--react-viewport-safe-area-left, 0px));
+}`
+
+export const modalActionBar = `import { useViewport } from '@nipe-solutions/react-viewport'
+
+function ModalActions() {
+  const { keyboard, safeArea } = useViewport()
+  const bottomInset = Math.max(keyboard.height, safeArea.bottom)
+
+  return <footer style={{ bottom: bottomInset }}>…</footer>
+}`
+
+export const visibleArea = `const { visual } = useViewport()
+const visibleHeight = visual?.height ?? null`
+
+export const cssSafeAreaFooter = `.footer {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }`
 
 export const apiReference = [
@@ -97,6 +118,8 @@ export const apiReference = [
 export const typeReference = [
   {
     name: 'LayoutViewport',
+    description:
+      'The layout viewport width and height from window.innerWidth and window.innerHeight, in CSS pixels. This is the page reference plane, not a guarantee that the whole region is visible or unobstructed.',
     signature: `export interface LayoutViewport {
   readonly width: number;
   readonly height: number;
@@ -104,6 +127,8 @@ export const typeReference = [
   },
   {
     name: 'VisualViewportState',
+    description:
+      'The visible viewport size, layout-relative offsets, document-relative page coordinates, and scale. Values come from VisualViewport when supported and from the documented layout fallback otherwise; a change does not identify its cause as a keyboard.',
     signature: `export interface VisualViewportState {
   readonly width: number;
   readonly height: number;
@@ -116,6 +141,8 @@ export const typeReference = [
   },
   {
     name: 'KeyboardState',
+    description:
+      "open records sufficient native or fallback evidence of a software keyboard. height is bottom-edge occlusion, not the on-screen keyboard's full rectangle. A native floating intersection can be open: true, height: 0.",
     signature: `export interface KeyboardState {
   readonly open: boolean;
   readonly height: number;
@@ -123,6 +150,8 @@ export const typeReference = [
   },
   {
     name: 'SafeAreaInsets',
+    description:
+      'Raw top, right, bottom, and left CSS safe-area environment measurements in CSS pixels. They are not automatically keyboard-aware and must not be added to keyboard occlusion.',
     signature: `export interface SafeAreaInsets {
   readonly top: number;
   readonly right: number;
@@ -132,10 +161,14 @@ export const typeReference = [
   },
   {
     name: 'ViewportOrientation',
+    description:
+      'Portrait or landscape derived from the layout viewport aspect ratio. This is not a device-orientation sensor reading.',
     signature: `export type ViewportOrientation = 'portrait' | 'landscape';`,
   },
   {
     name: 'ViewportSupport',
+    description:
+      'Runtime API-presence flags. visualViewport distinguishes native from fallback visual geometry; virtualKeyboard means navigator.virtualKeyboard exists, not that overlay mode is active or a keyboard is currently detected.',
     signature: `export interface ViewportSupport {
   readonly visualViewport: boolean;
   readonly virtualKeyboard: boolean;
@@ -143,6 +176,8 @@ export const typeReference = [
   },
   {
     name: 'ViewportState',
+    description:
+      'One immutable snapshot. ready becomes true after the first client measurement; before that, layout, visual, and orientation are null while keyboard and safe-area values remain safe zeroes.',
     signature: `export interface ViewportState {
   readonly ready: boolean;
   readonly layout: LayoutViewport | null;
@@ -155,6 +190,8 @@ export const typeReference = [
   },
   {
     name: 'ViewportProviderProps',
+    description:
+      'Scopes descendants to an accessible same-origin Window. Omission uses the global window; null intentionally selects the server snapshot.',
     signature: `export interface ViewportProviderProps {
   readonly children: React.ReactNode;
   readonly targetWindow?: Window | null;
@@ -162,6 +199,8 @@ export const typeReference = [
   },
   {
     name: 'ViewportCssVariablesOptions',
+    description:
+      'Chooses the HTMLElement or React ref that receives variables. Omission or null targets the document root; a ref whose current value is null has no target until it attaches.',
     signature: `export interface ViewportCssVariablesOptions {
   readonly target?: HTMLElement | React.RefObject<HTMLElement | null> | null;
 }`,
@@ -189,12 +228,12 @@ export const browserNotes = [
   {
     name: 'iOS Safari',
     detail:
-      'VisualViewport measurements are used when the API exists. Soft-keyboard inference remains conservative and needs physical-device verification.',
+      'VisualViewport measurements are used when the API exists. WebKit bug 217754 records a stale bottom safe-area inset while the software keyboard is visible; physical reproduction is still pending here.',
   },
   {
     name: 'Android Chrome',
     detail:
-      'VisualViewport and Virtual Keyboard capabilities are detected independently. Capability detection is not a universal support claim.',
+      'VisualViewport and VirtualKeyboard capabilities are detected independently. API presence does not prove overlaysContent mode is active or that a device scenario passed.',
   },
   {
     name: 'Installed PWA',

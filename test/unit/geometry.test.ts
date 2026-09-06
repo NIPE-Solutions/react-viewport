@@ -92,27 +92,33 @@ describe('inferKeyboard', () => {
     ).toEqual({ open: true, height: 120 })
   })
 
-  it('uses the 80px floor when the ratio threshold is smaller', () => {
+  it('requires the 15% layout threshold when it exceeds the 80px floor', () => {
     expect(
       inferKeyboard({
-        layout: { width: 390, height: 400 },
-        visual: visual({ height: 320 }),
-        editableFocused: true,
-        hasNativeGeometry: false,
-      }),
-    ).toEqual({ open: true, height: 80 })
-  })
-
-  it('rejects an occlusion below the 80px floor when the ratio threshold is smaller', () => {
-    expect(
-      inferKeyboard({
-        layout: { width: 390, height: 400 },
-        visual: visual({ height: 321 }),
+        layout,
+        visual: visual({ height: 681 }),
         editableFocused: true,
         hasNativeGeometry: false,
       }),
     ).toEqual({ open: false, height: 0 })
   })
+
+  it.each([
+    [79, { open: false, height: 0 }],
+    [80, { open: true, height: 80 }],
+  ] as const)(
+    'uses the independent 80px floor for %ipx occlusion when the ratio threshold is smaller',
+    (occlusion, expected) => {
+      expect(
+        inferKeyboard({
+          layout: { width: 390, height: 400 },
+          visual: visual({ height: 400 - occlusion }),
+          editableFocused: true,
+          hasNativeGeometry: false,
+        }),
+      ).toEqual(expected)
+    },
+  )
 
   it('requires focused editable content', () => {
     expect(
@@ -136,11 +142,11 @@ describe('inferKeyboard', () => {
     ).toEqual({ open: false, height: 0 })
   })
 
-  it('rejects pinch-zoom geometry', () => {
+  it('rejects 2x zoom geometry', () => {
     expect(
       inferKeyboard({
         layout,
-        visual: visual({ height: 500, scale: 1.02 }),
+        visual: visual({ height: 500, scale: 2 }),
         editableFocused: true,
         hasNativeGeometry: false,
       }),
@@ -195,7 +201,7 @@ describe('inferKeyboard', () => {
     expect(
       inferKeyboard({
         layout,
-        visual: visual({ height: 720, offsetTop: 20 }),
+        visual: visual({ height: 720, offsetTop: 56 }),
         editableFocused: true,
         hasNativeGeometry: false,
       }),

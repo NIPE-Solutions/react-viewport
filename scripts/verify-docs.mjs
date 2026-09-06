@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { readdir, readFile } from 'node:fs/promises'
+import { extname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -9,6 +9,13 @@ const packageRoot = resolve(process.env.REACT_VIEWPORT_DOCS_ROOT ?? defaultPacka
 
 const textRequirements = [
   ['README.md', 'Reliable mobile viewport state for React.'],
+  ['README.md', 'Know what part of the screen is actually usable.'],
+  [
+    'README.md',
+    'const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()',
+  ],
+  ['README.md', 'Math.max(keyboard.height, safeArea.bottom)'],
+  ['README.md', 'Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))'],
   ['README.md', 'npm install @nipe-solutions/react-viewport'],
   ['README.md', 'Layout viewport'],
   ['README.md', 'Visual viewport'],
@@ -21,9 +28,38 @@ const textRequirements = [
   ['README.md', 'https://opensource.nipesolutions.com'],
   ['README.md', 'https://github.com/NIPE-Solutions/react-viewport'],
   ['README.md', 'max(80 CSS px, 15% of layout height)'],
+  ['README.md', 'bottom-attached partial-width rectangle still yields a scalar bottom inset'],
+  ['README.md', 'segmented or arbitrary-shape avoidance'],
   ['README.md', 'viewport-fit=cover'],
   ['README.md', 'limitations'],
   ['docs/browser-notes.md', 'max(80 CSS px, 15% of layout height)'],
+  [
+    'docs/browser-notes.md',
+    'bottom-attached partial-width rectangle still yields a scalar bottom inset',
+  ],
+  ['docs/browser-notes.md', 'segmented or arbitrary-shape avoidance'],
+  ['docs/browser-notes.md', 'https://w3c.github.io/virtual-keyboard/'],
+  ['docs/browser-notes.md', 'https://bugs.webkit.org/show_bug.cgi?id=217754'],
+  ['docs/browser-notes.md', 'Math.max(keyboard.height, safeArea.bottom)'],
+  ['docs/REAL_DEVICE_QA.md', 'Physical iPhone Safari and Android Chrome testing is pending.'],
+  [
+    'docs/REAL_DEVICE_QA.md',
+    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 78 documentation-site scenarios',
+  ],
+  ['docs/REAL_DEVICE_QA.md', 'releases/2026-09-06-product-hardening-readiness.md'],
+  ['website/app/api/page.tsx', 'supported.virtualKeyboard means API availability'],
+  ['website/app/api/page.tsx', 'Math.max(keyboard.height, safeArea.bottom)'],
+  ['website/app/browser-behavior/page.tsx', 'https://w3c.github.io/virtual-keyboard/'],
+  ['website/app/browser-behavior/page.tsx', 'https://bugs.webkit.org/show_bug.cgi?id=217754'],
+  [
+    'website/app/browser-behavior/page.tsx',
+    'bottom-attached partial-width rectangle still yields a scalar bottom inset',
+  ],
+  ['website/app/browser-behavior/page.tsx', 'segmented or arbitrary-shape avoidance'],
+  ['website/app/browser-behavior/page.tsx', 'the larger of 80 CSS pixels and 15% of layout height'],
+  ['website/app/browser-behavior/page.tsx', '54 library scenarios'],
+  ['website/app/browser-behavior/page.tsx', '78 documentation-site scenarios'],
+  ['website/content/docs.ts', 'open: true, height: 0'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],
   ['SECURITY.md', 'Security Policy'],
@@ -79,6 +115,27 @@ const browserNoteFields = [
   'Decision',
 ]
 
+const publicGuidanceRoots = [
+  'docs',
+  'website/app',
+  'website/components',
+  'website/content',
+  'website/public',
+]
+const publicGuidanceExtensions = new Set([
+  '.css',
+  '.html',
+  '.js',
+  '.jsx',
+  '.md',
+  '.mdx',
+  '.mjs',
+  '.svg',
+  '.ts',
+  '.tsx',
+])
+const excludedGuidanceDirectories = new Set(['superpowers'])
+
 const contents = new Map()
 
 async function readDocument(path) {
@@ -87,6 +144,35 @@ async function readDocument(path) {
   }
 
   return contents.get(path)
+}
+
+async function discoverPublicGuidancePaths() {
+  const paths = ['README.md']
+
+  for (const root of publicGuidanceRoots) {
+    await collectPublicGuidancePaths(root, paths)
+  }
+
+  return paths.toSorted()
+}
+
+async function collectPublicGuidancePaths(directory, paths) {
+  const entries = await readdir(resolve(packageRoot, directory), { withFileTypes: true })
+
+  for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
+    const path = `${directory}/${entry.name}`
+
+    if (entry.isDirectory()) {
+      if (!excludedGuidanceDirectories.has(entry.name)) {
+        await collectPublicGuidancePaths(path, paths)
+      }
+      continue
+    }
+
+    if (entry.isFile() && publicGuidanceExtensions.has(extname(entry.name))) {
+      paths.push(path)
+    }
+  }
 }
 
 function getSection(content, heading) {
@@ -155,6 +241,44 @@ function assertQuickStart(readme) {
     'Quick start must call useViewport()',
   )
   assert.match(example, /export function \w+\(\)/, 'Quick start must export a runnable component')
+}
+
+function assertReadmeOpening(readme) {
+  const firstCopyLine = readme
+    .split('\n')
+    .slice(1)
+    .find((line) => line.trim().length > 0)
+  assert.equal(
+    firstCopyLine,
+    'Know what part of the screen is actually usable.',
+    'README must lead with product utility',
+  )
+
+  const installationIndex = readme.indexOf('\n## Installation')
+  assert.ok(installationIndex > 0, 'README must contain Installation after its opening')
+  const opening = readme.slice(0, installationIndex)
+  assert.ok(opening.includes('= useViewport()'), 'README opening must show the useViewport shape')
+  assert.ok(opening.includes('**Alpha software:**'), 'README opening must keep the alpha caveat')
+  assert.ok(
+    opening.includes('[browser limitations](#browser-terminology-and-limitations)'),
+    'README opening must link to browser limitations',
+  )
+
+  const links = new Map(
+    [...opening.matchAll(/\[([^\]]+)]\(([^)]+)\)/g)].map((match) => [match[1], match[2]]),
+  )
+  const discoveryLinks = new Map([
+    ['CSS alternatives', '#when-css-is-enough'],
+    ['Keyboard and safe area', '#keyboard-and-safe-area'],
+    ['Browser behavior', '#browser-terminology-and-limitations'],
+  ])
+  for (const [label, href] of discoveryLinks) {
+    assert.equal(
+      links.get(label),
+      href,
+      `README opening discovery links must include ${label} -> ${href}`,
+    )
+  }
 }
 
 async function assertQaMatrix(qa) {
@@ -272,9 +396,50 @@ function assertSecurityPolicy(securityPolicy) {
   }
 }
 
+async function assertNoMisleadingKeyboardGuidance() {
+  const memberPrefix = String.raw`(?:[$A-Z_a-z][\w$]*(?:\?\.|\.))*`
+  const keyboardOperand = String.raw`\b${memberPrefix}keyboard(?:(?:\?\.|\.)height|Height|Occlusion|BottomOcclusion|Inset|InsetBottom|BottomInset)\b`
+  const safeAreaOperand = String.raw`(?:\b${memberPrefix}safeArea(?:(?:\?\.|\.)bottom|Bottom|InsetBottom)\b|\bbottomSafeArea(?:Inset)?\b)`
+  const addition = String.raw`\s*\)?\s*\+\s*\(?\s*`
+  const additiveInsetPatterns = [
+    new RegExp(`${keyboardOperand}${addition}${safeAreaOperand}`, 'i'),
+    new RegExp(`${safeAreaOperand}${addition}${keyboardOperand}`, 'i'),
+    /(?:var|env)\(\s*(?:--)?[^)]*keyboard[^)]*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)]*safe-area[^)]*\)/i,
+    /(?:var|env)\(\s*(?:--)?[^)]*safe-area[^)]*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)]*keyboard[^)]*\)/i,
+    /(?:var|env)\(\s*(?:--)?[^)\n]*keyboard[^)\n]*\)\s*\+\s*max\(\s*[^,()\n]+,\s*(?:var|env)\(\s*(?:--)?[^)\n]*safe-area[^)\n]*\)\s*\)/i,
+    /max\(\s*[^,()\n]+,\s*(?:var|env)\(\s*(?:--)?[^)\n]*safe-area[^)\n]*\)\s*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)\n]*keyboard[^)\n]*\)/i,
+  ]
+  const universalDetectionPatterns = [
+    /\b(?:detects?|reports?|recognizes?|identifies?)\s+every\b[^.\n]{0,80}\bkeyboard\b/i,
+    /\bevery\b[^.\n]{0,80}\bkeyboard\b[^.\n]{0,40}\b(?:is|are)\s+(?:reliably\s+)?detected\b/i,
+  ]
+  const nonCanonicalFormulaPatterns = [
+    /\bmax\(0,\s*layout\.height\s*-\s*\(visual\.height\s*\+\s*visual\.offsetTop\)\)/,
+  ]
+
+  for (const path of await discoverPublicGuidancePaths()) {
+    const content = await readDocument(path)
+    for (const pattern of additiveInsetPatterns) {
+      assert.doesNotMatch(content, pattern, `${path} must not add keyboard and safe area insets`)
+    }
+    for (const pattern of universalDetectionPatterns) {
+      assert.doesNotMatch(content, pattern, `${path} must not claim every keyboard is detected`)
+    }
+    for (const pattern of nonCanonicalFormulaPatterns) {
+      assert.doesNotMatch(
+        content,
+        pattern,
+        `${path} must use the canonical Math.max bottom-occlusion formula`,
+      )
+    }
+  }
+}
+
 function escapeRegularExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
+
+await assertNoMisleadingKeyboardGuidance()
 
 for (const [path, requiredText] of textRequirements) {
   const content = await readDocument(path)
@@ -282,11 +447,12 @@ for (const [path, requiredText] of textRequirements) {
   assert.ok(normalizedContent.includes(requiredText), `${path} must include: ${requiredText}`)
 }
 
+assertReadmeOpening(await readDocument('README.md'))
 assertQuickStart(await readDocument('README.md'))
 await assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
 assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))
 assertSecurityPolicy(await readDocument('SECURITY.md'))
 
 process.stdout.write(
-  `Documentation verification passed (${textRequirements.length} text checks and 4 structural checks).\n`,
+  `Documentation verification passed (${textRequirements.length} text checks and 5 structural checks).\n`,
 )
