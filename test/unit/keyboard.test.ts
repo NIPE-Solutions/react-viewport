@@ -16,7 +16,7 @@ describe('getNativeKeyboardState', () => {
     ['floating', rect(90, 420, 210, 220), { open: true, height: 0 }],
     ['bottom-attached partial width', rect(120, 650, 150, 150), { open: true, height: 150 }],
     ['non-intersecting', rect(500, 500, 100, 300), { open: false, height: 0 }],
-  ] as const)('reports $s native keyboard geometry', (_name, boundingRect, expected) => {
+  ] as const)('reports %s native keyboard geometry', (_name, boundingRect, expected) => {
     expect(getNativeKeyboardState(layout, boundingRect)).toEqual(expected)
   })
 
