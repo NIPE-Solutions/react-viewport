@@ -81,7 +81,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
 
   const automatedEvidence = page.getByRole('region', { name: 'Automated evidence' })
   await expect(automatedEvidence).toContainText('54 library scenarios')
-  await expect(automatedEvidence).toContainText('93 documentation-site scenarios')
+  await expect(automatedEvidence).toContainText('102 documentation-site scenarios')
   await expect(
     automatedEvidence.getByRole('link', { name: 'Library browser suite', exact: true }),
   ).toHaveAttribute(
