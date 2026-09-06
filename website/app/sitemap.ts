@@ -18,5 +18,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${site.origin}${route}`,
     changeFrequency: route === '' ? 'weekly' : 'monthly',
     priority: route === '' ? 1 : 0.7,
+    images: route === '' ? [`${site.origin}/og.svg`] : undefined,
   }))
 }

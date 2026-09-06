@@ -25,18 +25,25 @@ const dataFont = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(site.origin),
   title: {
-    default: `${site.title} — measured geometry for React`,
+    default: site.seoTitle,
     template: `%s | ${site.title}`,
   },
   description: site.description,
   alternates: { canonical: '/' },
   icons: { icon: '/icon.svg' },
   openGraph: {
-    title: `${site.title} — measured geometry for React`,
+    title: site.seoTitle,
     description: site.description,
     url: site.origin,
     siteName: site.title,
-    images: [{ url: '/og.svg', width: 1200, height: 630, alt: 'Nested viewport coordinate plane' }],
+    images: [
+      {
+        url: '/og.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Composer positioned within a layout viewport and visual viewport above keyboard occlusion',
+      },
+    ],
     type: 'website',
   },
   twitter: {
@@ -75,11 +82,13 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
               <Link href="/project">Project</Link>
               <Link href="/imprint">Imprint</Link>
               <Link href="/privacy">Privacy</Link>
+              <a href={site.repository}>GitHub</a>
+              <a href={site.changelog}>Changelog</a>
+              <a href={site.security}>Security</a>
+              <a href={site.license}>License</a>
             </nav>
             <p>
-              <a href={site.openSource} rel="noreferrer">
-                Part of NIPE Open Source
-              </a>
+              Part of <a href={site.openSource}>NIPE Open Source</a>
             </p>
           </div>
         </footer>

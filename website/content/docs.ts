@@ -39,10 +39,14 @@ export const designPlan = {
 export const site = {
   name: '@nipe-solutions/react-viewport',
   title: 'React Viewport',
+  seoTitle: 'React Viewport — Visual viewport, keyboard and safe-area geometry for React',
   description:
-    'Reactive React geometry for layout viewports, visual viewports, soft keyboards, and safe areas.',
+    'Measured React geometry for visual viewports, software-keyboard occlusion, and safe areas, with documented browser fallbacks and limits.',
   origin: 'https://react-viewport.nipesolutions.com',
   repository: 'https://github.com/NIPE-Solutions/react-viewport',
+  changelog: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md',
+  security: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/SECURITY.md',
+  license: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/LICENSE',
   openSource: 'https://opensource.nipesolutions.com',
 } as const
 

@@ -55,6 +55,58 @@ test('guides is removed from routes, rendered navigation, and the sitemap', asyn
   await expect(page.locator('body')).toContainText('/concepts')
 })
 
+test('metadata describes measured viewport geometry without universal keyboard claims', async ({
+  page,
+}) => {
+  await page.goto('/')
+
+  await expect(page).toHaveTitle(
+    'React Viewport — Visual viewport, keyboard and safe-area geometry for React',
+  )
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    'Measured React geometry for visual viewports, software-keyboard occlusion, and safe areas, with documented browser fallbacks and limits.',
+  )
+  await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+    'content',
+    /composer.*layout viewport.*visual viewport.*keyboard occlusion/i,
+  )
+})
+
+test('footer makes project and legal trust links discoverable', async ({ page }) => {
+  await page.goto('/')
+
+  const footer = page.locator('footer')
+  const expectedLinks = [
+    ['GitHub', 'https://github.com/NIPE-Solutions/react-viewport'],
+    ['Changelog', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md'],
+    ['Security', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/SECURITY.md'],
+    ['License', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/LICENSE'],
+    ['NIPE Open Source', 'https://opensource.nipesolutions.com'],
+    ['Imprint', '/imprint'],
+    ['Privacy', '/privacy'],
+  ] as const
+
+  for (const [name, href] of expectedLinks) {
+    await expect(footer.getByRole('link', { name, exact: true })).toHaveAttribute('href', href)
+  }
+})
+
+test('trust page links to repository policy and release documents', async ({ page }) => {
+  await page.goto('/project')
+
+  const expectedLinks = [
+    ['GitHub repository', 'https://github.com/NIPE-Solutions/react-viewport'],
+    ['changelog', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md'],
+    ['security policy', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/SECURITY.md'],
+    ['MIT license', 'https://github.com/NIPE-Solutions/react-viewport/blob/main/LICENSE'],
+  ] as const
+
+  for (const [name, href] of expectedLinks) {
+    await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute('href', href)
+  }
+})
+
 test('hero leads with a usable composer and separates live browser state from simulation', async ({
   page,
 }) => {
@@ -78,7 +130,10 @@ test('hero leads with a usable composer and separates live browser state from si
   await expect(liveValues).toHaveCount(3)
   const beforeSimulation = await liveValues.allTextContents()
 
-  await hero.getByRole('button', { name: 'Simulate keyboard' }).click()
+  const simulationToggle = hero.getByRole('button', { name: 'Simulate keyboard' })
+  await expect(simulationToggle).toHaveAttribute('aria-pressed', 'false')
+  await simulationToggle.click()
+  await expect(simulationToggle).toHaveAttribute('aria-pressed', 'true')
   await expect(hero.getByText('Simulated keyboard', { exact: true })).toBeVisible()
   await expect(liveValues).toHaveText(beforeSimulation)
 })

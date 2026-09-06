@@ -13,7 +13,11 @@ const routes = [
   {
     route: '/',
     file: 'index.html',
-    copy: ['Viewport geometry you can reason about', 'Layout viewport', 'Visual viewport'],
+    copy: [
+      'Know what part of the screen is actually usable.',
+      'Layout viewport',
+      'Visual viewport',
+    ],
   },
   { route: '/api', file: 'api.html', copy: ['API reference', 'useViewport()', 'ViewportState'] },
   {
@@ -24,21 +28,12 @@ const routes = [
   {
     route: '/examples',
     file: 'examples.html',
-    copy: ['Examples', 'CSS-variable composer', 'When CSS is enough'],
+    copy: ['Examples', 'Chat composer', 'Modal actions', 'Visible area', 'CSS variables'],
   },
   {
-    route: '/guides',
-    file: 'guides.html',
-    copy: [
-      'SSR and hydration',
-      'Performance model',
-      'Factual comparison',
-      'CSS viewport units',
-      'Direct VisualViewport',
-      'Direct VirtualKeyboard',
-      'Frequently asked questions',
-      'Limitations',
-    ],
+    route: '/concepts',
+    file: 'concepts.html',
+    copy: ['Concepts', 'What changes, and why', 'Keyboard status'],
   },
   {
     route: '/project',
@@ -76,6 +71,7 @@ for (const { route, file, copy } of routes) {
 }
 
 const home = await readFile(path.join(outputRoot, 'index.html'), 'utf8')
+const concepts = await readFile(path.join(outputRoot, 'concepts.html'), 'utf8')
 for (const expectedDemoCopy of [
   'Browser chrome',
   'Soft keyboard',
@@ -84,7 +80,10 @@ for (const expectedDemoCopy of [
   'Custom',
   'layoutHeight - (visualOffsetTop + visualHeight)',
 ]) {
-  assert.ok(home.includes(expectedDemoCopy), `Geometry demo must contain “${expectedDemoCopy}”`)
+  assert.ok(
+    concepts.includes(expectedDemoCopy),
+    `Concepts geometry demo must contain “${expectedDemoCopy}”`,
+  )
 }
 assert.match(
   home,
@@ -92,8 +91,8 @@ assert.match(
   'The site viewport metadata must opt into safe-area coverage',
 )
 assert.ok(
-  home.includes('Initializing viewport measurement'),
-  'The static hero must identify geometry as initializing before the client measurement',
+  home.includes('Layout viewport and Visual viewport measurements are pending.'),
+  'The static hero must identify viewport geometry as pending before client measurement',
 )
 assert.ok(
   !home.includes('Live browser measurement'),
@@ -105,18 +104,22 @@ for (const expectedLink of [
 ]) {
   assert.ok(home.includes(expectedLink), `Home must link to ${expectedLink}`)
 }
-for (const expectedRoute of ['/guides', '/project']) {
+for (const expectedRoute of ['/concepts', '/project']) {
   assert.ok(
     home.includes(`href="${expectedRoute}"`),
     `Site navigation must link to ${expectedRoute}`,
   )
 }
+assert.ok(!home.includes('href="/guides"'), 'Site navigation must not link to /guides')
 
 const projectPage = await readFile(path.join(outputRoot, 'project.html'), 'utf8')
 for (const expectedLink of [
   `${site.repository}/blob/main/CONTRIBUTING.md`,
   `${site.repository}/blob/main/SECURITY.md`,
   `${site.repository}/blob/main/docs/REAL_DEVICE_QA.md`,
+  site.repository,
+  site.changelog,
+  site.license,
 ]) {
   assert.ok(projectPage.includes(expectedLink), `Project guidance must link to ${expectedLink}`)
 }
@@ -126,11 +129,14 @@ for (const { route } of routes) {
   const url = route === '/' ? canonicalOrigin : `${canonicalOrigin}${route}`
   assert.ok(sitemap.includes(`<loc>${url}</loc>`), `Sitemap must include ${url}`)
 }
+assert.ok(!sitemap.includes('/guides'), 'Sitemap must not include /guides')
+assert.ok(sitemap.includes(`${canonicalOrigin}/og.svg`), 'Sitemap must include the OpenGraph image')
 
 const robots = await readFile(path.join(outputRoot, 'robots.txt'), 'utf8')
 assert.match(robots, /User-Agent: \*/)
 assert.match(robots, /Allow: \//)
 assert.ok(robots.includes(`${canonicalOrigin}/sitemap.xml`), 'robots.txt must name the sitemap')
+assert.ok(robots.includes(`Host: ${canonicalOrigin}`), 'robots.txt must name the canonical host')
 
 const packageJson = JSON.parse(await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'))
 const installedPackages = {

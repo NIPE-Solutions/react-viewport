@@ -101,7 +101,7 @@ const bottomInset = Math.max(keyboard.height, safeArea.bottom)`}</code>
               aria-pressed={isKeyboardSimulated}
               onClick={() => setIsKeyboardSimulated((current) => !current)}
             >
-              {isKeyboardSimulated ? 'Hide simulated keyboard' : 'Simulate keyboard'}
+              Simulate keyboard
             </button>
           </div>
           <p className="viewport-hero__simulation-note">
