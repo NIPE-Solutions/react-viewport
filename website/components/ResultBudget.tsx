@@ -8,8 +8,8 @@ const RESERVED_SPACE = 320
 const ROW_HEIGHT = 48
 const MAX_RESULTS = 8
 const results = [
-  'Chat composer',
-  'Modal action bar',
+  'Document outline',
+  'Selection anchor',
   'Search overlay',
   'Visible-area panel',
   'Canvas controls',

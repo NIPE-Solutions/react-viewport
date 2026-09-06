@@ -100,10 +100,10 @@ test('rejects a quick start fence that names but does not call useViewport', asy
 test('rejects a README opening that does not lead with product utility', async () => {
   await withMutatedDocuments(
     'README.md',
-    `Know what part of the screen is actually usable.`,
+    `Visual viewport geometry as React state.`,
     `Reliable mobile viewport state for React.
 
-Know what part of the screen is actually usable.`,
+Visual viewport geometry as React state.`,
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /must lead with product utility/i),
   )
 })
@@ -175,7 +175,7 @@ test('rejects a browser-note registry without its Evidence field', async () => {
 
 test('rejects additive keyboard and safe-area guidance', async () => {
   await withMutatedDocuments(
-    'README.md',
+    'website/content/docs.ts',
     `  --bottom-inset: max(
     var(--react-viewport-keyboard-height, 0px),
     var(--react-viewport-safe-area-bottom, 0px)
@@ -190,7 +190,7 @@ test('rejects additive keyboard and safe-area guidance', async () => {
 
 test('rejects the historical keyboard plus safe-area-clearance recipe', async () => {
   await withMutatedDocuments(
-    'README.md',
+    'website/content/docs.ts',
     '  bottom: calc(var(--bottom-inset) + 1rem);',
     `  bottom: calc(
     var(--react-viewport-keyboard-height, 0px) +
@@ -265,10 +265,10 @@ test('rejects a stale automated QA baseline', async () => {
     'docs/REAL_DEVICE_QA.md',
     (qa) =>
       qa.replace(
-        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 117\ndocumentation-site scenarios',
+        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102\ndocumentation-site scenarios',
         'The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42\ndocumentation-site scenarios',
       ),
-    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*117/is),
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*102/is),
   )
 })
 

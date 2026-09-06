@@ -1,123 +1,94 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useViewport } from '@nipe-solutions/react-viewport'
+import { LiveGeometry } from './LiveGeometry'
 
-import { CodeBlock } from './CodeBlock'
-import { Composer } from './Composer'
-
-export function ViewportHero({ composerCode }: { readonly composerCode: string }) {
-  const [open, setOpen] = useState(true)
-  const keyboardHeight = open ? 156 : 0
-
+export function ViewportHero() {
+  const { layout, visual } = useViewport()
   return (
     <section className="viewport-hero" aria-labelledby="hero-title">
       <div className="site-frame">
         <div className="hero-intro">
           <div>
-            <h1 id="hero-title">Know what part of the screen is actually usable.</h1>
+            <h1 id="hero-title">Visual viewport geometry as React state.</h1>
             <p className="viewport-hero__introduction">
-              Size result sets, position overlays, and adapt keyboard-aware controls using actual
-              browser geometry when JavaScript needs more than CSS layout.
+              Read the visible browser region, viewport offsets, zoom, keyboard occlusion and
+              safe-area geometry when application logic needs coordinates as data.
+            </p>
+            <p>
+              <strong>CSS owns layout. React Viewport exposes geometry to logic.</strong>
             </p>
             <div className="viewport-hero__actions">
-              <a className="primary-action desktop-cta" href="#comparison">
-                Try the simulation
-              </a>
+              <Link className="primary-action desktop-cta" href="/examples">
+                Explore application logic
+              </Link>
               <Link className="primary-action mobile-cta" href="/lab">
-                Test the real keyboard
+                Inspect this device’s geometry
               </Link>
               <a href="#decision">Do I need this?</a>
             </div>
+            <p className="hero-trust">
+              Zero runtime dependencies · SSR safe · React 18.3 / 19 · Alpha
+            </p>
           </div>
           <div className="hero-api">
-            <p>Know what part of the screen is actually usable.</p>
             <pre
               tabIndex={0}
               className="viewport-hero__code"
               aria-label="Minimal useViewport example"
             >
-              <code>{`const { visual, keyboard, safeArea } = useViewport()
-const visibleHeight = visual?.height ?? null
-const bottomInset = Math.max(keyboard.height, safeArea.bottom)`}</code>
+              <code>{`const {
+  layout,
+  visual,
+  keyboard,
+  safeArea,
+} = useViewport()`}</code>
             </pre>
-            <p>
-              React Viewport measures the browser. Your application decides what to do with the
-              measurements.
-            </p>
+            <LiveGeometry compact />
           </div>
         </div>
-        <section id="comparison" className="comparison" aria-labelledby="comparison-title">
-          <header className="comparison-heading">
-            <div>
-              <span className="mode-badge">SIMULATION</span>
-              <h2 id="comparison-title">Same composer. Different geometry input.</h2>
-            </div>
-            <button type="button" aria-pressed={open} onClick={() => setOpen(!open)}>
-              {open ? 'Close simulated keyboard' : 'Open simulated keyboard'}
-            </button>
-          </header>
-          <p className="simulation-note">
-            This simulates a keyboard overlaying an unchanged layout. A browser that resizes the
-            layout can solve this composer with CSS alone.{' '}
-            <a href="/lab/css">Try the CSS baseline</a>.
-          </p>
-          <div className="comparison-pair">
-            {[false, true].map((aware) => (
-              <article
-                key={String(aware)}
-                className="comparison-example"
-                aria-label={aware ? 'Viewport-aware offset' : 'Fixed offset only'}
-              >
-                <h3>{aware ? 'Viewport-aware offset' : 'Fixed offset only'}</h3>
-                <div className="comparison-stage">
-                  <div className="comparison-messages" aria-hidden="true">
-                    <p>Train gets in at 18:40. Dinner after?</p>
-                    <p>Perfect. I’ll book a table.</p>
-                  </div>
-                  <div inert={open && !aware}>
-                    <Composer
-                      keyboardHeight={keyboardHeight}
-                      safeAreaBottom={12}
-                      aware={aware}
-                      position="absolute"
-                      testId={aware ? 'aware-composer' : 'unaware-composer'}
-                    />
-                  </div>
-                  {open && (
-                    <div
-                      className="comparison-keyboard"
-                      data-simulated-keyboard
-                      style={{ height: keyboardHeight }}
-                    >
-                      <span>Simulated keyboard</span>
-                      <div aria-hidden="true">
-                        Q W E R T Y U I O P<br />A S D F G H J K L<br />Z X C V B N M
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="comparison-outcome">
-                  {open
-                    ? aware
-                      ? 'The measured inset keeps controls above occlusion.'
-                      : 'A fixed bottom offset leaves controls behind the keyboard.'
-                    : 'Keyboard closed. Both composers sit at the bottom.'}
-                </p>
-                <code>
-                  {aware
-                    ? 'bottom: max(keyboard, safeArea) + 1rem'
-                    : 'position: fixed; bottom: 1rem'}
-                </code>
-              </article>
-            ))}
-          </div>
-          <p className="simulation-note">
-            Illustrated geometry, not your OS keyboard. The same form is anchored inside each frame
-            here; in the Device Lab it is fixed to your actual viewport.
-          </p>
-          <CodeBlock collapsible label="Shared composer · actual source" code={composerCode} />
-        </section>
+        <figure className="hero-coordinate-frame">
+          <svg
+            viewBox={`0 0 ${layout?.width ?? 390} ${layout?.height ?? 700}`}
+            role="img"
+            aria-label="Live layout viewport and nested visual viewport boundaries"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {layout && visual ? (
+              <>
+                <rect
+                  x="1"
+                  y="1"
+                  width={Math.max(0, layout.width - 2)}
+                  height={Math.max(0, layout.height - 2)}
+                  className="hero-layout-rect"
+                />
+                <rect
+                  x={visual.offsetLeft}
+                  y={visual.offsetTop}
+                  width={visual.width}
+                  height={visual.height}
+                  className="hero-visual-rect"
+                />
+              </>
+            ) : (
+              <rect x="12" y="12" width="366" height="676" className="hero-layout-rect" />
+            )}
+          </svg>
+          <figcaption>
+            <strong>Layout viewport → Visual viewport</strong>
+            <span>
+              {visual
+                ? `Visible ${Math.round(visual.width)} × ${Math.round(visual.height)} CSS px · offset (${visual.offsetLeft}, ${visual.offsetTop}) · scale ${visual.scale}`
+                : 'Measuring browser geometry…'}
+            </span>
+            <span>
+              Solid: layout boundary. Dashed: visual boundary. They can coincide. Diagram scaled to
+              fit; values are live.
+            </span>
+          </figcaption>
+        </figure>
       </div>
     </section>
   )

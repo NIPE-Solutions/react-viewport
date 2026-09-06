@@ -1,17 +1,21 @@
 # React Viewport
 
-Know what part of the screen is actually usable.
+Visual viewport geometry as React state.
 
-Keep chat composers, modal actions and viewport-aware UI above the software keyboard.
-Reactive visual viewport, software-keyboard occlusion and safe-area geometry for React.
-
-Reliable mobile viewport state for React.
+CSS owns layout. React Viewport exposes geometry; your application decides when that geometry
+changes behavior. **If CSS solves it, don’t install React Viewport.**
 
 ```tsx
 const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()
 ```
 
 Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe area](#keyboard-and-safe-area) and [Browser behavior](#browser-terminology-and-limitations).
+
+## Quick decision
+
+- CSS can size or position it: use CSS.
+- You need one occasional value: read `window.visualViewport` directly.
+- React must react to shared layout/visual geometry: use React Viewport.
 
 > **Alpha software:** `0.1.0-alpha.0` may change. Physical iPhone Safari and Android
 > Chrome testing is pending. Read [browser limitations](#browser-terminology-and-limitations)
@@ -48,50 +52,25 @@ export function ViewportReadout() {
 }
 ```
 
-No provider is required. Use `ViewportProvider` only for a same-origin window scope;
-see the [API reference](https://react-viewport.nipesolutions.com/api).
+No provider is required. Use `ViewportProvider` only for a same-origin window scope after verifying
+that an iframe or popup Window is accessible. Each window gets one shared `useSyncExternalStore`
+store and listener set. See the [API reference](https://react-viewport.nipesolutions.com/api).
 
-## Chat composer fallback
+## Why not `window.visualViewport`?
 
-For layout alone, try `interactive-widget=resizes-content` and CSS first where supported.
+Use it directly for occasional reads. React Viewport earns its place when React needs a consistent,
+reactive snapshot shared across consumers, an SSR-neutral initial snapshot, safe-area values, or
+normalized keyboard occlusion. It exposes geometry; it does not position elements, manage focus,
+scroll automatically, define responsive breakpoints, or replace CSS.
 
-```tsx
-import { useViewport } from '@nipe-solutions/react-viewport'
-
-export function ChatComposer() {
-  const { keyboard, safeArea } = useViewport()
-  const bottomInset = Math.max(keyboard.height, safeArea.bottom)
-  return (
-    <form
-      style={{ position: 'fixed', left: 16, right: 16, bottom: bottomInset + 16 }}
-      onSubmit={(event) => event.preventDefault()}
-    >
-      <label>
-        Message <input placeholder="Type a message…" />
-      </label>
-      <button type="submit">Send</button>
-    </form>
-  )
-}
-```
-
-React Viewport measures the browser. Your application decides what to do with the measurements.
-It does not move UI automatically, manage focus, render a keyboard, replace CSS, or guarantee the physical keyboard rectangle.
-
-## CSS first
-
-Use `100dvh`, safe-area `env()` and media/container queries for styling. React
-Viewport supplies geometry for JavaScript decisions such as rendering budgets.
-See [When CSS is enough](#when-css-is-enough).
-
-## Live Device Lab
+## Geometry Lab
 
 [Test React Viewport on your phone →](https://react-viewport.nipesolutions.com/lab)
 
-Compare the [CSS baseline](https://react-viewport.nipesolutions.com/lab/css) with
-the measured fallback. The site requests browser resizing; the library does not.
-Copy diagnostics excludes input text. Physical QA remains pending; follow the
-[device protocol](docs/REAL_DEVICE_QA.md).
+Change visual dimensions, offsets, page coordinates, scale, and safe areas; then test rendering
+budgets and document-coordinate visibility. Copy diagnostics excludes input text. Physical QA
+remains pending; follow the [device protocol](docs/REAL_DEVICE_QA.md). A secondary
+[CSS baseline](https://react-viewport.nipesolutions.com/lab/css) remains available for layout work.
 
 ## Reading `ViewportState`
 
@@ -136,6 +115,11 @@ On a client without `window.visualViewport`, `visual` falls back to layout
 geometry with zero offsets, page coordinates from window scroll, and scale `1`.
 `supported.visualViewport` records that this is fallback geometry rather than a
 native VisualViewport reading.
+
+`visual.offsetTop` and `offsetLeft` are layout-relative. `visual.pageTop` and
+`pageLeft` are document-relative CSS pixels. Convert a DOM rectangle by adding
+`window.scrollX` and `window.scrollY` to `getBoundingClientRect()` values from
+the same window. Do not multiply by `visual.scale`; scale is not a breakpoint.
 
 ## Keyboard and safe area
 
@@ -188,20 +172,7 @@ export function App() {
 }
 ```
 
-```css
-.composer {
-  position: fixed;
-  right: max(1rem, var(--react-viewport-safe-area-right, 0px));
-  --bottom-inset: max(
-    var(--react-viewport-keyboard-height, 0px),
-    var(--react-viewport-safe-area-bottom, 0px)
-  );
-  bottom: calc(var(--bottom-inset) + 1rem);
-  left: max(1rem, var(--react-viewport-safe-area-left, 0px));
-}
-```
-
-The hook writes these client-side variables: layout and visual width/height,
+The hook is a CSS bridge, not a layout system. It writes these client-side variables: layout and visual width/height,
 visual offsets/page positions/scale, keyboard height, and four safe-area inset
 lengths. Dimensional variables such as `--react-viewport-layout-height` are
 removed until the first measurement, rather than populated with made-up server
@@ -213,9 +184,13 @@ opt into `viewport-fit=cover`. Configure that metadata before relying on the
 package's measured `safeArea` values; unsupported or zero-inset environments
 truthfully report zero.
 
+For a secondary positioning recipe, see the
+[CSS baseline](https://react-viewport.nipesolutions.com/lab/css). Prefer direct CSS `env()` and
+dynamic viewport units when they solve the layout.
+
 ## SSR and hydration
 
-SSR uses a stable, geometry-neutral snapshot without accessing browser globals.
+SSR uses the stable, geometry-neutral snapshot required by `useSyncExternalStore` without accessing browser globals.
 Render a placeholder until `ready` becomes true after hydration.
 
 ## When CSS is enough

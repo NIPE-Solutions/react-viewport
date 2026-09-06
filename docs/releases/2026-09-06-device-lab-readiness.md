@@ -133,3 +133,39 @@ The current browser matrix contains 117 website scenarios (39 per engine), addin
 native-policy metadata, CSS behavior without JavaScript, distinct visual/layout
 resizing, no duplicate adjustment and rendered-result count coverage. Physical
 comparison remains pending, and iOS stress-mode drift is not declared fixed.
+
+## Geometry positioning follow-up
+
+The product is now **visual viewport geometry as React state**. CSS owns layout;
+React Viewport exposes data; application logic owns rendering and coordinate decisions.
+The homepage no longer leads with a composer or a JS-versus-CSS winner comparison.
+`/lab` is the Live Geometry Lab; `/lab/css` is the recommended CSS Baseline.
+
+Featured examples now demonstrate optional rendering budgets, document-coordinate
+intersection, zoom-sensitive annotation tolerance, and explicitly opted-in scroll correction.
+The correction ignores page-position changes alone so it does not fight deliberate scrolling.
+All helpers are website application code; no public API or package runtime code changed.
+
+The updated website matrix passed **102 checks** (34 per engine in Chromium,
+Firefox and WebKit). It replaces obsolete docking checks with geometry, algorithm,
+privacy and CSS-baseline evidence. The full local quality gate passed, with 125
+existing unit tests plus four initial website-helper tests. A subsequent empty-visible-region
+regression passed as the fifth helper test. Hosted CI runs the complete final 130-test unit suite.
+Physical iPhone Safari and Android Chrome keyboard, pinch-zoom and browser-chrome
+verification remains **MANUAL PENDING**. The historical iPhone Chrome scroll gap is
+not claimed fixed by this repositioning.
+
+Local package measurements: ESM gzip **3,740 bytes**, archive **16,520 bytes**,
+zero runtime dependencies. Initial route-referenced JS/CSS recompressed with gzip,
+compared with production `e829bde`, changed by -305 bytes on `/`, +812 bytes on
+`/lab`, -90 bytes on `/examples`, and +278 bytes on `/lab/css`. Initial HTML gzip
+changed by -61, +2,444, -1,400 and +466 bytes respectively. These exclude fonts,
+later navigation payloads, browser caching and network compression negotiation;
+small build-dependent differences are expected.
+
+**Recommendation: keep, narrowly.** The algorithms can be implemented against raw
+VisualViewport; none requires exclusive access provided by this package. The useful
+abstraction is a tested shared React subscription, stable SSR semantics, combined
+layout/visual snapshots, safe-area measurement and conservative keyboard normalization.
+Use the browser API directly for isolated reads and CSS for ordinary layout. Do not
+broaden the package into mobile utilities or claim native mobile timing guarantees.

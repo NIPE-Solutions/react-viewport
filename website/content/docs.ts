@@ -39,9 +39,9 @@ export const designPlan = {
 export const site = {
   name: '@nipe-solutions/react-viewport',
   title: 'React Viewport',
-  seoTitle: 'React Viewport — Visual viewport, keyboard and safe-area geometry for React',
+  seoTitle: 'React Viewport — Visual viewport geometry as React state',
   description:
-    'Read the visible viewport, bottom keyboard occlusion and safe-area geometry from one shared React state.',
+    'Reactive visual viewport, keyboard occlusion, zoom and safe-area geometry for React application logic.',
   origin: 'https://react-viewport.nipesolutions.com',
   repository: 'https://github.com/NIPE-Solutions/react-viewport',
   changelog: 'https://github.com/NIPE-Solutions/react-viewport/blob/main/CHANGELOG.md',
@@ -75,30 +75,6 @@ export const cssComposer = `.composer {
   );
   bottom: calc(var(--bottom-inset) + 1rem);
   left: max(1rem, var(--react-viewport-safe-area-left, 0px));
-}`
-
-export const modalActionBar = `import { useViewport } from '@nipe-solutions/react-viewport'
-
-function ModalActions() {
-  const { keyboard, safeArea } = useViewport()
-  const bottomInset = Math.max(keyboard.height, safeArea.bottom)
-
-  return (
-    <footer style={{ position: 'fixed', left: 16, right: 16, bottom: bottomInset + 16 }}>
-      <button type="button">Cancel</button>
-      <button type="submit" form="settings">Save</button>
-    </footer>
-  )
-}`
-
-export const visibleArea = `import { useViewport } from '@nipe-solutions/react-viewport'
-
-export function VisibleAreaPanel() {
-  const { visual } = useViewport()
-  if (!visual) return <p>Measuring viewport…</p>
-  return <section style={{ maxHeight: visual.height, overflowY: 'auto' }}>
-    Visible height: {visual.height}px
-  </section>
 }`
 
 export const cssSafeAreaFooter = `.footer {

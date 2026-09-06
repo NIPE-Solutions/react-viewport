@@ -42,7 +42,7 @@ export const metadata: Metadata = {
         url: '/og.svg',
         width: 1200,
         height: 630,
-        alt: 'Composer positioned within a layout viewport and visual viewport above keyboard occlusion',
+        alt: 'Nested layout viewport and visual viewport boundaries with coordinates and scale',
       },
     ],
     type: 'website',
@@ -73,12 +73,13 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
           <div className="site-frame site-footer__inner">
             <div>
               <strong>React Viewport</strong>
-              <p>Focused geometry for interface behavior that CSS cannot express alone.</p>
+              <p>CSS owns layout. React Viewport exposes geometry to logic.</p>
             </div>
             <nav aria-label="Footer navigation">
               <Link href="/">Overview</Link>
               <Link href="/examples">Examples</Link>
-              <Link href="/lab">Device Lab</Link>
+              <Link href="/lab">Geometry Lab</Link>
+              <Link href="/lab/css">CSS Baseline</Link>
               <Link href="/concepts">Concepts</Link>
               <Link href="/api">API</Link>
               <Link href="/browser-behavior">Browser behavior</Link>
