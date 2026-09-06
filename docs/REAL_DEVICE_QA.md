@@ -14,8 +14,8 @@ Physical iPhone Safari and Android Chrome testing is pending. Nothing in this
 matrix, the desktop browser suites, or the upstream issue links records a
 physical-device pass.
 
-The latest automated baseline on 2026-09-06 passed 54 library scenarios and 93
-documentation-site scenarios: 18 library and 31 site scenarios in each of
+The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102
+documentation-site scenarios: 18 library and 34 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
 [`2026-09-06` Device Lab readiness report](releases/2026-09-06-device-lab-readiness.md)
 and do not change any physical row below from `MANUAL PENDING`.
@@ -112,7 +112,8 @@ not replace a `MANUAL PENDING` status solely because an automated test exists.
 ## Live Device Lab protocol
 
 Open https://react-viewport.nipesolutions.com/lab on the physical device. Use the
-full-page composer, not the homepage simulation. Enable **Show geometry** and
+live composer, not the homepage simulation. Start in the default docked layout,
+then enable **Page-scroll stress test** to test document scrolling and browser chrome. Enable **Show geometry** and
 record **Copy diagnostics** before opening the keyboard, during keyboard display,
 after scrolling, after rotation, and after closing it. Copying is user-initiated,
 contains only geometry/capabilities/build identity, and never includes input text
@@ -125,7 +126,8 @@ or user agent. Nothing is uploaded or stored by the site.
 - [ ] Record whether keyboard.open changes appropriately.
 - [ ] Record bottom occlusion and raw safe area independently.
 - [ ] Composer remains visible while typing.
-- [ ] Scroll while keyboard is open; composer remains visible.
+- [ ] Fling the docked content to both ends while keyboard is open; composer stays aligned.
+- [ ] Repeat with **Page-scroll stress test** enabled; record any gap or delayed recovery.
 - [ ] Browser chrome changes alone do not look like a keyboard.
 - [ ] Close keyboard; geometry and composer return.
 - [ ] Rotate both with keyboard open and closed; no reload needed.
@@ -138,7 +140,8 @@ or user agent. Nothing is uploaded or stored by the site.
 - [ ] Record whether keyboard.open changes appropriately.
 - [ ] Record VisualViewport dimensions, offsets and bottom occlusion.
 - [ ] Composer remains visible while typing.
-- [ ] Scroll while keyboard is open; composer remains visible.
+- [ ] Fling the docked content to both ends while keyboard is open; composer stays aligned.
+- [ ] Repeat with **Page-scroll stress test** enabled; record any gap or delayed recovery.
 - [ ] Browser chrome changes alone do not look like a keyboard.
 - [ ] Close keyboard; geometry and composer return.
 - [ ] Rotate both with keyboard open and closed; no reload needed.
@@ -170,3 +173,26 @@ active source. Record the observation, not an assumed pass:
 
 Desktop Playwright WebKit does not verify physical Safari keyboard behavior.
 No physical-device test was performed during this implementation session.
+
+
+## Reported iPhone Chrome scroll-boundary issue — 2026-09-06
+
+A user tested the production lab on an **iPhone 17 Pro with Chrome** and reported
+that the composer was usually aligned, but scrolling far down left a gap below
+it and moved it toward the middle of the visible area; scrolling up usually
+restored alignment. OS and Chrome versions and numeric geometry were not supplied.
+This is a physical issue report, not a completed verification protocol.
+
+The follow-up uses a contained scroll region by default and anchors the composer
+to the actual visual bottom, with native keyboard and non-overlapping safe-area
+constraints. A deterministic fixture reproduced a 100px layout error when panning
+crossed the conservative inference threshold. The matrix now also covers visual
+panning beyond the layout bottom, long contained scrolls, and visual width changes.
+These tests do not reproduce physical browser rubber-banding or event timing.
+
+**Physical retest: MANUAL PENDING.** On this phone, repeat rapid swipes toward both
+ends with the keyboard open, pause, reverse direction, close/reopen the keyboard,
+and rotate. Record both docked and page-scroll modes, OS/Chrome versions, build
+SHA, `composerAnchorBottom`, and the existing numeric geometry. A page-scroll
+fling may still be limited by browser-delayed viewport updates; see
+[WebKit 218465](https://bugs.webkit.org/show_bug.cgi?id=218465).

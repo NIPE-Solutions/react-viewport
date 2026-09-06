@@ -87,3 +87,28 @@ Shared CSS grows from 7,102 B to 8,457 B gzip. The larger HTML carries real sour
 for code disclosures and the homepage simulator; source is read at build time,
 not fetched from GitHub at runtime. These are reproducible artifact byte counts,
 not browser transfer or performance benchmarks. No new npm dependency is involved.
+
+
+## Follow-up: composer docking during scrolling
+
+The original 93-scenario baseline above predates this follow-up. The current
+website matrix passes **102 scenarios** (34 per desktop engine). Two new
+regressions failed against the original lab and passed after the change: visual
+panning at/beyond the layout bottom and long scroll containment. A third verifies
+visual width/offset placement without disabling zoom. Existing page-scroll,
+restoration, safe-area overlap, keyboard navigation and accessibility checks pass.
+
+The lab now defaults to a full-screen, independently scrolling content region;
+the fixed composer is outside it. An explicit Page-scroll stress test preserves
+whole-document browser-chrome QA. The composer uses the visual bottom as its
+anchor, additionally constrained by native bottom occlusion and safe area after
+subtracting overlap. Raw keyboard values and `max(keyboard.height, safeArea.bottom)`
+remain separately inspectable; diagnostics also include the applied anchor and
+scroll mode. No polling, scroll cancellation, focus interception, library changes,
+or runtime dependencies were added. The same composer still renders the homepage
+simulation.
+
+An iPhone 17 Pro/Chrome user reported a scroll-boundary gap in the previous build.
+The precise device OS/browser versions and before/during geometry are unavailable;
+physical validation of this fix remains pending. See the [recorded issue and
+retest protocol](../REAL_DEVICE_QA.md#reported-iphone-chrome-scroll-boundary-issue--2026-09-06).
