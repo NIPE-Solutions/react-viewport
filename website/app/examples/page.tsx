@@ -1,4 +1,7 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 import { CodeBlock } from '../../components/CodeBlock'
 import { UseCaseExamples } from '../../components/UseCaseExamples'
@@ -21,7 +24,17 @@ export default function ExamplesPage() {
         </p>
       </header>
       <div className="site-frame examples-stack">
-        <UseCaseExamples />
+        <p>
+          <strong>Live browser readouts in scaled illustrations.</strong> For a full-screen, fixed
+          composer and your actual software keyboard,{' '}
+          <Link href="/lab">open the Live Device Lab</Link>.
+        </p>
+        <UseCaseExamples
+          source={readFileSync(
+            path.join(process.cwd(), 'website/components/UseCaseExamples.tsx'),
+            'utf8',
+          )}
+        />
         <section className="example-recipes" aria-labelledby="recipes-title">
           <header>
             <h2 id="recipes-title">Recipes to copy</h2>
@@ -33,15 +46,25 @@ export default function ExamplesPage() {
           <div className="example-recipe-list">
             <article>
               <h3>Position a composer</h3>
-              <CodeBlock label="CSS composer recipe" code={cssComposer} />
+              <CodeBlock
+                collapsible
+                label="Install the shared CSS bridge"
+                code={`import { useViewportCssVariables } from '@nipe-solutions/react-viewport'
+
+export function App() {
+  useViewportCssVariables()
+  return <form className="composer"><label>Message<input /></label></form>
+}`}
+              />
+              <CodeBlock collapsible label="CSS composer recipe" code={cssComposer} />
             </article>
             <article>
               <h3>Place modal actions</h3>
-              <CodeBlock label="React modal action recipe" code={modalActionBar} />
+              <CodeBlock collapsible label="React modal action recipe" code={modalActionBar} />
             </article>
             <article>
               <h3>Read the visible height</h3>
-              <CodeBlock label="Visible-area recipe" code={visibleArea} />
+              <CodeBlock collapsible label="Visible-area recipe" code={visibleArea} />
             </article>
           </div>
         </section>
@@ -59,7 +82,7 @@ export default function ExamplesPage() {
               padding directly.
             </p>
           </div>
-          <CodeBlock label="Safe-area-only footer" code={cssSafeAreaFooter} />
+          <CodeBlock collapsible label="Safe-area-only footer" code={cssSafeAreaFooter} />
         </section>
         <section className="avoid-recipe" aria-labelledby="avoid-recipe-title">
           <h2 id="avoid-recipe-title">What not to do</h2>

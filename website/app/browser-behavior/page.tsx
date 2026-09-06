@@ -92,8 +92,40 @@ export default function BrowserBehaviorPage() {
         </section>
         <section aria-labelledby="automated-evidence-title">
           <h2 id="automated-evidence-title">Automated evidence</h2>
+          <table className="qa-table">
+            <caption>Engine tests and physical devices are separate evidence.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Environment</th>
+                <th scope="col">Automated engine tests</th>
+                <th scope="col">Physical device verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Chromium</th>
+                <td>Passed baseline</td>
+                <td>Android Chrome: pending</td>
+              </tr>
+              <tr>
+                <th scope="row">WebKit</th>
+                <td>Passed baseline</td>
+                <td>iPhone Safari: pending</td>
+              </tr>
+              <tr>
+                <th scope="row">Firefox</th>
+                <td>Passed baseline</td>
+                <td>Mobile: pending</td>
+              </tr>
+            </tbody>
+          </table>
           <p>
-            The 2026-09-06 deterministic baseline passed 54 library scenarios and 78
+            <a href="/lab">Open the Live Device Lab</a> to record before, during and after keyboard
+            geometry. Capability flags, safe-area values and keyboard inference are shown
+            independently. No single “supported” badge can establish all of them.
+          </p>
+          <p>
+            The 2026-09-06 deterministic baseline passed 54 library scenarios and 93
             documentation-site scenarios across desktop Chromium, Firefox, and WebKit. These
             fixtures establish repository behavior only; they are not physical-device results.
           </p>
@@ -105,7 +137,7 @@ export default function BrowserBehaviorPage() {
               <a href={`${sourceRoot}/e2e/website.spec.ts`}>Website browser suite</a>
             </li>
             <li>
-              <a href={`${sourceRoot}/docs/releases/2026-09-06-product-hardening-readiness.md`}>
+              <a href={`${sourceRoot}/docs/releases/2026-09-06-device-lab-readiness.md`}>
                 Current readiness report
               </a>
             </li>

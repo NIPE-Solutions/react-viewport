@@ -214,7 +214,7 @@ h3 {
 }
 
 .viewport-hero {
-  padding-block: clamp(3.5rem, 7vw, 7rem) clamp(5rem, 9vw, 8rem);
+  padding-block: 2.5rem 3rem;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -1880,5 +1880,478 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
+
+/* Product proof: the same composer, explicit simulated and browser geometry. */
+.hero-intro {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+.hero-intro h1 {
+  max-width: 16ch;
+  font-size: clamp(2.5rem, 4.5vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+.hero-api {
+  min-width: 0;
+}
+.hero-api p {
+  max-width: 48ch;
+  color: var(--ink-muted);
+}
+.mobile-cta {
+  display: none;
+}
+.comparison {
+  margin-top: 3rem;
+  scroll-margin-top: 2rem;
+}
+.comparison-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.comparison-heading h2 {
+  margin: 0.6rem 0 0;
+  font-size: 1.5rem;
+}
+.mode-badge {
+  display: inline-block;
+  border: 1px solid var(--coordinate);
+  color: var(--coordinate-deep);
+  padding: 0.15rem 0.55rem;
+  font: 600 0.75rem var(--font-code);
+  letter-spacing: 0.04em;
+}
+.comparison-heading button,
+.lab-controls button,
+.code-block button {
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  color: var(--ink);
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+}
+.comparison-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.comparison-example {
+  min-width: 0;
+}
+.comparison-example h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1.2rem;
+}
+.comparison-stage {
+  position: relative;
+  height: 350px;
+  overflow: hidden;
+  border: 1px solid var(--coordinate);
+  background: linear-gradient(var(--paper-raised) 23px, var(--grid) 24px);
+  background-size: 24px 24px;
+}
+.comparison-messages {
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.comparison-messages p {
+  background: var(--paper);
+  border: 1px solid var(--grid);
+  padding: 0.65rem;
+  max-width: 75%;
+  font-size: 0.9rem;
+  margin: 0;
+}
+.comparison-messages p + p {
+  justify-self: end;
+}
+.viewport-composer {
+  left: max(1rem, env(safe-area-inset-left, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 10;
+  background: var(--paper-raised);
+  border: 1px solid var(--coordinate);
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.35rem;
+  box-shadow: 0 3px 12px #15232d14;
+}
+.viewport-composer label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.viewport-composer > div {
+  display: flex;
+  gap: 0.5rem;
+}
+.viewport-composer input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--rule);
+  padding: 0.5rem;
+  font-size: 16px;
+  border-radius: 0.2rem;
+  background: white;
+  color: var(--ink);
+}
+.viewport-composer button {
+  border: 0;
+  padding: 0.5rem 0.85rem;
+  background: var(--coordinate-deep);
+  color: white;
+  border-radius: 0.2rem;
+}
+.comparison-keyboard {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 11;
+  background: var(--keyboard-soft);
+  border-top: 2px solid var(--keyboard);
+  text-align: center;
+  padding: 0.6rem;
+  pointer-events: none;
+}
+.comparison-keyboard span {
+  font-size: 0.8rem;
+}
+.comparison-keyboard > div {
+  margin-top: 0.5rem;
+  font: 0.9rem/1.9 var(--font-code);
+  letter-spacing: 0.25em;
+}
+.comparison-outcome {
+  font-size: 0.95rem;
+  margin: 0.8rem 0 0.4rem;
+}
+.comparison-example > code {
+  overflow-wrap: anywhere;
+}
+.simulation-note {
+  margin-top: 1.25rem;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  max-width: 90ch;
+}
+.code-block figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+.code-block [hidden] {
+  display: none;
+}
+.code-block .copy-code {
+  margin: 0.75rem;
+}
+.code-block [role='status'] {
+  font-size: 0.85rem;
+}
+.code-block pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.lab-cta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding-block: 2rem;
+  border-block: 1px solid var(--rule);
+}
+.lab-cta h2 {
+  margin-bottom: 0.5rem;
+}
+.lab-cta p {
+  margin-bottom: 0;
+  max-width: 65ch;
+}
+.decision-tree {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1.5rem 0;
+}
+.decision-tree div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  border-bottom: 1px solid var(--grid);
+  padding-bottom: 0.7rem;
+}
+.decision-tree dd {
+  margin: 0;
+}
+.home-recipes .code-block {
+  margin-top: 1.5rem;
+}
+.home-api {
+  padding-block: 2rem;
+}
+.lab-main {
+  min-height: 100dvh;
+}
+body:has(.lab-main) > .site-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+body:has(.lab-main) > .site-header .primary-nav {
+  display: none;
+}
+body:has(.lab-main) > .site-footer {
+  display: none;
+}
+body:has(.lab-main) {
+  scroll-padding-bottom: 9rem;
+}
+.device-lab {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: 1rem max(1rem, env(safe-area-inset-right, 0px)) calc(var(--lab-bottom) + 10rem)
+    max(1rem, env(safe-area-inset-left, 0px));
+}
+.lab-intro {
+  max-width: 50rem;
+}
+.lab-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.lab-title-row h1 {
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  margin: 0;
+}
+.lab-intro > p {
+  margin: 0.8rem 0;
+}
+.lab-instructions {
+  padding-left: 1.3rem;
+  font-size: 0.95rem;
+}
+.lab-expected {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.lab-controls {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.copy-status {
+  font-size: 0.85rem;
+  min-height: 1.4em;
+}
+.lab-geometry {
+  background: var(--paper-raised);
+  border: 1px solid var(--coordinate);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.lab-geometry h2 {
+  font-size: 1.2rem;
+}
+.lab-geometry dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+  font-size: 0.85rem;
+}
+.lab-geometry dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--grid);
+}
+.lab-geometry dt {
+  overflow-wrap: anywhere;
+}
+.lab-geometry dd {
+  margin: 0;
+  font-family: var(--font-code);
+  white-space: nowrap;
+}
+.lab-geometry p {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  margin-bottom: 0.4rem;
+}
+.lab-thread {
+  min-height: 75svh;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  padding-block: 2rem;
+}
+.lab-message {
+  max-width: 75%;
+  border: 1px solid var(--grid);
+  padding: 1rem;
+  background: var(--paper-raised);
+  margin: 0;
+}
+.lab-message--reply {
+  align-self: flex-end;
+  border-color: var(--coordinate);
+}
+.lab-help {
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.lab-help p {
+  font-size: 0.95rem;
+}
+.lab-overlays {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+}
+.lab-layout-outline,
+.lab-visual-outline {
+  position: absolute;
+  border: 2px solid var(--coordinate);
+}
+.lab-visual-outline {
+  border: 2px dashed var(--coordinate);
+}
+.lab-effective-overlay,
+.lab-safe-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #e2634d33;
+  border-top: 2px solid var(--keyboard);
+}
+.lab-safe-overlay {
+  background: #18a6b744;
+  border-top-color: var(--safe);
+}
+.qa-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95rem;
+}
+.qa-table th,
+.qa-table td {
+  text-align: left;
+  padding: 0.7rem;
+  border-bottom: 1px solid var(--grid);
+}
+@media (max-width: 760px) {
+  .hero-intro {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .hero-intro h1 {
+    max-width: 19ch;
+  }
+  .comparison-pair {
+    gap: 1rem;
+  }
+  .comparison-heading,
+  .lab-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .comparison-stage {
+    height: 340px;
+  }
+  .lab-geometry dl {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .comparison-pair {
+    grid-template-columns: 1fr;
+  }
+  .comparison-stage {
+    height: 310px;
+  }
+  .hero-api .viewport-hero__code {
+    font-size: 0.75rem;
+  }
+  .lab-message {
+    max-width: 90%;
+  }
+  .decision-tree div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+@media (pointer: coarse), (max-width: 600px) {
+  .mobile-cta {
+    display: inline-flex;
+  }
+  .desktop-cta {
+    display: none;
+  }
+}
+
+.hero-api .viewport-hero__code {
+  font-size: 0.9rem;
+}
+.hero-api .viewport-hero__code code {
+  font-size: 1em;
+}
+.use-case-example > .code-block {
+  grid-column: 1 / -1;
+}
+@media (min-width: 1100px) {
+  .viewport-hero > .site-frame {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr);
+    column-gap: 2.5rem;
+    align-items: start;
+  }
+  .hero-intro {
+    display: contents;
+  }
+  .hero-intro > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .hero-intro h1 {
+    font-size: clamp(2.75rem, 3.8vw, 3.6rem);
+  }
+  .hero-api {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .hero-api .viewport-hero__code {
+    font-size: 0.8rem;
+  }
+  .comparison {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin-top: 0;
+  }
+  .comparison-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .comparison-heading h2 {
+    font-size: 1.3rem;
+  }
+  .comparison-pair {
+    gap: 1rem;
+  }
+  .comparison-stage {
+    height: 350px;
   }
 }

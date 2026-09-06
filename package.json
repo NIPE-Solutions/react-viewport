@@ -29,7 +29,7 @@
   "scripts": {
     "build": "npm run build:website",
     "build:dist": "vite build && tsc -p tsconfig.build.json",
-    "build:website": "npm run build:dist && next build website",
+    "build:website": "node scripts/build-website.mjs",
     "check": "npm run format:check && npm run lint && npm run build:dist && npm run typecheck && npm run test && npm run test:api && npm run test:size && npm run test:package && node scripts/verify-docs.mjs && npm run test:docs && npm run build && node scripts/verify-website.mjs && npm run test:workflows",
     "clean": "node scripts/clean.mjs",
     "dev:website": "npm run build:dist && next dev website",
@@ -47,8 +47,9 @@
     "test:size": "node scripts/check-bundle-size.mjs",
     "test:types": "tsc --project test/types/tsconfig.json --noEmit",
     "test:unit": "vitest run",
-    "test:workflows": "node --test scripts/clean.test.mjs scripts/verify-workflows.test.mjs scripts/verify-release.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "test:workflows": "node --test scripts/clean.test.mjs scripts/verify-workflows.test.mjs scripts/verify-release.test.mjs scripts/verify-production.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify:production": "node scripts/verify-production.mjs"
   },
   "peerDependencies": {
     "react": "^18.3.0 || ^19.0.0",

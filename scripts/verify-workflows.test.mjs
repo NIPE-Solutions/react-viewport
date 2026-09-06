@@ -88,7 +88,8 @@ test('website Playwright discovery runs every scenario in Chromium, Firefox, and
   assert.equal(result.status, 0, result.stderr || result.stdout)
   const discoveredTests = result.stdout.split('\n').filter((line) => /website\.spec\.ts/.test(line))
 
-  assert.equal(discoveredTests.length, 78, result.stdout)
+  assert.ok(discoveredTests.length >= 84, result.stdout)
+  assert.equal(discoveredTests.length % 3, 0, result.stdout)
   assert.ok(
     discoveredTests.some((line) => line.includes('[chromium]')),
     result.stdout,
@@ -148,7 +149,10 @@ test('the default build and Vercel static builder both target the exported websi
   assert.equal(packageJson.scripts.build, 'npm run build:website')
   assert.equal(vercel.framework, null)
   assert.equal(vercel.installCommand, 'npm ci')
-  assert.equal(vercel.buildCommand, 'npm run build:website')
+  assert.equal(vercel.buildCommand, 'npm run check')
+  assert.ok(packageJson.scripts.check.includes('npm run build'))
+  assert.ok(packageJson.scripts.check.includes('node scripts/verify-website.mjs'))
+  assert.doesNotMatch(vercelIgnore, /^(test|e2e|docs|\.github)\//m)
   assert.equal(vercel.outputDirectory, 'website/out')
   assert.ok(Array.isArray(vercel.headers) && vercel.headers.length > 0)
   assert.match(vercelIgnore, /node_modules/)

@@ -14,10 +14,17 @@ const routes = [
     route: '/',
     file: 'index.html',
     copy: [
-      'Know what part of the screen is actually usable.',
+      'Keep mobile UI above the software keyboard.',
+      'Without React Viewport',
+      'With React Viewport',
       'Layout viewport',
       'Visual viewport',
     ],
+  },
+  {
+    route: '/lab',
+    file: 'lab.html',
+    copy: ['Live Device Lab', 'Show geometry', 'Copy diagnostics'],
   },
   { route: '/api', file: 'api.html', copy: ['API reference', 'useViewport()', 'ViewportState'] },
   {
@@ -90,14 +97,17 @@ assert.match(
   /<meta[^>]+name="viewport"[^>]+content="[^"]*viewport-fit=cover[^"]*"/,
   'The site viewport metadata must opt into safe-area coverage',
 )
-assert.ok(
-  home.includes('Layout viewport and Visual viewport measurements are pending.'),
-  'The static hero must identify viewport geometry as pending before client measurement',
-)
-assert.ok(
-  !home.includes('Live browser measurement'),
-  'The static hero must not label illustrative or server values as a live measurement',
-)
+const marker = JSON.parse(await readFile(path.join(outputRoot, 'build.json'), 'utf8'))
+assert.match(marker.commit, /^[a-f0-9]{40}$/)
+assert.ok(Number.isFinite(Date.parse(marker.builtAt)))
+for (const { file } of routes) {
+  const html = await readFile(path.join(outputRoot, file), 'utf8')
+  assert.ok(
+    html.includes(`name="build-sha" content="${marker.commit}"`),
+    `${file}: build marker mismatch`,
+  )
+}
+assert.ok((await readFile(path.join(outputRoot, '404.html'), 'utf8')).includes('Page not found'))
 for (const expectedLink of [
   'https://github.com/NIPE-Solutions/react-viewport',
   'https://opensource.nipesolutions.com',

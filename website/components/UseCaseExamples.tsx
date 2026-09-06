@@ -3,6 +3,7 @@
 import { useRef, type CSSProperties } from 'react'
 import { useViewport, useViewportCssVariables } from '@nipe-solutions/react-viewport'
 
+import { CodeBlock } from './CodeBlock'
 import { getEffectiveBottomInset } from '../lib/layout-policy'
 
 type ExampleProperties = CSSProperties & {
@@ -11,7 +12,7 @@ type ExampleProperties = CSSProperties & {
   '--example-visual-top': string
 }
 
-export function UseCaseExamples() {
+export function UseCaseExamples({ source }: { readonly source: string }) {
   const examplesRef = useRef<HTMLDivElement>(null)
   const { layout, visual, keyboard, safeArea } = useViewport()
   useViewportCssVariables({ target: examplesRef })
@@ -63,6 +64,7 @@ export function UseCaseExamples() {
             </div>
           </form>
         </div>
+        <CodeBlock collapsible label="Example implementation · actual source" code={source} />
       </section>
 
       <section className="modal-example use-case-example" aria-labelledby="modal-actions-heading">
@@ -92,6 +94,7 @@ export function UseCaseExamples() {
             <strong>Save changes</strong>
           </div>
         </div>
+        <CodeBlock collapsible label="Example implementation · actual source" code={source} />
       </section>
 
       <section
@@ -113,6 +116,7 @@ export function UseCaseExamples() {
           </output>
           <span aria-hidden="true">visible height</span>
         </div>
+        <CodeBlock collapsible label="Example implementation · actual source" code={source} />
       </section>
 
       <section
@@ -122,8 +126,10 @@ export function UseCaseExamples() {
         <div className="use-case-example__copy">
           <h2 id="css-variables-heading">CSS variables</h2>
           <p>
-            <code>useViewportCssVariables()</code> writes measurements onto this example group. CSS
-            can then position interface chrome without copying viewport state into component styles.
+            <code>useViewportCssVariables()</code> writes measurements onto this example group.
+            Measure once in the shared viewport store, then let CSS consume the geometry where
+            styling is all you need. CSS can then position interface chrome without copying viewport
+            state into component styles.
           </p>
         </div>
         <dl className="css-variable-readout">
@@ -144,6 +150,7 @@ export function UseCaseExamples() {
             </dd>
           </div>
         </dl>
+        <CodeBlock collapsible label="Example implementation · actual source" code={source} />
       </section>
     </div>
   )

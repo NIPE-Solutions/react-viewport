@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     '',
     '/examples',
+    '/lab',
     '/concepts',
     '/api',
     '/browser-behavior',

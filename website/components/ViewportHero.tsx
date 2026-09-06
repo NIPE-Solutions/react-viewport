@@ -1,144 +1,116 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, type CSSProperties } from 'react'
-import { useViewport } from '@nipe-solutions/react-viewport'
+import { useState } from 'react'
 
-import { getEffectiveBottomInset } from '../lib/layout-policy'
+import { CodeBlock } from './CodeBlock'
+import { Composer } from './Composer'
 
-const simulatedKeyboardHeight = 176
-
-export function ViewportHero() {
-  const { ready, layout, visual, keyboard, safeArea } = useViewport()
-  const [isKeyboardSimulated, setIsKeyboardSimulated] = useState(false)
-  const illustratedKeyboardHeight = isKeyboardSimulated ? simulatedKeyboardHeight : keyboard.height
-  const effectiveBottomInset = getEffectiveBottomInset(illustratedKeyboardHeight, safeArea.bottom)
-  const summary =
-    ready && layout !== null && visual !== null
-      ? `Layout viewport ${formatSize(layout.width, layout.height)}. Visual viewport ${formatSize(visual.width, visual.height)} at offset ${formatPair(visual.offsetLeft, visual.offsetTop)}. Keyboard occlusion ${formatPixels(keyboard.height)}. Safe bottom ${formatPixels(safeArea.bottom)}.`
-      : 'Layout viewport and Visual viewport measurements are pending.'
-  const stageStyle = {
-    '--hero-effective-inset': `${effectiveBottomInset}px`,
-    '--hero-keyboard-height': `${illustratedKeyboardHeight}px`,
-    '--hero-safe-bottom': `${safeArea.bottom}px`,
-  } as CSSProperties
+export function ViewportHero({ composerCode }: { readonly composerCode: string }) {
+  const [open, setOpen] = useState(true)
+  const keyboardHeight = open ? 156 : 0
 
   return (
     <section className="viewport-hero" aria-labelledby="hero-title">
-      <div className="site-frame viewport-hero__layout">
-        <div className="viewport-hero__copy">
-          <h1 id="hero-title">Know what part of the screen is actually usable.</h1>
-          <p className="viewport-hero__introduction">
-            Keep a composer above the soft keyboard and protected screen edges with measured, typed
-            browser geometry.
-          </p>
-          <div className="viewport-hero__actions">
-            <a className="primary-action" href="#decision">
-              Decide if you need it
-            </a>
-            <Link href="/concepts#simulator">Explore the geometry</Link>
+      <div className="site-frame">
+        <div className="hero-intro">
+          <div>
+            <h1 id="hero-title">Keep mobile UI above the software keyboard.</h1>
+            <p className="viewport-hero__introduction">
+              Read the visible viewport, keyboard occlusion and safe-area geometry from one shared
+              React state when CSS alone is not enough.
+            </p>
+            <div className="viewport-hero__actions">
+              <a className="primary-action desktop-cta" href="#comparison">
+                Try the simulation
+              </a>
+              <Link className="primary-action mobile-cta" href="/lab">
+                Test the real keyboard
+              </Link>
+              <a href="#decision">Do I need this?</a>
+            </div>
           </div>
-          <pre className="viewport-hero__code" aria-label="Minimal useViewport example">
-            <code>{`const { visual, keyboard, safeArea } = useViewport()
-const bottomInset = Math.max(keyboard.height, safeArea.bottom)`}</code>
-          </pre>
+          <div className="hero-api">
+            <p>Know what part of the screen is actually usable.</p>
+            <pre className="viewport-hero__code" aria-label="Minimal useViewport example">
+              <code>{`const { visual, keyboard, safeArea } = useViewport()
+const bottomInset = Math.max(
+  keyboard.height, safeArea.bottom
+)`}</code>
+            </pre>
+            <p>
+              React Viewport measures the browser. Your application decides what to do with the
+              measurements.
+            </p>
+          </div>
         </div>
-
-        <div className="viewport-hero__proof">
-          <header className="viewport-hero__live-header">
+        <section id="comparison" className="comparison" aria-labelledby="comparison-title">
+          <header className="comparison-heading">
             <div>
-              <strong>Live browser</strong>
-              <span>Measured by useViewport()</span>
+              <span className="mode-badge">SIMULATION</span>
+              <h2 id="comparison-title">Same composer. Different geometry input.</h2>
             </div>
-            <output
-              className="viewport-hero__summary"
-              data-testid="hero-live-summary"
-              aria-label={summary}
-              aria-live="polite"
-            >
-              {ready ? 'Current snapshot' : 'Measuring…'}
-            </output>
-          </header>
-
-          <dl className="viewport-hero__readout">
-            <ViewportValue label="Visual height" value={formatNullablePixels(visual?.height)} />
-            <ViewportValue label="Keyboard occlusion" value={formatPixels(keyboard.height)} />
-            <ViewportValue label="Safe bottom" value={formatPixels(safeArea.bottom)} />
-          </dl>
-
-          <div className="viewport-hero__stage" style={stageStyle}>
-            <div className="viewport-hero__thread" aria-hidden="true">
-              <div className="viewport-hero__thread-header">
-                <span className="viewport-hero__avatar">M</span>
-                <span>
-                  <strong>Message Maya</strong>
-                  <small>Planning the weekend</small>
-                </span>
-              </div>
-              <p>Train gets in at 18:40. Dinner after?</p>
-              <p className="viewport-hero__reply">Perfect. I’ll book a table.</p>
-            </div>
-
-            <form className="viewport-hero__composer" onSubmit={(event) => event.preventDefault()}>
-              <label htmlFor="hero-message">Message</label>
-              <div>
-                <input id="hero-message" name="message" placeholder="Write a message" />
-                <button type="submit">Send</button>
-              </div>
-            </form>
-
-            <div className="viewport-hero__safe-area" aria-hidden="true" />
-            {isKeyboardSimulated ? (
-              <div className="viewport-hero__keyboard" aria-hidden="true" />
-            ) : null}
-          </div>
-
-          <div className="viewport-hero__simulation">
-            <output aria-live="polite">
-              {isKeyboardSimulated ? 'Simulated keyboard' : 'Live bottom constraints'}
-            </output>
-            <button
-              type="button"
-              aria-pressed={isKeyboardSimulated}
-              onClick={() => setIsKeyboardSimulated((current) => !current)}
-            >
-              Simulate keyboard
+            <button type="button" aria-pressed={open} onClick={() => setOpen(!open)}>
+              {open ? 'Close simulated keyboard' : 'Open simulated keyboard'}
             </button>
+          </header>
+          <div className="comparison-pair">
+            {[false, true].map((aware) => (
+              <article
+                key={String(aware)}
+                className="comparison-example"
+                aria-label={aware ? 'With React Viewport' : 'Without React Viewport'}
+              >
+                <h3>{aware ? 'With React Viewport' : 'Without React Viewport'}</h3>
+                <div className="comparison-stage">
+                  <div className="comparison-messages" aria-hidden="true">
+                    <p>Train gets in at 18:40. Dinner after?</p>
+                    <p>Perfect. I’ll book a table.</p>
+                  </div>
+                  <div inert={open && !aware}>
+                    <Composer
+                      keyboardHeight={keyboardHeight}
+                      safeAreaBottom={12}
+                      aware={aware}
+                      position="absolute"
+                      testId={aware ? 'aware-composer' : 'unaware-composer'}
+                    />
+                  </div>
+                  {open && (
+                    <div
+                      className="comparison-keyboard"
+                      data-simulated-keyboard
+                      style={{ height: keyboardHeight }}
+                    >
+                      <span>Simulated keyboard</span>
+                      <div aria-hidden="true">
+                        Q W E R T Y U I O P<br />A S D F G H J K L<br />Z X C V B N M
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="comparison-outcome">
+                  {open
+                    ? aware
+                      ? 'The measured inset keeps controls above occlusion.'
+                      : 'A fixed bottom offset leaves controls behind the keyboard.'
+                    : 'Keyboard closed. Both composers sit at the bottom.'}
+                </p>
+                <code>
+                  {aware
+                    ? 'bottom: max(keyboard, safeArea) + 1rem'
+                    : 'position: fixed; bottom: 1rem'}
+                </code>
+              </article>
+            ))}
           </div>
-          <p className="viewport-hero__simulation-note">
-            The control changes only this illustration. Live browser values stay measured.
+          <p className="simulation-note">
+            Illustrated geometry, not your OS keyboard. The same form is anchored inside each frame
+            here; in the Device Lab it is fixed to your actual viewport.
           </p>
-        </div>
+          <CodeBlock collapsible label="Shared composer · actual source" code={composerCode} />
+        </section>
       </div>
     </section>
   )
-}
-
-function ViewportValue({ label, value }: { readonly label: string; readonly value: string }) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd data-live-viewport-value>{value}</dd>
-    </div>
-  )
-}
-
-function formatNullablePixels(value: number | undefined): string {
-  return value === undefined ? 'Pending' : formatPixels(value)
-}
-
-function formatPixels(value: number): string {
-  return `${round(value)} px`
-}
-
-function formatSize(width: number, height: number): string {
-  return `${round(width)} by ${round(height)} pixels`
-}
-
-function formatPair(horizontal: number, vertical: number): string {
-  return `${round(horizontal)}, ${round(vertical)}`
-}
-
-function round(value: number): number {
-  return Math.round(value * 10) / 10
 }

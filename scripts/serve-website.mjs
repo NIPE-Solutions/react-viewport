@@ -40,8 +40,16 @@ const server = createServer(async (request, response) => {
     response.end(request.method === 'HEAD' ? undefined : body)
   } catch (error) {
     const status = isNotFound(error) ? 404 : 500
-    response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' })
-    response.end(status === 404 ? 'Not found' : 'Internal server error')
+    response.writeHead(status, {
+      'Content-Type': status === 404 ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8',
+    })
+    response.end(
+      request.method === 'HEAD'
+        ? undefined
+        : status === 404
+          ? await readFile(join(outputRoot, '404.html'))
+          : 'Internal server error',
+    )
   }
 })
 
