@@ -7,6 +7,7 @@ import {
   MIN_KEYBOARD_OCCLUSION_RATIO,
   normalizeFinite,
 } from './geometry.js'
+import { getNativeKeyboardState } from './keyboard.js'
 import { createSafeAreaProbe, type SafeAreaProbe } from './safe-area.js'
 import { getServerSnapshot, snapshotsEqual } from './snapshot.js'
 import type { KeyboardState, LayoutViewport, ViewportState, VisualViewportState } from './types.js'
@@ -247,26 +248,6 @@ function hasKeyboardSizedVisualReduction(
   )
 
   return reduction >= threshold
-}
-
-function getNativeKeyboardState(
-  layout: LayoutViewport,
-  boundingRect: DOMRectReadOnly,
-): KeyboardState {
-  const { x, y, width, height } = boundingRect
-
-  if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) {
-    return { open: false, height: 0 }
-  }
-
-  const intersectionWidth = Math.max(0, Math.min(layout.width, x + width) - Math.max(0, x))
-  const intersectionHeight = Math.max(0, Math.min(layout.height, y + height) - Math.max(0, y))
-
-  if (intersectionWidth === 0 || intersectionHeight === 0) {
-    return { open: false, height: 0 }
-  }
-
-  return { open: true, height: intersectionHeight }
 }
 
 function finiteOrZero(value: number): number {
