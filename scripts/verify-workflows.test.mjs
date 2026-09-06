@@ -88,7 +88,7 @@ test('website Playwright discovery runs every scenario in Chromium, Firefox, and
   assert.equal(result.status, 0, result.stderr || result.stdout)
   const discoveredTests = result.stdout.split('\n').filter((line) => /website\.spec\.ts/.test(line))
 
-  assert.equal(discoveredTests.length, 75, result.stdout)
+  assert.equal(discoveredTests.length, 78, result.stdout)
   assert.ok(
     discoveredTests.some((line) => line.includes('[chromium]')),
     result.stdout,
