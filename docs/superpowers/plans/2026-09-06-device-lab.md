@@ -13,7 +13,7 @@ Design: preserve Barlow, IBM Plex Mono, paper #F4F7F8, ink #15232D, coordinate b
 - [x] Add build marker and post-deployment verification of both domains; use repository quality gate as deployment build command.
 - [x] Extend README, device QA protocol, and browser evidence; record physical tests as pending.
 - [x] Run quality gate, all three browser engines, package audit, and visual review at desktop/mobile sizes.
-- [ ] Commit and publish through main's Git integration; verify both production aliases and document final evidence.
+- [x] Commit and publish through main's Git integration; verify both production aliases and document final evidence.
 
 Deployment finding before changes: on 2026-09-06 both aliases serve dpl_WE5HJaTXhvApGScpeKJnjRWGrUqT, Git SHA 86b3fa7c0ed7c13477f801a23864710108d1288a (current origin/main). Root '.', npm ci, npm run build:website, website/out, production branch main, auto assignment enabled. No current stale deployment reproduced. Do not invent a historical root cause or change working domain configuration.
 

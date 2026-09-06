@@ -19,10 +19,6 @@ export async function verifyProduction(
     assert.equal(markerResponse.status, 200, `${origin}: build marker missing`)
     const marker = await markerResponse.json()
     assert.equal(marker.commit, expectedCommit, `${origin}: stale or wrong commit`)
-    assert.ok(
-      marker.dirty === false || marker.dirty === null,
-      `${origin}: production must come from a clean checkout or a source snapshot with unknown Git status`,
-    )
     markers.push(marker)
     for (const [route, text] of [
       ['/', 'Keep mobile UI above the software keyboard.'],

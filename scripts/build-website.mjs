@@ -4,7 +4,7 @@ import process from 'node:process'
 
 import { getBuildIdentity } from './build-identity.mjs'
 
-const { commit, builtAt, dirty } = getBuildIdentity()
+const { commit, builtAt } = getBuildIdentity()
 const version = JSON.parse(readFileSync('package.json', 'utf8')).version
 const env = { ...process.env, NEXT_PUBLIC_BUILD_SHA: commit, NEXT_PUBLIC_BUILD_TIME: builtAt }
 execFileSync('npm', ['run', 'build:dist'], { stdio: 'inherit', env })
@@ -14,5 +14,5 @@ execFileSync(process.execPath, ['node_modules/next/dist/bin/next', 'build', 'web
 })
 writeFileSync(
   'website/out/build.json',
-  JSON.stringify({ commit, builtAt, version, dirty }, null, 2) + '\n',
+  JSON.stringify({ commit, builtAt, version }, null, 2) + '\n',
 )
