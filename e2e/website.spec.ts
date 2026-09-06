@@ -172,6 +172,17 @@ for (const size of responsiveSizes) {
   })
 }
 
+test('keeps live examples within the 320px viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 })
+  await page.goto('/examples')
+
+  const dimensions = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    content: document.documentElement.scrollWidth,
+  }))
+  expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport)
+})
+
 test('supports keyboard navigation with a visible skip-link focus indicator', async ({
   browserName,
   page,

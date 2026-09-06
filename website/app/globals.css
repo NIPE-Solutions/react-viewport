@@ -1166,6 +1166,7 @@ h3 {
 
 .examples-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(5rem, 10vw, 10rem);
   padding-block: clamp(4rem, 8vw, 8rem);
 }
