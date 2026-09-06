@@ -245,6 +245,52 @@ describe('createViewportStore', () => {
     unsubscribe()
   })
 
+  it('reports shifted visual viewport keyboard occlusion from the current bottom edge', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const editable = fake.createEditable()
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(editable)
+    fake.setVisualViewport({ height: 472, offsetTop: 28 })
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
+    unsubscribe()
+  })
+
+  it('rejects focused browser chrome below the reduction threshold', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const editable = fake.createEditable()
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(editable)
+    fake.setVisualViewport({ height: 720, offsetTop: 56 })
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
+    unsubscribe()
+  })
+
+  it('keeps a focused unchanged visual viewport closed for hardware keyboards', () => {
+    const fake = createEnvironment()
+    const store = createViewportStore(fake.environment)
+    const editable = fake.createEditable()
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(editable)
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
+    unsubscribe()
+  })
+
   it('does not infer a keyboard when layout and visual geometry shrink together', () => {
     const fake = createEnvironment()
     const store = createViewportStore(fake.environment)
