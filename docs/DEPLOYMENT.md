@@ -61,3 +61,14 @@ Inspect configuration with `vercel project inspect react-viewport` and deploymen
 assignments with `vercel inspect https://react-viewport.nipesolutions.com`.
 Compare `/build.json` against `git ls-remote origin refs/heads/main` when debugging.
 Do not manually copy pages or alias an unrelated deployment to hide a mismatch.
+
+
+## Hosted gate compatibility
+
+The first new preview was rejected before publishing: Vercel's working
+`vercel.json` failed formatting while the committed file passed locally and in
+GitHub CI. The formatter now checks that file in CI/local runs and excludes only
+its hosted working copy when `VERCEL=1`; semantic configuration checks still run
+in both environments. All other formatting, lint, types and tests stay enabled.
+Linux compression also produced a slightly larger npm archive than macOS; the
+README was shortened to retain the existing archive budget rather than raise it.

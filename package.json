@@ -34,7 +34,7 @@
     "clean": "node scripts/clean.mjs",
     "dev:website": "npm run build:dist && next dev website",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "node scripts/check-format.mjs",
     "lint": "eslint .",
     "release:check": "node scripts/verify-release.mjs",
     "serve:website": "node scripts/serve-website.mjs",

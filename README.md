@@ -13,12 +13,9 @@ const { ready, layout, visual, keyboard, safeArea, orientation, supported } = us
 
 Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe area](#keyboard-and-safe-area) and [Browser behavior](#browser-terminology-and-limitations).
 
-> **Alpha software:** `0.1.0-alpha.0` is an early release. Its API and browser
-> behavior may change. Physical iPhone Safari and Android Chrome testing is
-> pending. Read the early [browser limitations](#browser-terminology-and-limitations)
-> and [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md) before making a support
-> claim. Measured automated-release evidence and deployment status are recorded in the
-> [2026-09-06 product-hardening readiness report](docs/releases/2026-09-06-product-hardening-readiness.md).
+> **Alpha software:** `0.1.0-alpha.0` may change. Physical iPhone Safari and Android
+> Chrome testing is pending. Read [browser limitations](#browser-terminology-and-limitations)
+> and [real-device QA](docs/REAL_DEVICE_QA.md) before making a support claim.
 
 ## Installation
 
@@ -217,11 +214,8 @@ truthfully report zero.
 
 ## SSR and hydration
 
-Server rendering is safe: importing the package and calling `useViewport` do not
-access browser globals. The stable server snapshot has `ready: false`, null
-layout and visual values, a closed zero-height keyboard, zero safe-area insets,
-and false support flags. Render a safe placeholder for geometry-dependent UI
-until `ready` is true to avoid assumptions during SSR and hydration.
+SSR uses a stable, geometry-neutral snapshot without accessing browser globals.
+Render a placeholder until `ready` becomes true after hydration.
 
 ## When CSS is enough
 
