@@ -1,5 +1,7 @@
 'use client'
 
+import { formatGeometry } from './format-geometry'
+
 import { useViewport } from '@nipe-solutions/react-viewport'
 
 // Example application policy, not library defaults. Reserve space for the
@@ -33,7 +35,7 @@ export function ResultBudget() {
       <p role="status">
         {limit === null
           ? 'Measuring viewport…'
-          : `Render budget: ${limit} results · visible height ${Math.round(visual?.height ?? 0)} px`}
+          : `Render budget: ${limit} results · visible height ${formatGeometry(visual?.height ?? 0)} px`}
       </p>
       <p>
         Example policy: reserve {RESERVED_SPACE}px for search controls, allow {ROW_HEIGHT}px per

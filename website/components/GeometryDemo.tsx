@@ -358,5 +358,5 @@ function formatSize(width: number, height: number): string {
   return `${round(width)} × ${round(height)} px`
 }
 function round(value: number): number {
-  return Math.round(value * 10) / 10
+  return Math.round(value * 100) / 100
 }

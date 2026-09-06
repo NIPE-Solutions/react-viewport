@@ -1,5 +1,6 @@
 'use client'
 
+import { InteractionHint } from './InteractionHint'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useViewport } from '@nipe-solutions/react-viewport'
@@ -62,6 +63,7 @@ export function DeviceLab({
           occlusion can stay zero. iOS may ignore the request.
         </p>
       </header>
+      <InteractionHint />
       <div className="lab-controls">
         <button type="button" onClick={copyDiagnostics} disabled={!ready}>
           Copy diagnostics

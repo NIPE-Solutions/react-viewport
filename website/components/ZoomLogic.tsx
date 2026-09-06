@@ -1,5 +1,7 @@
 'use client'
 
+import { formatGeometry } from './format-geometry'
+
 import { useViewport } from '@nipe-solutions/react-viewport'
 import { zoomTolerance } from './geometry-logic'
 
@@ -11,7 +13,7 @@ export function ZoomLogic() {
       <p data-testid="zoom-tolerance">
         Optional annotation hit tolerance:{' '}
         <strong>
-          {tolerance === null ? 'Pending' : `${Math.round(tolerance * 100) / 100} document CSS px`}
+          {tolerance === null ? 'Pending' : `${formatGeometry(tolerance)} document CSS px`}
         </strong>
       </p>
       <p>
@@ -26,7 +28,7 @@ export function ZoomLogic() {
       <p>
         Safe-area input for a custom drawing surface:{' '}
         {ready
-          ? `top ${safeArea.top}, right ${safeArea.right}, bottom ${safeArea.bottom}, left ${safeArea.left} CSS px`
+          ? `top ${formatGeometry(safeArea.top)}, right ${formatGeometry(safeArea.right)}, bottom ${formatGeometry(safeArea.bottom)}, left ${formatGeometry(safeArea.left)} CSS px`
           : 'Pending'}
         .
       </p>

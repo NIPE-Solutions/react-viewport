@@ -1,5 +1,7 @@
 'use client'
 
+import { formatGeometry } from './format-geometry'
+
 import Link from 'next/link'
 import { useViewport } from '@nipe-solutions/react-viewport'
 import { LiveGeometry } from './LiveGeometry'
@@ -80,7 +82,7 @@ export function ViewportHero() {
             <strong>Layout viewport → Visual viewport</strong>
             <span>
               {visual
-                ? `Visible ${Math.round(visual.width)} × ${Math.round(visual.height)} CSS px · offset (${visual.offsetLeft}, ${visual.offsetTop}) · scale ${visual.scale}`
+                ? `Visible ${formatGeometry(visual.width)} × ${formatGeometry(visual.height)} CSS px · offset (${formatGeometry(visual.offsetLeft)}, ${formatGeometry(visual.offsetTop)}) · scale ${formatGeometry(visual.scale)}`
                 : 'Measuring browser geometry…'}
             </span>
             <span>

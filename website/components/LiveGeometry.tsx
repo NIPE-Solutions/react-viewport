@@ -1,16 +1,18 @@
 'use client'
 
+import { formatGeometry } from './format-geometry'
+
 import { useViewport } from '@nipe-solutions/react-viewport'
 
 export function LiveGeometry({ compact = false }: { readonly compact?: boolean }) {
   const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()
   const px = (n: number | undefined) =>
-    ready && n !== undefined ? `${Math.round(n * 100) / 100} px` : 'Pending'
+    ready && n !== undefined ? `${formatGeometry(n)} px` : 'Pending'
   const rows = compact
     ? [
         ['Visual height', px(visual?.height)],
         ['Offset top', px(visual?.offsetTop)],
-        ['Scale', visual ? String(visual.scale) : 'Pending'],
+        ['Scale', visual ? formatGeometry(visual.scale) : 'Pending'],
         ['Keyboard', ready ? (keyboard.open ? 'open' : 'closed') : 'Pending'],
         ['Bottom occlusion', px(keyboard.height)],
         ['Safe bottom', px(safeArea.bottom)],
@@ -24,7 +26,7 @@ export function LiveGeometry({ compact = false }: { readonly compact?: boolean }
         ['visual.offsetLeft', px(visual?.offsetLeft)],
         ['visual.pageTop', px(visual?.pageTop)],
         ['visual.pageLeft', px(visual?.pageLeft)],
-        ['visual.scale', visual ? String(visual.scale) : 'Pending'],
+        ['visual.scale', visual ? formatGeometry(visual.scale) : 'Pending'],
         ['keyboard.open', ready ? String(keyboard.open) : 'Pending'],
         ['keyboard.height (bottom occlusion)', px(keyboard.height)],
         ['safeArea.top', px(safeArea.top)],

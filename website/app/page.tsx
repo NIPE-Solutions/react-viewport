@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { InteractionHint } from '../components/InteractionHint'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { GeometryDemo } from '../components/GeometryDemo'
@@ -11,6 +12,7 @@ import { quickStart } from '../content/docs'
 export default function HomePage() {
   return (
     <main id="main-content" tabIndex={-1}>
+      <InteractionHint />
       <ViewportHero />
       <ProductBoundary />
       <section className="use-cases site-frame" aria-labelledby="use-cases-title">
