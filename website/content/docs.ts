@@ -65,10 +65,11 @@ export function ViewportReadout() {
 export const cssComposer = `.composer {
   position: fixed;
   right: max(1rem, var(--react-viewport-safe-area-right, 0px));
-  bottom: calc(
-    var(--react-viewport-keyboard-height, 0px) +
-      max(1rem, var(--react-viewport-safe-area-bottom, 0px))
+  --bottom-inset: max(
+    var(--react-viewport-keyboard-height, 0px),
+    var(--react-viewport-safe-area-bottom, 0px)
   );
+  bottom: calc(var(--bottom-inset) + 1rem);
   left: max(1rem, var(--react-viewport-safe-area-left, 0px));
 }`
 

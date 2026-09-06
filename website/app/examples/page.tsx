@@ -26,8 +26,8 @@ export default function ExamplesPage() {
           <div>
             <h2 id="recipe-title">Position from the measured edge</h2>
             <p>
-              <code>useViewportCssVariables()</code> updates the target directly. The composer
-              combines keyboard height and safe-area bottom in CSS.
+              <code>useViewportCssVariables()</code> updates the target directly. The composer uses
+              the larger of keyboard height and safe-area bottom in CSS.
             </p>
           </div>
           <CodeBlock label="CSS positioning recipe" code={cssComposer} />
