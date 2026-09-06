@@ -50,9 +50,12 @@ test('guides is removed from routes, rendered navigation, and the sitemap', asyn
   await page.goto('/concepts')
   await expect(page.locator('nav a[href="/guides"]')).toHaveCount(0)
 
-  await page.goto('/sitemap.xml')
-  await expect(page.locator('body')).not.toContainText('/guides')
-  await expect(page.locator('body')).toContainText('/concepts')
+  const sitemapResponse = await page.request.get('/sitemap.xml')
+  expect(sitemapResponse.status()).toBe(200)
+
+  const sitemap = await sitemapResponse.text()
+  expect(sitemap).not.toContain('/guides')
+  expect(sitemap).toContain('/concepts')
 })
 
 test('metadata describes measured viewport geometry without universal keyboard claims', async ({
