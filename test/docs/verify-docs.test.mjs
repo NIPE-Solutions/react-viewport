@@ -265,10 +265,10 @@ test('rejects a stale automated QA baseline', async () => {
     'docs/REAL_DEVICE_QA.md',
     (qa) =>
       qa.replace(
-        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102\ndocumentation-site scenarios',
+        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 117\ndocumentation-site scenarios',
         'The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42\ndocumentation-site scenarios',
       ),
-    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*102/is),
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*117/is),
   )
 })
 

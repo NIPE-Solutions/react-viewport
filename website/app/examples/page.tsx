@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { CodeBlock } from '../../components/CodeBlock'
+import { ResultBudget } from '../../components/ResultBudget'
 import { UseCaseExamples } from '../../components/UseCaseExamples'
 import { cssComposer, cssSafeAreaFooter, modalActionBar, visibleArea } from '../../content/docs'
 
@@ -24,6 +25,34 @@ export default function ExamplesPage() {
         </p>
       </header>
       <div className="site-frame examples-stack">
+        <section id="result-budget" aria-labelledby="result-budget-title">
+          <h2 id="result-budget-title">Use geometry to decide what JavaScript renders</h2>
+          <p>
+            A search overlay can choose a result budget from the visible height. CSS can size the
+            box; JavaScript chooses which results exist. This live example renders a bounded slice
+            of local results. Resize the window or change the visible viewport to change the count.
+          </p>
+          <ResultBudget />
+          <CodeBlock
+            collapsible
+            label="ResultBudget.tsx · actual source"
+            code={readFileSync(
+              path.join(process.cwd(), 'website/components/ResultBudget.tsx'),
+              'utf8',
+            )}
+          />
+        </section>
+        <section aria-labelledby="browser-first-title">
+          <h2 id="browser-first-title">A chat composer may only need CSS</h2>
+          <p>
+            Request <code>interactive-widget=resizes-content</code> so supporting browsers make room
+            for the keyboard. Use a regular grid or flex layout first. iOS may ignore the request;
+            measured visual geometry can provide an application fallback, with browser limitations.
+          </p>
+          <p>
+            <a href="/lab/css">Browser + CSS baseline</a> · <a href="/lab">Measured fallback</a>
+          </p>
+        </section>
         <p>
           <strong>Live browser readouts in scaled illustrations.</strong> For a full-screen, fixed
           composer and your actual software keyboard,{' '}
@@ -71,6 +100,10 @@ export function App() {
         <section className="css-first" aria-labelledby="css-first-title">
           <h2 id="css-first-title">When CSS is enough</h2>
           <div>
+            <p>
+              <code>interactive-widget=resizes-content</code> opts supporting browsers into
+              keyboard-driven layout resizing. It is a request, not a support check.
+            </p>
             <p>
               Use <code>dvh</code>, <code>svh</code>, and <code>lvh</code> for viewport sizing.
             </p>

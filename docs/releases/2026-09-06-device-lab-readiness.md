@@ -112,3 +112,24 @@ An iPhone 17 Pro/Chrome user reported a scroll-boundary gap in the previous buil
 The precise device OS/browser versions and before/during geometry are unavailable;
 physical validation of this fix remains pending. See the [recorded issue and
 retest protocol](../REAL_DEVICE_QA.md#reported-iphone-chrome-scroll-boundary-issue--2026-09-06).
+
+
+## Follow-up: browser-first layout and product scope
+
+The website requests `interactive-widget=resizes-content` in its initial viewport
+metadata. `/lab/css` is an independent CSS-only positioning baseline using the
+same composer in normal grid flow; `/lab` retains the measured visual fallback.
+No API capability flag is repurposed as proof of resize-policy support. Zero
+occlusion when both viewports shrink is explained as valid browser behavior.
+
+The homepage now leads with usable geometry and conditions the chat simulation
+on an unchanged layout being overlaid. `/examples#result-budget` demonstrates a
+JavaScript decision: slicing the rendered results according to actual visual
+height, with clearly stated application constants. Source disclosures, CSS-first
+guidance and the geometry visual identity remain. The package source, API and
+runtime dependencies are unchanged.
+
+The current browser matrix contains 117 website scenarios (39 per engine), adding
+native-policy metadata, CSS behavior without JavaScript, distinct visual/layout
+resizing, no duplicate adjustment and rendered-result count coverage. Physical
+comparison remains pending, and iOS stress-mode drift is not declared fixed.

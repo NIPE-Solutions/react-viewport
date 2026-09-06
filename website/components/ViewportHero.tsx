@@ -15,10 +15,10 @@ export function ViewportHero({ composerCode }: { readonly composerCode: string }
       <div className="site-frame">
         <div className="hero-intro">
           <div>
-            <h1 id="hero-title">Keep mobile UI above the software keyboard.</h1>
+            <h1 id="hero-title">Know what part of the screen is actually usable.</h1>
             <p className="viewport-hero__introduction">
-              Read the visible viewport, keyboard occlusion and safe-area geometry from one shared
-              React state when CSS alone is not enough.
+              Size result sets, position overlays, and adapt keyboard-aware controls using actual
+              browser geometry when JavaScript needs more than CSS layout.
             </p>
             <div className="viewport-hero__actions">
               <a className="primary-action desktop-cta" href="#comparison">
@@ -32,11 +32,14 @@ export function ViewportHero({ composerCode }: { readonly composerCode: string }
           </div>
           <div className="hero-api">
             <p>Know what part of the screen is actually usable.</p>
-            <pre className="viewport-hero__code" aria-label="Minimal useViewport example">
+            <pre
+              tabIndex={0}
+              className="viewport-hero__code"
+              aria-label="Minimal useViewport example"
+            >
               <code>{`const { visual, keyboard, safeArea } = useViewport()
-const bottomInset = Math.max(
-  keyboard.height, safeArea.bottom
-)`}</code>
+const visibleHeight = visual?.height ?? null
+const bottomInset = Math.max(keyboard.height, safeArea.bottom)`}</code>
             </pre>
             <p>
               React Viewport measures the browser. Your application decides what to do with the
@@ -54,14 +57,19 @@ const bottomInset = Math.max(
               {open ? 'Close simulated keyboard' : 'Open simulated keyboard'}
             </button>
           </header>
+          <p className="simulation-note">
+            This simulates a keyboard overlaying an unchanged layout. A browser that resizes the
+            layout can solve this composer with CSS alone.{' '}
+            <a href="/lab/css">Try the CSS baseline</a>.
+          </p>
           <div className="comparison-pair">
             {[false, true].map((aware) => (
               <article
                 key={String(aware)}
                 className="comparison-example"
-                aria-label={aware ? 'With React Viewport' : 'Without React Viewport'}
+                aria-label={aware ? 'Viewport-aware offset' : 'Fixed offset only'}
               >
-                <h3>{aware ? 'With React Viewport' : 'Without React Viewport'}</h3>
+                <h3>{aware ? 'Viewport-aware offset' : 'Fixed offset only'}</h3>
                 <div className="comparison-stage">
                   <div className="comparison-messages" aria-hidden="true">
                     <p>Train gets in at 18:40. Dinner after?</p>

@@ -21,6 +21,27 @@ export default function BrowserBehaviorPage() {
         </p>
       </header>
       <article className="site-frame prose browser-prose">
+        <section aria-labelledby="browser-resize-title">
+          <h2 id="browser-resize-title">Let the browser resize the layout first</h2>
+          <p>
+            This website requests <code>interactive-widget=resizes-content</code>. Supporting
+            browsers resize both viewports for the keyboard. A CSS grid or flex layout may then be
+            sufficient; zero bottom occlusion can mean the browser already made room.
+          </p>
+          <p>
+            The meta tag does not detect support. Current compatibility data lists Chrome and
+            Firefox on Android as supporting this policy, and iOS WebKit as unsupported.
+            <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/viewport#interactive-widget">
+              {' '}
+              Check browser compatibility
+            </a>
+            . React Viewport does not set viewport policy or opt into VirtualKeyboard overlay mode.
+          </p>
+          <p>
+            <a href="/lab/css">Compare the CSS baseline</a> with the{' '}
+            <a href="/lab">measured fallback</a>.
+          </p>
+        </section>
         <section aria-labelledby="terms-title">
           <h2 id="terms-title">Read the labels literally</h2>
           <dl className="definition-list">
@@ -125,7 +146,7 @@ export default function BrowserBehaviorPage() {
             independently. No single “supported” badge can establish all of them.
           </p>
           <p>
-            The 2026-09-06 deterministic baseline passed 54 library scenarios and 102
+            The 2026-09-06 deterministic baseline passed 54 library scenarios and 117
             documentation-site scenarios across desktop Chromium, Firefox, and WebKit. These
             fixtures establish repository behavior only; they are not physical-device results.
           </p>

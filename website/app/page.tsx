@@ -18,10 +18,10 @@ export default function HomePage() {
       />
       <section className="lab-cta site-frame" aria-labelledby="lab-cta-title">
         <div>
-          <h2 id="lab-cta-title">Your phone is the proof.</h2>
+          <h2 id="lab-cta-title">Compare CSS with measured geometry on your phone.</h2>
           <p>
-            Open the Live Device Lab, focus the input, and watch actual browser geometry respond to
-            your software keyboard.
+            Start with browser-managed layout, then compare the measured fallback and inspect what
+            your browser reports when the keyboard opens.
           </p>
         </div>
         <Link className="primary-action mobile-cta" href="/lab">
@@ -46,6 +46,12 @@ export default function HomePage() {
                 <dt>Need full-screen height?</dt>
                 <dd>
                   <code>100dvh</code>
+                </dd>
+              </div>
+              <div>
+                <dt>Need the layout to shrink for the keyboard?</dt>
+                <dd>
+                  <code>interactive-widget=resizes-content</code>, where supported
                 </dd>
               </div>
               <div>
@@ -88,8 +94,16 @@ export default function HomePage() {
         </div>
         <div className="use-case-list home-recipes">
           <article>
-            <h3>Chat composers</h3>
-            <p>Keep the input above bottom occlusion without double-counting the safe area.</p>
+            <h3>JavaScript rendering budgets</h3>
+            <p>Use visible height to decide how many search results to render or request.</p>
+            <Link href="/examples#result-budget">Try the live result budget →</Link>
+          </article>
+          <article>
+            <h3>Chat composers, when CSS is insufficient</h3>
+            <p>
+              Try browser-managed resizing first. Use measured occlusion for an application
+              fallback.
+            </p>
             <CodeBlock
               collapsible
               label="Chat composer · actual source"
@@ -190,8 +204,8 @@ export default function HomePage() {
             <h2 id="evidence-handoff-title">Browser evidence has boundaries</h2>
             <p>
               <strong>Automated evidence.</strong> The current deterministic desktop matrix covers
-              54 library scenarios and 93 documentation-site scenarios across Chromium, Firefox, and
-              WebKit.
+              54 library scenarios and 117 documentation-site scenarios across Chromium, Firefox,
+              and WebKit.
             </p>
             <p>
               <strong>Physical-device status.</strong> iPhone Safari and Android Chrome testing is

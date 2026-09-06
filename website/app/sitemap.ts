@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/examples',
     '/lab',
+    '/lab/css',
     '/concepts',
     '/api',
     '/browser-behavior',

@@ -20,9 +20,11 @@ export async function verifyProduction(
     const marker = await markerResponse.json()
     assert.equal(marker.commit, expectedCommit, `${origin}: stale or wrong commit`)
     markers.push(marker)
+    const verifiedAssets = new Set()
     for (const [route, text] of [
-      ['/', 'Keep mobile UI above the software keyboard.'],
+      ['/', 'Know what part of the screen is actually usable.'],
       ['/lab', 'Live Device Lab'],
+      ['/lab/css', 'Browser + CSS baseline'],
       ['/examples', 'Chat composer'],
     ]) {
       const response = await fetch(`${origin}${route}`, { cache: 'no-store' })
@@ -37,8 +39,27 @@ export async function verifyProduction(
       for (const asset of new Set(
         [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((match) => match[1]),
       )) {
+        if (verifiedAssets.has(asset)) continue
         const assetResponse = await fetch(new URL(asset, origin), { method: 'HEAD' })
         assert.equal(assetResponse.status, 200, `${origin}: missing asset ${asset}`)
+        verifiedAssets.add(asset)
+      }
+      const stylesheets = [...html.matchAll(/<link\b[^>]*>/g)]
+        .filter(([tag]) => /\brel="stylesheet"/.test(tag))
+        .map(([tag]) => /\bhref="([^"]+)"/.exec(tag)?.[1])
+      assert.ok(stylesheets.length > 0, `${origin}${route}: stylesheet link missing`)
+      for (const asset of stylesheets) {
+        assert.ok(asset, `${origin}${route}: stylesheet href missing`)
+        if (verifiedAssets.has(asset)) continue
+        const css = await fetch(new URL(asset, origin))
+        assert.equal(css.status, 200, `${origin}: missing stylesheet ${asset}`)
+        assert.match(
+          css.headers.get('content-type') ?? '',
+          /^text\/css(?:;|$)/i,
+          `${origin}: incorrect stylesheet MIME ${asset}`,
+        )
+        assert.ok((await css.text()).trim().length > 0, `${origin}: empty stylesheet ${asset}`)
+        verifiedAssets.add(asset)
       }
     }
     const missing = await fetch(`${origin}/__deployment-smoke-missing__`)

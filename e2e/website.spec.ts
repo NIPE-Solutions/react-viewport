@@ -60,7 +60,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
   const homepageEvidence = page.getByRole('region', {
     name: 'Browser evidence has boundaries',
   })
-  await expect(homepageEvidence).toContainText(/Automated evidence.*54.*93/s)
+  await expect(homepageEvidence).toContainText(/Automated evidence.*54.*117/s)
   await expect(homepageEvidence).toContainText(/Physical-device status.*pending/is)
 
   const referenceLinks = [
@@ -81,7 +81,7 @@ test('homepage hands off to concepts, references, and bounded browser evidence',
 
   const automatedEvidence = page.getByRole('region', { name: 'Automated evidence' })
   await expect(automatedEvidence).toContainText('54 library scenarios')
-  await expect(automatedEvidence).toContainText('102 documentation-site scenarios')
+  await expect(automatedEvidence).toContainText('117 documentation-site scenarios')
   await expect(
     automatedEvidence.getByRole('link', { name: 'Library browser suite', exact: true }),
   ).toHaveAttribute(
@@ -193,6 +193,12 @@ test('before and after use the same form with distinct geometry input', async ({
   await page.keyboard.press(
     browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
   )
+  await expect(
+    comparison.getByRole('link', { name: 'Try the CSS baseline', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  )
   await expect(aware.getByRole('textbox')).toBeFocused()
   await comparison.getByRole('button', { name: 'Close simulated keyboard' }).click()
   expect((await topOf(unaware)) - (await topOf(aware))).toBeCloseTo(12, 0)
@@ -235,7 +241,7 @@ for (const size of responsiveSizes) {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Keep mobile UI above the software keyboard.',
+        name: 'Know what part of the screen is actually usable.',
       }),
     ).toBeVisible()
     const homepageDimensions = await page.evaluate(() => ({
@@ -308,6 +314,7 @@ test('has no serious accessibility violations on every documentation route', asy
     '/imprint',
     '/privacy',
     '/lab',
+    '/lab/css',
   ]) {
     await page.goto(route)
     const results = await new AxeBuilder({ page })
@@ -497,7 +504,7 @@ test('examples expose concrete viewport-aware interface outputs', async ({ page 
   await page.goto('/examples')
 
   for (const heading of ['Chat composer', 'Modal actions', 'Visible area', 'CSS variables']) {
-    await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 2, name: heading, exact: true })).toBeVisible()
   }
 
   await expect(page.getByTestId('effective-bottom-inset')).toHaveText(/\d+px/)
@@ -917,4 +924,101 @@ test('lab respects visual width and panning without cancelling user zoom', async
   const viewport = await page.locator('meta[name="viewport"]').getAttribute('content')
   expect(viewport).not.toContain('user-scalable=no')
   expect(viewport).not.toContain('maximum-scale=1')
+})
+
+test('both labs request browser-managed keyboard resizing without claiming support', async ({
+  page,
+}) => {
+  for (const route of ['/lab', '/lab/css']) {
+    await page.goto(route)
+    const viewport = page.locator('meta[name="viewport"]')
+    await expect(viewport).toHaveCount(1)
+    await expect(viewport).toHaveAttribute('content', /interactive-widget=resizes-content/)
+    await expect(viewport).toHaveAttribute('content', /viewport-fit=cover/)
+    await expect(viewport).not.toHaveAttribute('content', /user-scalable=no|maximum-scale=1/)
+    await expect(page.getByText('Requested, not detected.', { exact: true })).toBeVisible()
+  }
+})
+
+test('CSS baseline uses layout height and does not apply the measured visual fallback', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/lab/css')
+  const composer = page.getByTestId('css-composer')
+  await expect(composer).toBeVisible()
+  const before = await boxOf(composer)
+  await composer.getByRole('textbox').focus()
+  await setWebsiteGeometry(page, { visualHeight: 500, safeAreaBottom: 0 })
+  const after = await boxOf(composer)
+  expect(after.y + after.height).toBe(before.y + before.height)
+  await expect(page.getByRole('link', { name: 'Open measured fallback' })).toHaveAttribute(
+    'href',
+    '/lab',
+  )
+})
+
+test('CSS baseline remains usable without JavaScript when the layout viewport resizes', async ({
+  browser,
+  baseURL,
+}) => {
+  if (!baseURL) throw new Error('Website baseURL is required')
+  const context = await browser.newContext({
+    baseURL,
+    javaScriptEnabled: false,
+    viewport: { width: 390, height: 800 },
+  })
+  const page = await context.newPage()
+  try {
+    await page.goto('/lab/css')
+    const composer = page.getByTestId('css-composer')
+    await expect(composer).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 500 })
+    await expect
+      .poll(async () => {
+        const box = await boxOf(composer)
+        return Math.round(box.y + box.height)
+      })
+      .toBe(484)
+    await expect(composer.getByRole('textbox')).toBeVisible()
+  } finally {
+    await context.close()
+  }
+})
+
+test('measured lab does not double-adjust when the browser resizes both viewports', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/lab')
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  const composer = page.getByTestId('lab-composer')
+  await composer.getByRole('textbox').focus()
+  await page.setViewportSize({ width: 390, height: 500 })
+  await setWebsiteGeometry(page, { visualHeight: 500, safeAreaBottom: 0 })
+  await expect
+    .poll(async () => {
+      const box = await boxOf(composer)
+      return Math.round(box.y + box.height)
+    })
+    .toBe(484)
+})
+
+test('visible-height result budget changes rendered items rather than hiding them with CSS', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/examples')
+  const results = page.getByRole('region', { name: 'JavaScript result budget' })
+  await expect(results.getByRole('listitem')).toHaveCount(8)
+  await setWebsiteGeometry(page, { visualHeight: 500, safeAreaBottom: 0 })
+  await expect(results.getByRole('listitem')).toHaveCount(3)
+  await setWebsiteGeometry(page, { visualHeight: 300, safeAreaBottom: 0 })
+  await expect(results.getByRole('listitem')).toHaveCount(0)
+  await expect(results).toContainText('No result rows fit the current budget.')
+  await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 0 })
+  await expect(results.getByRole('listitem')).toHaveCount(8)
 })

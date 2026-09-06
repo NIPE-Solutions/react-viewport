@@ -1,0 +1,32 @@
+html:has(.browser-css-main),
+body:has(.browser-css-main) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+body:has(.browser-css-main) > .site-header,
+body:has(.browser-css-main) > .site-footer {
+  display: none;
+}
+.browser-css-lab {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+.browser-css-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.browser-css-lab .lab-content {
+  padding-bottom: 1rem;
+}
+.browser-css-lab .viewport-composer {
+  margin: 1rem max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+}
+.browser-css-end {
+  padding-top: 40dvh;
+}
