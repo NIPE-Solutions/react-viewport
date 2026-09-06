@@ -73,6 +73,22 @@ export const cssComposer = `.composer {
   left: max(1rem, var(--react-viewport-safe-area-left, 0px));
 }`
 
+export const modalActionBar = `import { useViewport } from '@nipe-solutions/react-viewport'
+
+function ModalActions() {
+  const { keyboard, safeArea } = useViewport()
+  const bottomInset = Math.max(keyboard.height, safeArea.bottom)
+
+  return <footer style={{ bottom: bottomInset }}>…</footer>
+}`
+
+export const visibleArea = `const { visual } = useViewport()
+const visibleHeight = visual?.height ?? null`
+
+export const cssSafeAreaFooter = `.footer {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}`
+
 export const apiReference = [
   {
     name: 'useViewport()',

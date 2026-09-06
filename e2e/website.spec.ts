@@ -274,6 +274,53 @@ test('moves the CSS-variable composer after real fixture geometry changes', asyn
   await expect.poll(() => topOf(composer)).toBeLessThan(initialTop - 250)
 })
 
+test('examples expose concrete viewport-aware interface outputs', async ({ page }) => {
+  await page.goto('/examples')
+
+  for (const heading of ['Chat composer', 'Modal actions', 'Visible area', 'CSS variables']) {
+    await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible()
+  }
+
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText(/\d+px/)
+  await expect(page.getByTestId('visible-area-height')).toHaveText(/\d+px/)
+  await expect(page.getByTestId('css-keyboard-height')).toHaveText(/\d+px/)
+  await expect(page.getByTestId('css-safe-area-bottom')).toHaveText(/\d+px/)
+})
+
+test('examples use the effective inset and keep modal actions inside the visual region', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/examples')
+
+  await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 34 })
+  await expect(page.getByTestId('keyboard-height-output')).toHaveText('0px')
+  await expect(page.getByTestId('safe-area-bottom-output')).toHaveText('34px')
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText('34px')
+
+  await page.getByRole('textbox', { name: 'Message' }).focus()
+  await setWebsiteGeometry(page, { visualHeight: 474, safeAreaBottom: 34 })
+  await expect(page.getByTestId('keyboard-height-output')).toHaveText('326px')
+  await expect(page.getByTestId('safe-area-bottom-output')).toHaveText('34px')
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText('326px')
+  await expect(page.getByTestId('visible-area-height')).toHaveText('474px')
+  expect(await page.locator('output[data-example-output]').allTextContents()).not.toContain('360px')
+
+  const visualRegion = await boxOf(page.getByTestId('modal-visual-region'))
+  const modalActions = await boxOf(page.getByTestId('modal-action-bar'))
+  expect(modalActions.y).toBeGreaterThanOrEqual(visualRegion.y)
+  expect(modalActions.y + modalActions.height).toBeLessThanOrEqual(
+    visualRegion.y + visualRegion.height + 1,
+  )
+
+  await setWebsiteGeometry(page, { visualHeight: 474, safeAreaBottom: 0 })
+  await expect(page.getByTestId('keyboard-height-output')).toHaveText('326px')
+  await expect(page.getByTestId('safe-area-bottom-output')).toHaveText('0px')
+  await expect(page.getByTestId('effective-bottom-inset')).toHaveText('326px')
+  expect(await page.locator('output[data-example-output]').allTextContents()).not.toContain('360px')
+})
+
 async function topOf(locator: ReturnType<Page['getByTestId']>): Promise<number> {
   const box = await locator.boundingBox()
   if (box === null) throw new Error('Composer did not have a layout box')
@@ -322,6 +369,9 @@ async function holdAnimationFrames(page: Page): Promise<void> {
 
 async function installVisualViewportFixture(page: Page): Promise<void> {
   await page.addInitScript(() => {
+    let safeAreaBottom = 0
+    const nativeGetComputedStyle = window.getComputedStyle.bind(window)
+
     class ControlledVisualViewport extends EventTarget {
       width = 390
       height = 800
@@ -344,6 +394,26 @@ async function installVisualViewportFixture(page: Page): Promise<void> {
       configurable: true,
       value: undefined,
     })
+    Object.defineProperty(window, 'getComputedStyle', {
+      configurable: true,
+      value(element: Element, pseudoElement?: string | null) {
+        const computed = nativeGetComputedStyle(element, pseudoElement)
+        if (
+          !(element instanceof HTMLElement) ||
+          element.style.paddingBottom !== 'env(safe-area-inset-bottom)'
+        ) {
+          return computed
+        }
+
+        return new Proxy(computed, {
+          get(target, property) {
+            if (property === 'paddingBottom') return `${safeAreaBottom}px`
+            const value = Reflect.get(target, property, target)
+            return typeof value === 'function' ? value.bind(target) : value
+          },
+        })
+      },
+    })
 
     Object.defineProperty(window, '__websiteGeometryFixture', {
       configurable: true,
@@ -352,7 +422,29 @@ async function installVisualViewportFixture(page: Page): Promise<void> {
           controlled.height = height
           controlled.dispatchEvent(new Event('resize'))
         },
+        setGeometry(next: { visualHeight: number; safeAreaBottom: number }) {
+          controlled.height = next.visualHeight
+          safeAreaBottom = next.safeAreaBottom
+          controlled.dispatchEvent(new Event('resize'))
+        },
       },
     })
   })
+}
+
+async function setWebsiteGeometry(
+  page: Page,
+  geometry: { readonly visualHeight: number; readonly safeAreaBottom: number },
+): Promise<void> {
+  await page.evaluate((nextGeometry) => {
+    const fixture = (
+      window as Window & {
+        __websiteGeometryFixture?: {
+          setGeometry(next: { visualHeight: number; safeAreaBottom: number }): void
+        }
+      }
+    ).__websiteGeometryFixture
+    if (fixture === undefined) throw new Error('Geometry fixture was not installed')
+    fixture.setGeometry(nextGeometry)
+  }, geometry)
 }

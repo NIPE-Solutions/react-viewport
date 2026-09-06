@@ -1170,6 +1170,29 @@ h3 {
   padding-block: clamp(4rem, 8vw, 8rem);
 }
 
+.use-case-examples {
+  display: grid;
+  gap: clamp(5rem, 10vw, 9rem);
+}
+
+.use-case-example {
+  min-width: 0;
+}
+
+.use-case-example__copy {
+  padding-top: 1rem;
+  border-top: 4px solid var(--ink);
+}
+
+.use-case-example__copy h2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+.use-case-example__copy p {
+  max-width: 68ch;
+  color: var(--ink-muted);
+}
+
 .composer-demo {
   display: grid;
   grid-template-columns: minmax(15rem, 0.65fr) minmax(22rem, 1.35fr);
@@ -1188,6 +1211,39 @@ h3 {
 
 .composer-demo__copy p {
   color: var(--ink-muted);
+}
+
+.inset-equation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 2rem 0 0;
+  border-block: 1px solid var(--rule);
+}
+
+.inset-equation > div {
+  min-width: 0;
+  padding-block: 0.8rem;
+}
+
+.inset-equation > div + div {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--rule);
+}
+
+.inset-equation dt {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.inset-equation dd {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-code);
+  font-size: 0.85rem;
+}
+
+.inset-equation > div:last-child dd {
+  color: var(--coordinate-deep);
+  font-weight: 600;
 }
 
 .composer-stage {
@@ -1270,6 +1326,185 @@ h3 {
   font-weight: 600;
 }
 
+.modal-example,
+.visible-area-example,
+.css-bridge-example {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.65fr) minmax(22rem, 1.35fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+}
+
+.modal-stage {
+  position: relative;
+  height: clamp(25rem, 52vw, 34rem);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background-color: var(--paper-raised);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+}
+
+.modal-stage__visual {
+  position: absolute;
+  z-index: 1;
+  top: var(--example-visual-top);
+  right: 0;
+  left: 0;
+  height: var(--example-visual-height);
+  border-block: 2px solid var(--coordinate);
+  background: color-mix(in srgb, var(--coordinate) 7%, transparent);
+}
+
+.modal-stage__visual span {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  padding: 0.2rem 0.35rem;
+  background: var(--coordinate);
+  color: #fff;
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.modal-sheet {
+  position: absolute;
+  z-index: 2;
+  top: 13%;
+  right: 12%;
+  left: 12%;
+  min-height: 11rem;
+  padding: 1.5rem;
+  border: 2px solid var(--ink);
+  background: var(--paper-raised);
+}
+
+.modal-sheet__title,
+.modal-sheet__line {
+  height: 0.65rem;
+  background: var(--grid);
+}
+
+.modal-sheet__title {
+  width: 40%;
+  height: 1rem;
+  margin-bottom: 1.75rem;
+  background: var(--ink);
+}
+
+.modal-sheet__line {
+  width: 80%;
+  margin-top: 0.8rem;
+}
+
+.modal-sheet__line--short {
+  width: 58%;
+}
+
+.modal-action-bar {
+  position: absolute;
+  z-index: 3;
+  right: 12%;
+  bottom: calc(var(--example-effective-bottom) + 0.75rem);
+  left: 12%;
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.65rem;
+  border: 2px solid var(--ink);
+  background: var(--paper-raised);
+  font-size: 0.78rem;
+}
+
+.modal-action-bar strong {
+  padding: 0.45rem 0.65rem;
+  background: var(--coordinate-deep);
+  color: #fff;
+}
+
+.visible-area-ruler {
+  position: relative;
+  display: grid;
+  min-height: 17rem;
+  place-items: center;
+  border-block: 1px solid var(--rule);
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(10% - 1px),
+    var(--grid) calc(10% - 1px),
+    var(--grid) 10%
+  );
+}
+
+.visible-area-ruler::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.4rem;
+  background: var(--coordinate);
+  content: '';
+}
+
+.visible-area-ruler > span {
+  position: absolute;
+  left: 1rem;
+  color: var(--ink-muted);
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+}
+
+.visible-area-ruler > span:first-child {
+  top: 0.75rem;
+}
+
+.visible-area-ruler > span:last-child {
+  bottom: 0.75rem;
+}
+
+.visible-area-ruler output {
+  padding: 0.35rem 0.6rem;
+  background: var(--coordinate-deep);
+  color: #fff;
+  font-size: clamp(1.6rem, 5vw, 3.8rem);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.css-variable-readout {
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.css-variable-readout > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.css-variable-readout dt {
+  min-width: 0;
+  color: var(--ink-muted);
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.css-variable-readout dd {
+  margin: 0;
+  color: var(--coordinate-deep);
+  font-family: var(--font-code);
+  font-weight: 600;
+}
+
 .recipe {
   display: grid;
   grid-template-columns: 0.75fr 1.25fr;
@@ -1305,6 +1540,51 @@ h3 {
 
 .css-first p {
   margin-bottom: 0;
+}
+
+.css-first > .code-block {
+  max-width: var(--reading-width);
+  margin-top: 2.5rem;
+}
+
+.example-recipes > header {
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: end;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.example-recipes h2,
+.avoid-recipe h2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+.example-recipes header p,
+.avoid-recipe p {
+  max-width: 68ch;
+  margin-bottom: 0;
+  color: var(--ink-muted);
+}
+
+.example-recipe-list article {
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+  padding-block: clamp(2rem, 5vw, 4rem);
+  border-bottom: 1px solid var(--rule);
+}
+
+.example-recipe-list h3 {
+  margin: 0;
+}
+
+.avoid-recipe {
+  max-width: var(--reading-width);
+  padding-left: clamp(1rem, 3vw, 2rem);
+  border-left: 4px solid var(--keyboard);
 }
 
 .legal-main {
@@ -1387,7 +1667,12 @@ h3 {
   .geometry-demo__body,
   .split-section,
   .composer-demo,
-  .recipe {
+  .recipe,
+  .modal-example,
+  .visible-area-example,
+  .css-bridge-example,
+  .example-recipes > header,
+  .example-recipe-list article {
     grid-template-columns: 1fr;
   }
 

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 
 import { CodeBlock } from '../../components/CodeBlock'
-import { ComposerDemo } from '../../components/ComposerDemo'
-import { cssComposer } from '../../content/docs'
+import { UseCaseExamples } from '../../components/UseCaseExamples'
+import { cssComposer, cssSafeAreaFooter, modalActionBar, visibleArea } from '../../content/docs'
 
 export const metadata: Metadata = {
   title: 'Examples',
-  description: 'A live CSS-variable composer and CSS-first viewport recipes.',
+  description: 'Live viewport-aware interface examples and copyable integration recipes.',
   alternates: { canonical: '/examples' },
 }
 
@@ -21,16 +21,29 @@ export default function ExamplesPage() {
         </p>
       </header>
       <div className="site-frame examples-stack">
-        <ComposerDemo />
-        <section className="recipe" aria-labelledby="recipe-title">
-          <div>
-            <h2 id="recipe-title">Position from the measured edge</h2>
+        <UseCaseExamples />
+        <section className="example-recipes" aria-labelledby="recipes-title">
+          <header>
+            <h2 id="recipes-title">Recipes to copy</h2>
             <p>
-              <code>useViewportCssVariables()</code> updates the target directly. The composer uses
-              the larger of keyboard height and safe-area bottom in CSS.
+              Use React state for decisions that need coordinates. Use the CSS bridge when layout is
+              the only consumer.
             </p>
+          </header>
+          <div className="example-recipe-list">
+            <article>
+              <h3>Position a composer</h3>
+              <CodeBlock label="CSS composer recipe" code={cssComposer} />
+            </article>
+            <article>
+              <h3>Place modal actions</h3>
+              <CodeBlock label="React modal action recipe" code={modalActionBar} />
+            </article>
+            <article>
+              <h3>Read the visible height</h3>
+              <CodeBlock label="Visible-area recipe" code={visibleArea} />
+            </article>
           </div>
-          <CodeBlock label="CSS positioning recipe" code={cssComposer} />
         </section>
         <section className="css-first" aria-labelledby="css-first-title">
           <h2 id="css-first-title">When CSS is enough</h2>
@@ -42,10 +55,20 @@ export default function ExamplesPage() {
               Use <code>env(safe-area-inset-*)</code> for protected-edge padding.
             </p>
             <p>
-              Use media and container queries for responsive layout. This package is not a
-              breakpoint or device-detection utility.
+              A safe-area-only footer does not need JavaScript. Let the browser resolve its edge
+              padding directly.
             </p>
           </div>
+          <CodeBlock label="Safe-area-only footer" code={cssSafeAreaFooter} />
+        </section>
+        <section className="avoid-recipe" aria-labelledby="avoid-recipe-title">
+          <h2 id="avoid-recipe-title">What not to do</h2>
+          <p>
+            Do not add keyboard height to the safe-area bottom. Both can describe overlap at the
+            same physical edge, and a browser may keep reporting the safe area while the keyboard is
+            open. Adding <code>326px + 34px</code> produces a false <code>360px</code> gap; use the
+            larger value.
+          </p>
         </section>
       </div>
     </main>
