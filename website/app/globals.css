@@ -2104,7 +2104,7 @@ h3 {
   min-height: 100dvh;
 }
 body:has(.lab-main) > .site-header {
-  padding-top: env(safe-area-inset-top, 0px);
+  display: none;
 }
 body:has(.lab-main) > .site-header .primary-nav {
   display: none;
@@ -2115,10 +2115,42 @@ body:has(.lab-main) > .site-footer {
 body:has(.lab-main) {
   scroll-padding-bottom: 9rem;
 }
-.device-lab {
+html:has(.device-lab[data-page-scroll='false']),
+body:has(.device-lab[data-page-scroll='false']) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.device-lab[data-page-scroll='false'] .lab-scroll {
+  position: fixed;
+  top: var(--lab-top);
+  left: var(--lab-left);
+  width: var(--lab-width);
+  height: var(--lab-height);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-padding-block: 1rem 10rem;
+}
+.lab-home {
+  display: inline-block;
+  padding-block: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.lab-scroll-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.lab-scroll-note {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+.lab-content {
   max-width: 58rem;
   margin: 0 auto;
-  padding: 1rem max(1rem, env(safe-area-inset-right, 0px)) calc(var(--lab-bottom) + 10rem)
+  padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) 10rem
     max(1rem, env(safe-area-inset-left, 0px));
 }
 .lab-intro {

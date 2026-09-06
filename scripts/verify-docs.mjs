@@ -44,7 +44,7 @@ const textRequirements = [
   ['docs/REAL_DEVICE_QA.md', 'Physical iPhone Safari and Android Chrome testing is pending.'],
   [
     'docs/REAL_DEVICE_QA.md',
-    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 93 documentation-site scenarios',
+    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102 documentation-site scenarios',
   ],
   ['docs/REAL_DEVICE_QA.md', 'releases/2026-09-06-device-lab-readiness.md'],
   ['website/app/api/page.tsx', 'supported.virtualKeyboard means API availability'],
@@ -58,7 +58,7 @@ const textRequirements = [
   ['website/app/browser-behavior/page.tsx', 'segmented or arbitrary-shape avoidance'],
   ['website/app/browser-behavior/page.tsx', 'the larger of 80 CSS pixels and 15% of layout height'],
   ['website/app/browser-behavior/page.tsx', '54 library scenarios'],
-  ['website/app/browser-behavior/page.tsx', '93 documentation-site scenarios'],
+  ['website/app/browser-behavior/page.tsx', '102 documentation-site scenarios'],
   ['website/content/docs.ts', 'open: true, height: 0'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],

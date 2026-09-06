@@ -125,7 +125,7 @@ export default function BrowserBehaviorPage() {
             independently. No single “supported” badge can establish all of them.
           </p>
           <p>
-            The 2026-09-06 deterministic baseline passed 54 library scenarios and 93
+            The 2026-09-06 deterministic baseline passed 54 library scenarios and 102
             documentation-site scenarios across desktop Chromium, Firefox, and WebKit. These
             fixtures establish repository behavior only; they are not physical-device results.
           </p>

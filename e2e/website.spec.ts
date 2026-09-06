@@ -659,8 +659,17 @@ async function installVisualViewportFixture(page: Page): Promise<void> {
           controlled.height = height
           controlled.dispatchEvent(new Event('resize'))
         },
-        setGeometry(next: { visualHeight: number; safeAreaBottom: number }) {
+        setGeometry(next: {
+          visualHeight: number
+          safeAreaBottom: number
+          offsetTop?: number
+          offsetLeft?: number
+          visualWidth?: number
+        }) {
           controlled.height = next.visualHeight
+          controlled.offsetTop = next.offsetTop ?? 0
+          controlled.offsetLeft = next.offsetLeft ?? 0
+          controlled.width = next.visualWidth ?? 390
           safeAreaBottom = next.safeAreaBottom
           controlled.dispatchEvent(new Event('resize'))
         },
@@ -671,13 +680,25 @@ async function installVisualViewportFixture(page: Page): Promise<void> {
 
 async function setWebsiteGeometry(
   page: Page,
-  geometry: { readonly visualHeight: number; readonly safeAreaBottom: number },
+  geometry: {
+    readonly visualHeight: number
+    readonly safeAreaBottom: number
+    readonly offsetTop?: number
+    readonly offsetLeft?: number
+    readonly visualWidth?: number
+  },
 ): Promise<void> {
   await page.evaluate((nextGeometry) => {
     const fixture = (
       window as Window & {
         __websiteGeometryFixture?: {
-          setGeometry(next: { visualHeight: number; safeAreaBottom: number }): void
+          setGeometry(next: {
+            visualHeight: number
+            safeAreaBottom: number
+            offsetTop?: number
+            offsetLeft?: number
+            visualWidth?: number
+          }): void
         }
       }
     ).__websiteGeometryFixture
@@ -729,7 +750,7 @@ test('unknown routes return a real not-found page', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Open the Device Lab' })).toBeVisible()
 })
 
-test('lab follows shared-store keyboard geometry through scroll and restoration', async ({
+test('lab follows shared-store keyboard geometry through page scroll and restoration', async ({
   page,
 }) => {
   await installVisualViewportFixture(page)
@@ -737,19 +758,40 @@ test('lab follows shared-store keyboard geometry through scroll and restoration'
   await page.goto('/lab')
   await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
   const composer = page.getByTestId('lab-composer')
+  await page.getByRole('checkbox', { name: 'Page-scroll stress test' }).check()
   const input = composer.getByRole('textbox')
   await input.focus()
   await setWebsiteGeometry(page, { visualHeight: 500, safeAreaBottom: 34 })
-  await expect(composer).toHaveCSS('bottom', '316px')
+  await expect
+    .poll(async () => {
+      const box = await boxOf(composer)
+      return Math.round(box.y + box.height)
+    })
+    .toBe(484)
   expect((await boxOf(composer)).y + (await boxOf(composer)).height).toBeLessThan(500)
   await page.evaluate(() => window.scrollTo(0, 450))
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(100)
-  await expect(composer).toHaveCSS('bottom', '316px')
+  await expect
+    .poll(async () => {
+      const box = await boxOf(composer)
+      return Math.round(box.y + box.height)
+    })
+    .toBe(484)
   expect((await boxOf(composer)).y + (await boxOf(composer)).height).toBeLessThan(500)
   await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 34 })
-  await expect(composer).toHaveCSS('bottom', '50px')
+  await expect
+    .poll(async () => {
+      const box = await boxOf(composer)
+      return Math.round(box.y + box.height)
+    })
+    .toBe(750)
   await setWebsiteGeometry(page, { visualHeight: 800, safeAreaBottom: 0 })
-  await expect(composer).toHaveCSS('bottom', '16px')
+  await expect
+    .poll(async () => {
+      const box = await boxOf(composer)
+      return Math.round(box.y + box.height)
+    })
+    .toBe(784)
 })
 
 test('lab responds to rotation and keeps keyboard focus usable with debug overlays', async ({
@@ -794,4 +836,85 @@ test('clipboard failure gives a manual recording fallback without collecting inp
   await page.getByRole('button', { name: 'Copy diagnostics' }).click()
   await expect(page.getByRole('status')).toContainText('Clipboard unavailable')
   await expect(page.getByTestId('lab-geometry')).toBeVisible()
+})
+
+test('lab keeps the composer at the visible bottom across panning and small occlusion', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/lab')
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  const composer = page.getByTestId('lab-composer')
+  await composer.getByRole('textbox').focus()
+  // Panning can cross the inference threshold or extend beyond the layout bottom.
+  // The application must follow visual geometry even when keyboard.open is false.
+  for (const [visualHeight, offsetTop, expectedBottom] of [
+    [500, 0, 484],
+    [500, 200, 684],
+    [500, 350, 834],
+    [760, 0, 744],
+    [800, 0, 784],
+  ] as const) {
+    await setWebsiteGeometry(page, { visualHeight, offsetTop, safeAreaBottom: 0 })
+    await expect
+      .poll(async () => {
+        const box = await boxOf(composer)
+        return Math.round(box.y + box.height)
+      })
+      .toBe(expectedBottom)
+  }
+})
+
+test('docked lab contains long scrolls and keeps the composer outside the scrolling content', async ({
+  page,
+}) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/lab')
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  const composer = page.getByTestId('lab-composer')
+  await composer.getByRole('textbox').focus()
+  await setWebsiteGeometry(page, { visualHeight: 500, safeAreaBottom: 34 })
+  const scroll = page.getByRole('region', { name: 'Scrollable lab content' })
+  await expect(scroll).toHaveCSS('overflow-y', 'auto')
+  await scroll.hover({ position: { x: 100, y: 100 } })
+  await page.mouse.wheel(0, 3000)
+  await expect.poll(() => scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(100)
+  await page.mouse.wheel(0, 3000)
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
+  await expect
+    .poll(async () => {
+      const box = await boxOf(composer)
+      return Math.round(box.y + box.height)
+    })
+    .toBe(484)
+  await scroll.evaluate((el) => {
+    el.scrollTop = 0
+  })
+  await page.getByRole('checkbox', { name: 'Page-scroll stress test' }).check()
+  await page.evaluate(() => window.scrollTo(0, 450))
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(100)
+})
+
+test('lab respects visual width and panning without cancelling user zoom', async ({ page }) => {
+  await installVisualViewportFixture(page)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.goto('/lab')
+  await expect(page.getByTestId('lab-live')).toHaveText('LIVE')
+  await setWebsiteGeometry(page, {
+    visualHeight: 400,
+    safeAreaBottom: 0,
+    offsetTop: 40,
+    offsetLeft: 30,
+    visualWidth: 280,
+  })
+  const composer = page.getByTestId('lab-composer')
+  await expect.poll(async () => Math.round((await boxOf(composer)).width)).toBe(248)
+  const box = await boxOf(composer)
+  expect(box.x).toBe(46)
+  expect(Math.round(box.y + box.height)).toBe(424)
+  const viewport = await page.locator('meta[name="viewport"]').getAttribute('content')
+  expect(viewport).not.toContain('user-scalable=no')
+  expect(viewport).not.toContain('maximum-scale=1')
 })
