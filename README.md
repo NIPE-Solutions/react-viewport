@@ -10,12 +10,14 @@ interface can respond to the measurements CSS cannot coordinate by itself.
 const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()
 ```
 
+Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe area](#keyboard-and-safe-area) and [Browser behavior](#browser-terminology-and-limitations).
+
 > **Alpha software:** `0.1.0-alpha.0` is an early release. Its API and browser
 > behavior may change. Physical iPhone Safari and Android Chrome testing is
 > pending. Read the early [browser limitations](#browser-terminology-and-limitations)
 > and [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md) before making a support
 > claim. Measured automated-release evidence and deployment status are recorded in the
-> [`0.1.0-alpha.0` readiness report](docs/releases/0.1.0-alpha.0-readiness.md).
+> [2026-09-06 product-hardening readiness report](docs/releases/2026-09-06-product-hardening-readiness.md).
 
 ## Installation
 
@@ -106,7 +108,7 @@ geometry with zero offsets, page coordinates from window scroll, and scale `1`.
 `supported.visualViewport` records that this is fallback geometry rather than a
 native VisualViewport reading.
 
-### Keyboard state is conservative
+## Keyboard and safe area
 
 `keyboard.height` is the estimated or reported bottom viewport occlusion caused
 by the software keyboard. It is not the physical keyboard's full rectangular
@@ -126,6 +128,8 @@ geometry and never enables overlay mode. A non-empty native intersection sets
 `open: true`; if floating geometry does not touch the layout viewport's bottom
 edge, bottom occlusion remains `height: 0`.
 
+A bottom-attached partial-width rectangle still yields a scalar bottom inset. That scalar cannot represent segmented or arbitrary-shape avoidance.
+
 The fallback infers an occluding software keyboard only when an
 editable element is focused, zoom is not active, and visual-bottom occlusion
 crosses `max(80 CSS px, 15% of layout height)`. The keyboard-closed baseline is
@@ -136,6 +140,10 @@ remains closed. Focus alone never means that a software keyboard is open. This
 deliberate heuristic can miss small, floating, or split keyboards; treat
 `keyboard` as measured or inferred geometry, not a device-level keyboard
 guarantee.
+
+Keyboard occlusion and the raw bottom safe-area inset can describe the same
+covered edge. When an application needs one bottom constraint, use
+`Math.max(keyboard.height, safeArea.bottom)` rather than adding them.
 
 ## CSS variables
 

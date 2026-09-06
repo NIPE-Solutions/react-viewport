@@ -14,11 +14,11 @@ Physical iPhone Safari and Android Chrome testing is pending. Nothing in this
 matrix, the desktop browser suites, or the upstream issue links records a
 physical-device pass.
 
-The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42
-documentation-site scenarios: 14 library and 14 site scenarios in each of
+The latest automated baseline on 2026-09-06 passed 54 library scenarios and 78
+documentation-site scenarios: 18 library and 26 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
-[`0.1.0-alpha.0` readiness report](releases/0.1.0-alpha.0-readiness.md) and do
-not change any physical row below from `MANUAL PENDING`.
+[`2026-09-06` product-hardening readiness report](releases/2026-09-06-product-hardening-readiness.md)
+and do not change any physical row below from `MANUAL PENDING`.
 
 ## Platform matrix
 

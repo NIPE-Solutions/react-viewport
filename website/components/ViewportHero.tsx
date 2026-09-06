@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, type CSSProperties } from 'react'
 import { useViewport } from '@nipe-solutions/react-viewport'
 
@@ -35,7 +36,7 @@ export function ViewportHero() {
             <a className="primary-action" href="#decision">
               Decide if you need it
             </a>
-            <a href="#simulator">Explore the geometry</a>
+            <Link href="/concepts#simulator">Explore the geometry</Link>
           </div>
           <pre className="viewport-hero__code" aria-label="Minimal useViewport example">
             <code>{`const { visual, keyboard, safeArea } = useViewport()

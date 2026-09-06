@@ -28,17 +28,37 @@ const textRequirements = [
   ['README.md', 'https://opensource.nipesolutions.com'],
   ['README.md', 'https://github.com/NIPE-Solutions/react-viewport'],
   ['README.md', 'max(80 CSS px, 15% of layout height)'],
+  ['README.md', 'bottom-attached partial-width rectangle still yields a scalar bottom inset'],
+  ['README.md', 'segmented or arbitrary-shape avoidance'],
   ['README.md', 'viewport-fit=cover'],
   ['README.md', 'limitations'],
   ['docs/browser-notes.md', 'max(80 CSS px, 15% of layout height)'],
+  [
+    'docs/browser-notes.md',
+    'bottom-attached partial-width rectangle still yields a scalar bottom inset',
+  ],
+  ['docs/browser-notes.md', 'segmented or arbitrary-shape avoidance'],
   ['docs/browser-notes.md', 'https://w3c.github.io/virtual-keyboard/'],
   ['docs/browser-notes.md', 'https://bugs.webkit.org/show_bug.cgi?id=217754'],
   ['docs/browser-notes.md', 'Math.max(keyboard.height, safeArea.bottom)'],
   ['docs/REAL_DEVICE_QA.md', 'Physical iPhone Safari and Android Chrome testing is pending.'],
+  [
+    'docs/REAL_DEVICE_QA.md',
+    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 78 documentation-site scenarios',
+  ],
+  ['docs/REAL_DEVICE_QA.md', 'releases/2026-09-06-product-hardening-readiness.md'],
   ['website/app/api/page.tsx', 'supported.virtualKeyboard means API availability'],
   ['website/app/api/page.tsx', 'Math.max(keyboard.height, safeArea.bottom)'],
   ['website/app/browser-behavior/page.tsx', 'https://w3c.github.io/virtual-keyboard/'],
   ['website/app/browser-behavior/page.tsx', 'https://bugs.webkit.org/show_bug.cgi?id=217754'],
+  [
+    'website/app/browser-behavior/page.tsx',
+    'bottom-attached partial-width rectangle still yields a scalar bottom inset',
+  ],
+  ['website/app/browser-behavior/page.tsx', 'segmented or arbitrary-shape avoidance'],
+  ['website/app/browser-behavior/page.tsx', 'the larger of 80 CSS pixels and 15% of layout height'],
+  ['website/app/browser-behavior/page.tsx', '54 library scenarios'],
+  ['website/app/browser-behavior/page.tsx', '78 documentation-site scenarios'],
   ['website/content/docs.ts', 'open: true, height: 0'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],
@@ -243,6 +263,22 @@ function assertReadmeOpening(readme) {
     opening.includes('[browser limitations](#browser-terminology-and-limitations)'),
     'README opening must link to browser limitations',
   )
+
+  const links = new Map(
+    [...opening.matchAll(/\[([^\]]+)]\(([^)]+)\)/g)].map((match) => [match[1], match[2]]),
+  )
+  const discoveryLinks = new Map([
+    ['CSS alternatives', '#when-css-is-enough'],
+    ['Keyboard and safe area', '#keyboard-and-safe-area'],
+    ['Browser behavior', '#browser-terminology-and-limitations'],
+  ])
+  for (const [label, href] of discoveryLinks) {
+    assert.equal(
+      links.get(label),
+      href,
+      `README opening discovery links must include ${label} -> ${href}`,
+    )
+  }
 }
 
 async function assertQaMatrix(qa) {
@@ -370,6 +406,8 @@ async function assertNoMisleadingKeyboardGuidance() {
     new RegExp(`${safeAreaOperand}${addition}${keyboardOperand}`, 'i'),
     /(?:var|env)\(\s*(?:--)?[^)]*keyboard[^)]*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)]*safe-area[^)]*\)/i,
     /(?:var|env)\(\s*(?:--)?[^)]*safe-area[^)]*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)]*keyboard[^)]*\)/i,
+    /(?:var|env)\(\s*(?:--)?[^)\n]*keyboard[^)\n]*\)\s*\+\s*max\(\s*[^,()\n]+,\s*(?:var|env)\(\s*(?:--)?[^)\n]*safe-area[^)\n]*\)\s*\)/i,
+    /max\(\s*[^,()\n]+,\s*(?:var|env)\(\s*(?:--)?[^)\n]*safe-area[^)\n]*\)\s*\)\s*\+\s*(?:var|env)\(\s*(?:--)?[^)\n]*keyboard[^)\n]*\)/i,
   ]
   const universalDetectionPatterns = [
     /\b(?:detects?|reports?|recognizes?|identifies?)\s+every\b[^.\n]{0,80}\bkeyboard\b/i,

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 
-import { browserNotes } from '../../content/docs'
+import { browserNotes, site } from '../../content/docs'
+
+const sourceRoot = `${site.repository}/blob/main`
 
 export const metadata: Metadata = {
   title: 'Browser behavior',
@@ -59,13 +61,18 @@ export default function BrowserBehaviorPage() {
             <code>{'{ open: true, height: 0 }'}</code>. Open and zero bottom occlusion are therefore
             compatible, not contradictory.
           </p>
+          <p>
+            A bottom-attached partial-width rectangle still yields a scalar bottom inset. That
+            scalar cannot represent segmented or arbitrary-shape avoidance, so consumers needing
+            two-dimensional avoidance must use a richer layout policy.
+          </p>
         </section>
         <section aria-labelledby="keyboard-title">
           <h2 id="keyboard-title">Keyboard inference is conservative</h2>
           <p>
             Without native Virtual Keyboard geometry, inference requires a focused editable element,
-            no active zoom, and visual-bottom occlusion of at least 80 CSS pixels or 15% of layout
-            height. Focus alone is never reported as an open keyboard.
+            no active zoom, and visual-bottom occlusion of at least the larger of 80 CSS pixels and
+            15% of layout height. Focus alone is never reported as an open keyboard.
           </p>
         </section>
         <section aria-labelledby="composition-title">
@@ -83,6 +90,27 @@ export default function BrowserBehaviorPage() {
             adds no browser-specific runtime workaround.
           </p>
         </section>
+        <section aria-labelledby="automated-evidence-title">
+          <h2 id="automated-evidence-title">Automated evidence</h2>
+          <p>
+            The 2026-09-06 deterministic baseline passed 54 library scenarios and 78
+            documentation-site scenarios across desktop Chromium, Firefox, and WebKit. These
+            fixtures establish repository behavior only; they are not physical-device results.
+          </p>
+          <ul>
+            <li>
+              <a href={`${sourceRoot}/e2e/viewport.spec.ts`}>Library browser suite</a>
+            </li>
+            <li>
+              <a href={`${sourceRoot}/e2e/website.spec.ts`}>Website browser suite</a>
+            </li>
+            <li>
+              <a href={`${sourceRoot}/docs/releases/2026-09-06-product-hardening-readiness.md`}>
+                Current readiness report
+              </a>
+            </li>
+          </ul>
+        </section>
         <section aria-labelledby="environments-title">
           <h2 id="environments-title">Environment notes</h2>
           <div className="browser-list">
@@ -94,12 +122,16 @@ export default function BrowserBehaviorPage() {
             ))}
           </div>
         </section>
-        <aside className="evidence-note">
-          <strong>Physical-device status</strong>
+        <aside className="evidence-note" aria-labelledby="physical-device-status-title">
+          <strong id="physical-device-status-title">Physical-device status</strong>
           <p>
             Physical iPhone Safari and Android Chrome testing is pending. Desktop automation cannot
             reproduce mobile keyboard animation, browser chrome, floating keyboards, or all embedded
             hosts.
+          </p>
+          <p>
+            Track those pending rows in the{' '}
+            <a href={`${sourceRoot}/docs/REAL_DEVICE_QA.md`}>real-device QA matrix</a>.
           </p>
         </aside>
       </article>

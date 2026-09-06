@@ -28,6 +28,8 @@ intersection as native evidence that the keyboard is open. `keyboard.height`
 then reports only the portion occluding the layout viewport's bottom edge. A
 floating intersection can consequently produce `{ open: true, height: 0 }`.
 
+A bottom-attached partial-width rectangle still yields a scalar bottom inset. That scalar cannot represent segmented or arbitrary-shape avoidance.
+
 The specification initializes `overlaysContent` to false and changes viewport
 resizing behavior only when an author sets it to true. This library never sets
 `overlaysContent`, calls `show()`, or calls `hide()`; it observes the available

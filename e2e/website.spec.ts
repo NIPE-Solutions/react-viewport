@@ -33,13 +33,68 @@ test('concepts explains viewport changes before the geometry controls', async ({
   expect(contextTop).toBeLessThan(controlsTop)
 })
 
-test('homepage concepts preview links to the sole geometry simulator', async ({ page }) => {
+test('homepage hands off to concepts, references, and bounded browser evidence', async ({
+  page,
+}) => {
   await page.goto('/')
 
   await expect(
     page.getByRole('link', { name: 'Explore the concepts and simulator' }),
   ).toHaveAttribute('href', '/concepts')
   await expect(page.getByRole('group', { name: 'View' })).toHaveCount(0)
+
+  const modalPreview = page.locator('.use-case-list article').filter({ hasText: 'Modal actions' })
+  await expect(modalPreview).toContainText('larger of keyboard occlusion and the safe-area bottom')
+  await expect(modalPreview).not.toContainText(
+    'inside the visual viewport while browser chrome changes',
+  )
+
+  const homepageEvidence = page.getByRole('region', {
+    name: 'Browser evidence has boundaries',
+  })
+  await expect(homepageEvidence).toContainText(/Automated evidence.*54.*78/s)
+  await expect(homepageEvidence).toContainText(/Physical-device status.*pending/is)
+
+  const referenceLinks = [
+    ['CSS alternatives', '/examples#css-first-title'],
+    ['Keyboard and safe area', '/concepts#keyboard-and-safe-area'],
+    ['API reference', '/api'],
+    ['Browser behavior', '/browser-behavior'],
+  ] as const
+  for (const [name, href] of referenceLinks) {
+    await expect(homepageEvidence.getByRole('link', { name, exact: true })).toHaveAttribute(
+      'href',
+      href,
+    )
+  }
+
+  await homepageEvidence.getByRole('link', { name: 'Browser behavior', exact: true }).click()
+  await expect(page).toHaveURL(/\/browser-behavior$/)
+
+  const automatedEvidence = page.getByRole('region', { name: 'Automated evidence' })
+  await expect(automatedEvidence).toContainText('54 library scenarios')
+  await expect(automatedEvidence).toContainText('78 documentation-site scenarios')
+  await expect(
+    automatedEvidence.getByRole('link', { name: 'Library browser suite', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/e2e/viewport.spec.ts',
+  )
+  await expect(
+    automatedEvidence.getByRole('link', { name: 'Website browser suite', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/e2e/website.spec.ts',
+  )
+  await expect(
+    automatedEvidence.getByRole('link', { name: 'Current readiness report', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/NIPE-Solutions/react-viewport/blob/main/docs/releases/2026-09-06-product-hardening-readiness.md',
+  )
+  await expect(page.getByRole('complementary', { name: 'Physical-device status' })).toContainText(
+    'pending',
+  )
 })
 
 test('guides is removed from routes, rendered navigation, and the sitemap', async ({ page }) => {
@@ -139,6 +194,12 @@ test('hero leads with a usable composer and separates live browser state from si
   await expect(simulationToggle).toHaveAttribute('aria-pressed', 'true')
   await expect(hero.getByText('Simulated keyboard', { exact: true })).toBeVisible()
   await expect(liveValues).toHaveText(beforeSimulation)
+
+  const geometryLink = hero.getByRole('link', { name: 'Explore the geometry', exact: true })
+  await expect(geometryLink).toHaveAttribute('href', '/concepts#simulator')
+  await geometryLink.click()
+  await expect(page).toHaveURL(/\/concepts#simulator$/)
+  await expect(page.locator('#simulator')).toBeVisible()
 })
 
 test('hero gives assistive technology a layout and visual viewport summary', async ({ page }) => {
@@ -150,9 +211,24 @@ test('hero gives assistive technology a layout and visual viewport summary', asy
 })
 
 for (const size of responsiveSizes) {
-  test(`keeps the coordinate model legible without overflow at ${size.width}px`, async ({
+  test(`keeps the homepage hero and coordinate model legible without overflow at ${size.width}px`, async ({
     page,
   }) => {
+    await page.setViewportSize(size)
+    await page.goto('/')
+
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Know what part of the screen is actually usable.',
+      }),
+    ).toBeVisible()
+    const homepageDimensions = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      content: document.documentElement.scrollWidth,
+    }))
+    expect(homepageDimensions.content).toBeLessThanOrEqual(homepageDimensions.viewport)
+
     await page.setViewportSize(size)
     await page.goto('/concepts')
 
@@ -433,6 +509,24 @@ test('examples use the effective inset and keep modal actions inside the visual 
   await expect(page.getByTestId('effective-bottom-inset')).toHaveText('326px')
   await expect(page.getByTestId('visible-area-height')).toHaveText('474px')
   expect(await page.locator('output[data-example-output]').allTextContents()).not.toContain('360px')
+
+  const computedComposerPosition = await page.getByTestId('composer-shell').evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      bottom: Number.parseFloat(style.bottom),
+      keyboard: Number.parseFloat(style.getPropertyValue('--react-viewport-keyboard-height')),
+      safeArea: Number.parseFloat(style.getPropertyValue('--react-viewport-safe-area-bottom')),
+      oneRem: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+    }
+  })
+  expect(computedComposerPosition.keyboard).toBe(326)
+  expect(computedComposerPosition.safeArea).toBe(34)
+  expect(computedComposerPosition.bottom).toBeCloseTo(
+    Math.max(computedComposerPosition.keyboard, computedComposerPosition.safeArea) +
+      computedComposerPosition.oneRem,
+    5,
+  )
+  expect(computedComposerPosition.bottom - computedComposerPosition.oneRem).not.toBeCloseTo(360, 5)
 
   const visualRegion = await boxOf(page.getByTestId('modal-visual-region'))
   const modalActions = await boxOf(page.getByTestId('modal-action-bar'))

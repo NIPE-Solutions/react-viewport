@@ -42,8 +42,10 @@ export default function HomePage() {
           </article>
           <article>
             <h3>Modal actions</h3>
-            <p>Keep the action row inside the visual viewport while browser chrome changes.</p>
-            <code>visual.height</code>
+            <p>
+              Keep the action row above the larger of keyboard occlusion and the safe-area bottom.
+            </p>
+            <code>Math.max(…)</code>
           </article>
           <article>
             <h3>Zoom-aware tools</h3>
@@ -91,6 +93,30 @@ export default function HomePage() {
         <p className="section-link">
           <Link href="/concepts">Explore the concepts and simulator</Link>
         </p>
+      </section>
+
+      <section className="evidence-handoff" aria-labelledby="evidence-handoff-title">
+        <div className="site-frame split-section">
+          <div className="section-heading evidence-handoff__copy">
+            <h2 id="evidence-handoff-title">Browser evidence has boundaries</h2>
+            <p>
+              <strong>Automated evidence.</strong> The current deterministic desktop matrix covers
+              54 library scenarios and 78 documentation-site scenarios across Chromium, Firefox, and
+              WebKit.
+            </p>
+            <p>
+              <strong>Physical-device status.</strong> iPhone Safari and Android Chrome testing is
+              still pending; automation does not turn those rows into device passes.
+            </p>
+          </div>
+          <nav className="reference-handoff" aria-label="Evidence and reference">
+            <strong>Continue with</strong>
+            <Link href="/examples#css-first-title">CSS alternatives</Link>
+            <Link href="/concepts#keyboard-and-safe-area">Keyboard and safe area</Link>
+            <Link href="/api">API reference</Link>
+            <Link href="/browser-behavior">Browser behavior</Link>
+          </nav>
+        </div>
       </section>
     </main>
   )
