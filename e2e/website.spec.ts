@@ -8,6 +8,42 @@ const responsiveSizes = [
   { name: 'wide', width: 1440, height: 1000 },
 ] as const
 
+test('hero leads with a usable composer and separates live browser state from simulation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1200, height: 900 })
+  await page.goto('/')
+
+  const hero = page.getByRole('region', {
+    name: 'Know what part of the screen is actually usable.',
+  })
+  await expect(
+    hero.getByRole('heading', {
+      name: 'Know what part of the screen is actually usable.',
+    }),
+  ).toBeVisible()
+  await expect(hero.getByText('Live browser', { exact: true })).toBeVisible()
+  await expect(
+    hero.getByText(/const \{ visual, keyboard, safeArea \} = useViewport\(\)/),
+  ).toBeVisible()
+
+  const liveValues = hero.locator('[data-live-viewport-value]')
+  await expect(liveValues).toHaveCount(3)
+  const beforeSimulation = await liveValues.allTextContents()
+
+  await hero.getByRole('button', { name: 'Simulate keyboard' }).click()
+  await expect(hero.getByText('Simulated keyboard', { exact: true })).toBeVisible()
+  await expect(liveValues).toHaveText(beforeSimulation)
+})
+
+test('hero gives assistive technology a layout and visual viewport summary', async ({ page }) => {
+  await page.goto('/')
+
+  const summary = page.getByTestId('hero-live-summary')
+  await expect(summary).toBeVisible()
+  await expect(summary).toHaveAccessibleName(/Layout viewport.*Visual viewport/i)
+})
+
 for (const size of responsiveSizes) {
   test(`keeps the coordinate model legible without overflow at ${size.width}px`, async ({
     page,

@@ -2,53 +2,22 @@ import Link from 'next/link'
 
 import { CodeBlock } from '../components/CodeBlock'
 import { GeometryDemo } from '../components/GeometryDemo'
+import { ViewportHero } from '../components/ViewportHero'
 import { quickStart, site } from '../content/docs'
 
 export default function HomePage() {
   return (
     <main id="main-content" tabIndex={-1}>
-      <section className="hero site-frame" aria-labelledby="hero-title">
-        <div className="hero__copy">
-          <h1 id="hero-title">Viewport geometry you can reason about.</h1>
-          <p className="hero__introduction">
-            Read the layout viewport, visual viewport, keyboard occlusion, and safe area as one
-            typed React state—without pretending they are one rectangle.
-          </p>
-          <div className="hero__actions">
-            <a className="primary-action" href="#install">
-              Start with the API
-            </a>
-            <a href={site.repository} rel="noreferrer">
-              View source on GitHub
-            </a>
-          </div>
-          <dl className="hero__facts">
-            <div>
-              <dt>Runtime dependencies</dt>
-              <dd>0</dd>
-            </div>
-            <div>
-              <dt>Server import</dt>
-              <dd>Safe</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>Alpha</dd>
-            </div>
-          </dl>
-        </div>
-        <div className="hero__demo">
-          <GeometryDemo />
-        </div>
-      </section>
+      <ViewportHero />
 
-      <section className="install-section" id="install" aria-labelledby="install-title">
+      <section className="install-section" id="decision" aria-labelledby="install-title">
         <div className="site-frame split-section">
           <div className="section-heading">
-            <h2 id="install-title">Measure only when CSS stops being enough</h2>
+            <h2 id="install-title">Do I need React Viewport?</h2>
             <p>
-              Use dynamic viewport units and environment insets first. Reach for JavaScript when
-              interface behavior needs measured geometry.
+              Start with <code>100dvh</code>, <code>env(safe-area-inset-bottom)</code>, media
+              queries, and container queries. Reach for JavaScript only when behavior needs the
+              measured relationship between browser regions.
             </p>
             <p className="install-command">
               <code>npm install @nipe-solutions/react-viewport</code>
@@ -56,6 +25,36 @@ export default function HomePage() {
           </div>
           <CodeBlock label="Quick start" code={quickStart} />
         </div>
+      </section>
+
+      <section className="use-cases site-frame" aria-labelledby="use-cases-title">
+        <div className="section-heading">
+          <h2 id="use-cases-title">Use it where geometry changes behavior</h2>
+          <p>
+            React Viewport supplies measurements. Your interface decides what those measurements
+            should do.
+          </p>
+        </div>
+        <div className="use-case-list">
+          <article>
+            <h3>Chat composers</h3>
+            <p>Keep the input above bottom occlusion without double-counting the safe area.</p>
+            <code>keyboard.height</code>
+          </article>
+          <article>
+            <h3>Modal actions</h3>
+            <p>Keep the action row inside the visual viewport while browser chrome changes.</p>
+            <code>visual.height</code>
+          </article>
+          <article>
+            <h3>Zoom-aware tools</h3>
+            <p>Distinguish a shifted or scaled visible region from a smaller layout viewport.</p>
+            <code>visual.scale</code>
+          </article>
+        </div>
+        <p className="section-link">
+          <Link href="/examples">See working examples</Link>
+        </p>
       </section>
 
       <section className="mental-model site-frame" aria-labelledby="mental-model-title">
@@ -91,6 +90,26 @@ export default function HomePage() {
         </div>
         <p className="section-link">
           <Link href="/browser-behavior">Read the evidence and browser limits</Link>
+        </p>
+      </section>
+
+      <section
+        className="simulator-section site-frame"
+        id="simulator"
+        aria-labelledby="simulator-title"
+      >
+        <div className="section-heading">
+          <h2 id="simulator-title">Viewport geometry you can reason about.</h2>
+          <p>
+            Compare the coordinate systems after seeing where they matter. The simulator is a
+            teaching tool; its scenarios never replace the live browser snapshot.
+          </p>
+        </div>
+        <GeometryDemo />
+        <p className="section-link">
+          <a href={site.repository} rel="noreferrer">
+            View source on GitHub
+          </a>
         </p>
       </section>
     </main>
