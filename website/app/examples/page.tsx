@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { InteractionHint } from '../../components/InteractionHint'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { CodeBlock } from '../../components/CodeBlock'
@@ -22,6 +23,7 @@ export default function ExamplesPage() {
         <h1>Examples</h1>
         <p>CSS owns layout. React Viewport exposes geometry to logic.</p>
       </header>
+      <InteractionHint />
       <div className="site-frame examples-stack">
         <nav aria-label="Example categories">
           <a href="#result-budget">Application logic</a> ·{' '}

@@ -1,5 +1,7 @@
 'use client'
 
+import { formatGeometry } from './format-geometry'
+
 import { useEffect, useRef, useState, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { useViewport } from '@nipe-solutions/react-viewport'
@@ -72,7 +74,7 @@ export function CoordinateVisibility() {
       {target && (
         <>
           <p data-testid="target-coordinates">
-            Document target: x {Math.round(target.left)}, y {Math.round(target.top)} CSS px.
+            Document target: x {formatGeometry(target.left)}, y {formatGeometry(target.top)} CSS px.
           </p>
           <p>
             Any positive rectangle overlap counts as visible. Other elements, clipping and floating
@@ -98,7 +100,7 @@ export function CoordinateVisibility() {
         </p>
         <p data-testid="scroll-correction">
           Suggested vertical correction:{' '}
-          {correction === null ? 'Pending' : `${Math.round(correction)} px`}
+          {correction === null ? 'Pending' : `${formatGeometry(correction)} px`}
         </p>
         <label className="lab-scroll-mode">
           <input

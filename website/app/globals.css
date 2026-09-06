@@ -2579,3 +2579,21 @@ body:has(.device-lab[data-page-scroll='false']) {
     overflow-wrap: anywhere;
   }
 }
+
+.interaction-hint {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: max(0.65rem, env(safe-area-inset-top, 0px)) var(--gutter) 0.65rem;
+  border-block: 1px solid var(--rule);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.geometry-lab .interaction-hint {
+  padding-inline: 0.8rem;
+}
+html:has(.interaction-hint) {
+  scroll-padding-top: calc(8rem + env(safe-area-inset-top, 0px));
+}
