@@ -22,10 +22,10 @@ export async function verifyProduction(
     markers.push(marker)
     const verifiedAssets = new Set()
     for (const [route, text] of [
-      ['/', 'Know what part of the screen is actually usable.'],
-      ['/lab', 'Live Device Lab'],
-      ['/lab/css', 'Browser + CSS baseline'],
-      ['/examples', 'Chat composer'],
+      ['/', 'Visual viewport geometry as React state.'],
+      ['/lab', 'Live Geometry Lab'],
+      ['/lab/css', 'CSS Baseline'],
+      ['/examples', 'Rendering budget'],
     ]) {
       const response = await fetch(`${origin}${route}`, { cache: 'no-store' })
       assert.equal(response.status, 200, `${origin}${route}`)

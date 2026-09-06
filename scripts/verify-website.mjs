@@ -14,9 +14,9 @@ const routes = [
     route: '/',
     file: 'index.html',
     copy: [
-      'Know what part of the screen is actually usable.',
-      'Fixed offset only',
-      'Viewport-aware offset',
+      'Visual viewport geometry as React state.',
+      'If CSS solves it',
+      'Rendering decisions',
       'Layout viewport',
       'Visual viewport',
     ],
@@ -24,12 +24,12 @@ const routes = [
   {
     route: '/lab',
     file: 'lab.html',
-    copy: ['Live Device Lab', 'Show geometry', 'Copy diagnostics'],
+    copy: ['Live Geometry Lab', 'Application decision', 'Copy diagnostics'],
   },
   {
     route: '/lab/css',
     file: 'lab/css.html',
-    copy: ['Browser + CSS baseline', 'Requested, not detected.'],
+    copy: ['CSS Baseline', 'Requested, not detected.'],
   },
   { route: '/api', file: 'api.html', copy: ['API reference', 'useViewport()', 'ViewportState'] },
   {
@@ -40,7 +40,13 @@ const routes = [
   {
     route: '/examples',
     file: 'examples.html',
-    copy: ['Examples', 'Chat composer', 'Modal actions', 'Visible area', 'CSS variables'],
+    copy: [
+      'Examples',
+      'Rendering budget',
+      'Coordinate visibility',
+      'Zoom-aware tools',
+      'CSS integration',
+    ],
   },
   {
     route: '/concepts',

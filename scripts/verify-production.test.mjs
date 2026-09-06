@@ -26,7 +26,7 @@ function fixture(overrides = {}) {
         ? 'Page not found'
         : `
       <meta name="build-sha" content="${commit}">
-      Know what part of the screen is actually usable. Live Device Lab Chat composer Browser + CSS baseline
+      Visual viewport geometry as React state. Live Geometry Lab Rendering budget CSS Baseline
       <script src="/asset.js"></script><link rel="stylesheet" href="/asset.css">`
     let json = { ...marker }
     let contentType = route.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/html'
@@ -49,7 +49,7 @@ test('production verifier accepts matching aliases, HTML markers, assets and 404
 
 for (const [name, changes, message] of [
   ['stale deployment', { '/build.json': { json: { ...marker, commit: 'b'.repeat(40) } } }, /stale/],
-  ['mixed HTML and marker', { '/lab': { text: 'Live Device Lab' } }, /HTML\/marker mismatch/],
+  ['mixed HTML and marker', { '/lab': { text: 'Live Geometry Lab' } }, /HTML\/marker mismatch/],
   ['wrong root', { '/': { text: 'unrelated website' } }, /wrong website artifact/],
   ['missing asset', { '/asset.js': { status: 404 } }, /missing asset/],
   ['missing stylesheet', { '/asset.css': { status: 404 } }, /stylesheet/],

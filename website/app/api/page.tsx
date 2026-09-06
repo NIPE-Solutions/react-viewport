@@ -53,6 +53,12 @@ export default function ApiPage() {
           </section>
           <section id="runtime" aria-labelledby="runtime-title">
             <h2 id="runtime-title">Runtime</h2>
+            <p>
+              Hooks use a shared <code>useSyncExternalStore</code> store per window. The server
+              snapshot is stable and geometry-neutral. Pass <code>targetWindow</code> only after
+              verifying that an alternate iframe or popup is same-origin and its Window is
+              accessible; coordinates and DOM rectangles must come from that same window.
+            </p>
             {apiReference.map((entry) => (
               <div className="reference-entry" key={entry.name}>
                 <h3>{entry.name}</h3>
@@ -75,7 +81,8 @@ export default function ApiPage() {
             <h2 id="variables-title">CSS variables</h2>
             <p>
               Lengths serialize as CSS pixels; scale is unitless. Dimensional values are absent
-              until the first client measurement.
+              until the first client measurement. This hook bridges shared measurements into CSS;
+              CSS still owns layout and the application still owns policy.
             </p>
             <ul className="variable-list">
               {cssVariables.map((variable) => (

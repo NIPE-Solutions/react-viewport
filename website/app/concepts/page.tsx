@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { CodeBlock } from '../../components/CodeBlock'
 import { GeometryDemo } from '../../components/GeometryDemo'
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function ConceptsPage() {
           <strong>On this page</strong>
           <a href="#coordinates">Four measurements</a>
           <a href="#changes">What changes</a>
+          <a href="#coordinate-systems">Coordinate guide</a>
           <a href="#keyboard-and-safe-area">Keyboard and safe area</a>
           <a href="#scenarios">Scenarios</a>
           <a href="#simulator">Simulator</a>
@@ -73,6 +75,43 @@ export default function ConceptsPage() {
             <p>
               <code>Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))</code>
             </p>
+          </section>
+
+          <section id="coordinate-systems" aria-labelledby="coordinate-systems-title">
+            <h2 id="coordinate-systems-title">Coordinate guide</h2>
+            <p>
+              <code>visual.offsetTop</code> and <code>offsetLeft</code> locate the visual viewport
+              inside the layout viewport. <code>visual.pageTop</code> and <code>pageLeft</code>
+              locate it in the document. All are CSS pixels. <code>visual.scale</code> describes
+              pinch zoom; it is not a responsive breakpoint.
+            </p>
+            <p>
+              Keep visibility targets in document coordinates. Convert a DOM rectangle with{' '}
+              <code>getBoundingClientRect()</code>, then add <code>window.scrollX</code> and{' '}
+              <code>window.scrollY</code> from that element&apos;s window. Do not multiply by scale.
+              Compare it with the bounds from <code>pageLeft</code>, <code>pageTop</code>, visual
+              width, and visual height; visible means the rectangles have a positive-width and
+              positive-height intersection.
+            </p>
+            <p>
+              This geometric test does not detect clipping ancestors or other DOM overlays. See the{' '}
+              <a href="https://drafts.csswg.org/cssom-view/#the-visualviewport-interface">
+                CSSOM View VisualViewport definition
+              </a>{' '}
+              and{' '}
+              <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect">
+                MDN&apos;s getBoundingClientRect reference
+              </a>
+              .
+            </p>
+            <CodeBlock
+              collapsible
+              label="Document-coordinate intersection · actual example helper"
+              code={readFileSync(
+                path.join(process.cwd(), 'website/components/geometry-logic.ts'),
+                'utf8',
+              )}
+            />
           </section>
 
           <section id="keyboard-and-safe-area" aria-labelledby="keyboard-safe-title">
@@ -165,9 +204,11 @@ export default function ConceptsPage() {
         <section id="performance" aria-labelledby="performance-title">
           <h2 id="performance-title">Shared-store performance</h2>
           <p>
-            Subscribers targeting the same window share one store, browser listener set, and
-            safe-area probe. Events are coalesced into one animation-frame measurement, and an
-            unchanged scalar snapshot does not notify React again.
+            <code>useViewport()</code> uses <code>useSyncExternalStore</code>. Subscribers targeting
+            the same window share one store, browser listener set, and hidden CSS safe-area probe.
+            The probe reads all four <code>env(safe-area-inset-*)</code> sides. Events are coalesced
+            into one animation-frame measurement, and an unchanged scalar snapshot does not notify
+            React again.
           </p>
           <p>
             CSS-variable consumers subscribe to that store directly. This describes the measured

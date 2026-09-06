@@ -3,7 +3,8 @@ import Link from 'next/link'
 const navigation = [
   { href: '/', label: 'Overview' },
   { href: '/examples', label: 'Examples' },
-  { href: '/lab', label: 'Device Lab' },
+  { href: '/lab', label: 'Geometry Lab' },
+  { href: '/lab/css', label: 'CSS Baseline' },
   { href: '/concepts', label: 'Concepts' },
   { href: '/api', label: 'API' },
   { href: '/browser-behavior', label: 'Browser behavior' },

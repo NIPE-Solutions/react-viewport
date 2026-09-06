@@ -51,6 +51,11 @@ export default function ProjectPage() {
             iPhone, iPad, Android, installed PWA, WebView, and external-keyboard work marked manual
             pending until a person records exact device evidence.
           </p>
+          <p>
+            A reported iPhone 17 Pro Chrome scroll-boundary problem is retained as historical issue
+            evidence. Its physical retest remains pending, alongside new iPhone Safari and Android
+            Chrome geometry checks.
+          </p>
         </section>
       </article>
     </main>

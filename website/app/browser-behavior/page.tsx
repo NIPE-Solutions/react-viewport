@@ -22,7 +22,7 @@ export default function BrowserBehaviorPage() {
       </header>
       <article className="site-frame prose browser-prose">
         <section aria-labelledby="browser-resize-title">
-          <h2 id="browser-resize-title">Let the browser resize the layout first</h2>
+          <h2 id="browser-resize-title">If CSS solves it, don’t install React Viewport</h2>
           <p>
             This website requests <code>interactive-widget=resizes-content</code>. Supporting
             browsers resize both viewports for the keyboard. A CSS grid or flex layout may then be
@@ -38,9 +38,44 @@ export default function BrowserBehaviorPage() {
             . React Viewport does not set viewport policy or opt into VirtualKeyboard overlay mode.
           </p>
           <p>
-            <a href="/lab/css">Compare the CSS baseline</a> with the{' '}
-            <a href="/lab">measured fallback</a>.
+            Explore reactive geometry in the <a href="/lab">Geometry Lab</a>. The{' '}
+            <a href="/lab/css">CSS baseline</a> is a secondary layout comparison.
           </p>
+          <p>
+            For an occasional JavaScript read, use <code>window.visualViewport</code> directly.
+            React Viewport is for shared, reactive geometry consumed by React. It reports state; the
+            application decides whether to change rendering, hit tolerance, or scrolling.
+          </p>
+        </section>
+        <section aria-labelledby="sources-title">
+          <h2 id="sources-title">Where each value comes from</h2>
+          <dl className="definition-list">
+            <div>
+              <dt>Visual viewport</dt>
+              <dd>
+                Native <code>window.visualViewport</code> supplies dimensions, layout-relative
+                offsets, document-relative page coordinates, and scale when available. Otherwise,
+                documented fallback geometry mirrors the layout viewport, uses window scroll for
+                page coordinates, and reports scale 1.
+              </dd>
+            </div>
+            <div>
+              <dt>Keyboard</dt>
+              <dd>
+                A finite, positive native VirtualKeyboard intersection is used when usable.
+                Otherwise, conservative focused-editable and visual-occlusion evidence may infer
+                keyboard state. The result is normalized to bottom-edge occlusion.
+              </dd>
+            </div>
+            <div>
+              <dt>Safe area</dt>
+              <dd>
+                A hidden CSS probe reads all four <code>env(safe-area-inset-*)</code> values. These
+                remain raw measurements; CSS should consume <code>env()</code> directly when layout
+                is the only need.
+              </dd>
+            </div>
+          </dl>
         </section>
         <section aria-labelledby="terms-title">
           <h2 id="terms-title">Read the labels literally</h2>
@@ -141,12 +176,12 @@ export default function BrowserBehaviorPage() {
             </tbody>
           </table>
           <p>
-            <a href="/lab">Open the Live Device Lab</a> to record before, during and after keyboard
+            <a href="/lab">Open the Geometry Lab</a> to record before, during and after keyboard
             geometry. Capability flags, safe-area values and keyboard inference are shown
             independently. No single “supported” badge can establish all of them.
           </p>
           <p>
-            The 2026-09-06 deterministic baseline passed 54 library scenarios and 117
+            The 2026-09-06 deterministic baseline passed 54 library scenarios and 102
             documentation-site scenarios across desktop Chromium, Firefox, and WebKit. These
             fixtures establish repository behavior only; they are not physical-device results.
           </p>

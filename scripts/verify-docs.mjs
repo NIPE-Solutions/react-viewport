@@ -8,8 +8,8 @@ const defaultPackageRoot = resolve(fileURLToPath(new URL('..', import.meta.url))
 const packageRoot = resolve(process.env.REACT_VIEWPORT_DOCS_ROOT ?? defaultPackageRoot)
 
 const textRequirements = [
-  ['README.md', 'Reliable mobile viewport state for React.'],
-  ['README.md', 'Know what part of the screen is actually usable.'],
+  ['README.md', 'CSS owns layout.'],
+  ['README.md', 'Visual viewport geometry as React state.'],
   [
     'README.md',
     'const { ready, layout, visual, keyboard, safeArea, orientation, supported } = useViewport()',
@@ -44,7 +44,7 @@ const textRequirements = [
   ['docs/REAL_DEVICE_QA.md', 'Physical iPhone Safari and Android Chrome testing is pending.'],
   [
     'docs/REAL_DEVICE_QA.md',
-    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 117 documentation-site scenarios',
+    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102 documentation-site scenarios',
   ],
   ['docs/REAL_DEVICE_QA.md', 'releases/2026-09-06-device-lab-readiness.md'],
   ['website/app/api/page.tsx', 'supported.virtualKeyboard means API availability'],
@@ -58,7 +58,7 @@ const textRequirements = [
   ['website/app/browser-behavior/page.tsx', 'segmented or arbitrary-shape avoidance'],
   ['website/app/browser-behavior/page.tsx', 'the larger of 80 CSS pixels and 15% of layout height'],
   ['website/app/browser-behavior/page.tsx', '54 library scenarios'],
-  ['website/app/browser-behavior/page.tsx', '117 documentation-site scenarios'],
+  ['website/app/browser-behavior/page.tsx', '102 documentation-site scenarios'],
   ['website/content/docs.ts', 'open: true, height: 0'],
   ['CHANGELOG.md', '0.1.0-alpha.0'],
   ['CONTRIBUTING.md', 'npm run format:check'],
@@ -99,7 +99,7 @@ const qaScenarios = new Map([
   ['toolbar collapse/expansion', 'AUTOMATED FIXTURE'],
   ['scrolling with and without the keyboard', 'AUTOMATED FIXTURE'],
   ['modal input', 'MANUAL PENDING'],
-  ['fixed-bottom composer', 'AUTOMATED FIXTURE'],
+  ['fixed-bottom composer', 'HISTORICAL AUTOMATED FIXTURE'],
   ['safe areas', 'AUTOMATED UNIT'],
   ['zoom', 'AUTOMATED FIXTURE'],
   ['restoration after blur', 'AUTOMATED UNIT'],
@@ -250,7 +250,7 @@ function assertReadmeOpening(readme) {
     .find((line) => line.trim().length > 0)
   assert.equal(
     firstCopyLine,
-    'Know what part of the screen is actually usable.',
+    'Visual viewport geometry as React state.',
     'README must lead with product utility',
   )
 

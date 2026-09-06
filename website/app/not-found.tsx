@@ -9,7 +9,7 @@ export default function NotFound() {
         <Link href="/">Return to the overview</Link>
       </p>
       <p>
-        <Link href="/lab">Open the Device Lab</Link>
+        <Link href="/lab">Open the Geometry Lab</Link>
       </p>
     </main>
   )
