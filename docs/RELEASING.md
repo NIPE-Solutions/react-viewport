@@ -1,55 +1,85 @@
 # Releasing
 
-This guide is a release checklist for maintainers. It does not publish a package
-and does not assert that npm trusted publishing, provenance, or organization
-access has been configured.
+Stable `1.0.0` is prepared through the manually dispatched
+[`release.yml`](../.github/workflows/release.yml) workflow on current `main`.
+The workflow stages an exact retained tarball for npm approval with public access,
+provenance, and the `latest` dist-tag. Maintainers approve publication in npm after
+reviewing the staged version and retained artifact.
 
-## Before creating a release
+## Before dispatching
 
-1. Confirm the intended version and changelog entry, including alpha status.
-2. Confirm the working tree is clean and review the staged diff.
-3. Run the repository checks that exist for this revision:
+1. Confirm package and lockfile version `1.0.0`, the matching changelog heading,
+   and `publishConfig` values `access: public`, `provenance: true`, `tag: latest`.
+2. Confirm a clean checkout of current `main`; review the release diff and checks.
+3. Use Node.js `>=24 <25` and npm `11.19.0`, and run the quality gates:
 
    ```sh
-   npm run format:check
-   npm run lint
-   npm run typecheck
-   npm run test
-   npm run build:dist
-   npm run test:api
-   npm run test:size
-   npm run test:package
+   NPM_CONFIG_USERCONFIG=/dev/null npm ci
+   npm run check
+   npx playwright install --with-deps chromium firefox webkit
    npm run test:e2e
    npm run test:website:e2e
-   node scripts/verify-docs.mjs
    ```
 
 4. Review [`docs/REAL_DEVICE_QA.md`](REAL_DEVICE_QA.md). Do not represent an
-   alpha as physically verified if its required rows remain `MANUAL PENDING`.
-5. Perform a package dry run and inspect its output:
+   release as physically verified if required rows remain `MANUAL PENDING`.
+5. Inspect the release policy and package without publishing:
 
    ```sh
-   npm pack --dry-run
+   NPM_CONFIG_USERCONFIG=/dev/null npm run release:check -- --dry-run --tag v1.0.0 --dist-tag latest
    ```
 
-The tag-triggered release workflow repeats both three-engine Playwright suites
-after the full quality gate and before release metadata validation, packing, or
-publication. A green pull-request browser workflow is useful evidence but does
-not substitute for this tag-specific pre-publication gate.
+The dry run may inspect a dirty working tree. The staging workflow requires a
+clean checkout, checks that `1.0.0` is absent from the public npm registry, and
+requires its exact checkout SHA to match both the dispatch SHA and a fresh remote
+`main` lookup. Authentication errors, timeouts, malformed registry responses, and
+stale commits stop staging.
 
-## Publishing decision
+## Stage the retained artifact
 
-Publishing requires maintainer authority in the npm organization and an approved
-release process. Check the tag/version relationship and the intended npm dist-tag
-before publishing. Alpha versions should use the `alpha` dist-tag; do not use a
-stable tag for `0.1.0-alpha.0`.
+Configure npm trusted publishing for this repository and the unchanged workflow
+filename `release.yml`, with the GitHub environment `npm`. Restrict that
+environment to `main` and configure the organization's required approval controls.
+The workflow uses OIDC; it does not need a long-lived npm token.
 
-If an OIDC trusted-publishing workflow and provenance are configured by the
-organization, use the approved release path. Do not add a long-lived npm token to
-ordinary CI or copy credentials into repository configuration.
+Dispatch the workflow from `main`. It repeats `npm run check` and both Playwright
+suites across Chromium, Firefox, and WebKit before preparing `artifacts/` once.
+Preparation runs `npm pack --ignore-scripts` and validates the resulting archive.
+The artifact contains exactly:
+
+- `nipe-solutions-react-viewport-1.0.0.tgz`;
+- its `.sha512` checksum;
+- `release-artifact.json`, recording the source SHA, SHA-512 integrity, package
+  identity, and publication policy.
+
+The archive must contain exactly the 38 public package files. Existing bundle and
+tarball limits remain enforced, including the 3,960-byte gzip and 16,779-byte
+tarball budgets. All five installed consumers (ESM, CommonJS, React 18 SSR,
+hydration and strict types, React 19 Vite, and React 19 Next.js) run on those same
+retained bytes. To repeat that consumer check locally:
+
+```sh
+REACT_VIEWPORT_PACKAGE_TARBALL=./artifacts/nipe-solutions-react-viewport-1.0.0.tgz npm run test:package
+```
+
+This mode neither repacks nor rebuilds the supplied archive and leaves it in place.
+The workflow verifies the retained files before and after uploading them as
+`npm-react-viewport-1.0.0-<source SHA>` with seven-day retention, then repeats the
+registry and current-main guards immediately before:
+
+```sh
+npm stage publish ./artifacts/nipe-solutions-react-viewport-1.0.0.tgz --ignore-scripts --provenance --access public --tag latest
+```
+
+This stages the verified tarball for npm approval. Review its source SHA,
+checksum, package identity, dist-tag, access, and provenance before approving the
+staged publication in npm. If `main` advances during the run, dispatch again from
+the new commit. Release tags do not trigger publication.
 
 ## After publishing
 
-Record the package version, git tag, publish timestamp, dist-tag, and any
-physical-device evidence added for that release. If browser-specific behavior
-changed, add or update a record in [`browser-notes.md`](browser-notes.md).
+Confirm the public registry reports version `1.0.0`, the `latest` dist-tag,
+the expected tarball integrity, and provenance. Record the source SHA, workflow
+run, artifact checksum, approval and publish timestamps, and any physical-device
+evidence. If browser-specific behavior changed, add or update a record in
+[`browser-notes.md`](browser-notes.md).

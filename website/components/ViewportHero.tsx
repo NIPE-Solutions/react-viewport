@@ -31,7 +31,7 @@ export function ViewportHero() {
               <a href="#decision">Do I need this?</a>
             </div>
             <p className="hero-trust">
-              Zero runtime dependencies · SSR safe · React 18.3 / 19 · Alpha
+              Zero runtime dependencies · SSR safe · React 18.3 / 19 · Stable 1.0.0
             </p>
           </div>
           <div className="hero-api">

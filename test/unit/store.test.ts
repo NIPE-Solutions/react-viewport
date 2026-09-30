@@ -291,6 +291,100 @@ describe('createViewportStore', () => {
     unsubscribe()
   })
 
+  it.each([true, false])(
+    'infers keyboard geometry for nested open-shadow-root input focus (focused before subscription: %s)',
+    (focusedBeforeSubscription) => {
+      const fake = createEnvironment()
+      const host = fake.document.createElement('div')
+      fake.document.body.append(host)
+      const innerHost = fake.document.createElement('div')
+      host.attachShadow({ mode: 'open' }).append(innerHost)
+      const editable = fake.createEditable()
+      innerHost.attachShadow({ mode: 'open' }).append(editable)
+
+      if (focusedBeforeSubscription) {
+        fake.focus(editable)
+      }
+
+      const store = createViewportStore(fake.environment)
+      const unsubscribe = store.subscribe(() => undefined)
+      fake.flushAnimationFrame()
+
+      if (!focusedBeforeSubscription) {
+        fake.focus(editable)
+      }
+
+      fake.setVisualViewport({ height: 500 })
+      fake.dispatchVisualResize()
+      fake.flushAnimationFrame()
+
+      expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
+
+      fake.blur(editable)
+      fake.flushAnimationFrame()
+      expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
+      unsubscribe()
+    },
+  )
+
+  it.each([1, 2])('tracks button-to-input focus inside %s open shadow roots', (depth) => {
+    const fake = createEnvironment()
+    let parent: HTMLElement | ShadowRoot = fake.document.body
+    for (let index = 0; index < depth; index += 1) {
+      const host = fake.document.createElement('div')
+      parent.append(host)
+      parent = host.attachShadow({ mode: 'open' })
+    }
+    const editable = fake.createEditable()
+    const button = fake.document.createElement('button')
+    parent.append(button, editable)
+    const store = createViewportStore(fake.environment)
+    const unsubscribe = store.subscribe(() => undefined)
+    fake.flushAnimationFrame()
+
+    fake.focus(button)
+    fake.flushAnimationFrame()
+    fake.focus(editable)
+    fake.setVisualViewport({ height: 500 })
+    fake.dispatchVisualResize()
+    fake.flushAnimationFrame()
+
+    expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
+    unsubscribe()
+  })
+
+  it.each([1, 2])(
+    'tracks input-to-button focus inside %s open shadow roots without resize',
+    (depth) => {
+      const fake = createEnvironment()
+      let parent: HTMLElement | ShadowRoot = fake.document.body
+      for (let index = 0; index < depth; index += 1) {
+        const host = fake.document.createElement('div')
+        parent.append(host)
+        parent = host.attachShadow({ mode: 'open' })
+      }
+      const editable = fake.createEditable()
+      const button = fake.document.createElement('button')
+      parent.append(button, editable)
+      const store = createViewportStore(fake.environment)
+      const unsubscribe = store.subscribe(() => undefined)
+      fake.flushAnimationFrame()
+      fake.focus(editable)
+      fake.setVisualViewport({ height: 500 })
+      fake.dispatchVisualResize()
+      fake.flushAnimationFrame()
+      expect(store.getSnapshot().keyboard).toEqual({ open: true, height: 300 })
+
+      fake.focus(button)
+      fake.flushAnimationFrame()
+      expect(store.getSnapshot().keyboard).toEqual({ open: false, height: 0 })
+
+      unsubscribe()
+      fake.focus(editable)
+      expect(fake.queuedAnimationFrames).toBe(0)
+    },
+  )
+
   it('does not infer a keyboard when layout and visual geometry shrink together', () => {
     const fake = createEnvironment()
     const store = createViewportStore(fake.environment)

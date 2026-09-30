@@ -59,6 +59,10 @@ export default function ApiPage() {
               verifying that an alternate iframe or popup is same-origin and its Window is
               accessible; coordinates and DOM rectangles must come from that same window.
             </p>
+            <p>
+              Unmount all consumers before navigating a scoped window to another document, then
+              remount to reacquire its store. Navigation during active subscriptions is unsupported.
+            </p>
             {apiReference.map((entry) => (
               <div className="reference-entry" key={entry.name}>
                 <h3>{entry.name}</h3>

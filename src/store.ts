@@ -1,4 +1,4 @@
-import { isKeyboardCapableElement } from './editable.js'
+import { getDeepActiveElement, isKeyboardCapableElement } from './editable.js'
 import type { BrowserEnvironment } from './environment.js'
 import {
   getOrientation,
@@ -33,7 +33,7 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
   let animationFrameId: number | null = null
   let probe: SafeAreaProbe | null = null
   let cleanup: Array<() => void> = []
-  let editableFocused = false
+  let focusRoots: ShadowRoot[] = []
   let keyboardBaseline: KeyboardBaseline | null = null
 
   function subscribe(listener: () => void): () => void {
@@ -62,13 +62,12 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
   }
 
   function activate(): void {
-    editableFocused = isKeyboardCapableElement(environment.document.activeElement)
     probe = createSafeAreaProbe(environment.document)
 
     listen(environment.window, 'resize', scheduleMeasurement)
     listen(environment.window, 'scroll', scheduleMeasurement)
-    listen(environment.document, 'focusin', handleFocusIn)
-    listen(environment.document, 'focusout', handleFocusOut)
+    listen(environment.document, 'focusin', scheduleMeasurement)
+    listen(environment.document, 'focusout', scheduleMeasurement)
 
     if (environment.visualViewport !== null) {
       listen(environment.visualViewport, 'resize', scheduleMeasurement)
@@ -93,7 +92,7 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
 
     probe?.destroy()
     probe = null
-    editableFocused = false
+    updateFocusRoots([])
     keyboardBaseline = null
   }
 
@@ -102,14 +101,17 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
     cleanup.push(() => target.removeEventListener(type, listener))
   }
 
-  function handleFocusIn(event: Event): void {
-    editableFocused = isKeyboardCapableElement(isElement(event.target) ? event.target : null)
-    scheduleMeasurement()
-  }
-
-  function handleFocusOut(): void {
-    editableFocused = false
-    scheduleMeasurement()
+  function updateFocusRoots(roots: ShadowRoot[]): void {
+    // Same-host shadow focus moves can suppress the document's focus events.
+    for (const root of focusRoots) {
+      root.removeEventListener('focusin', scheduleMeasurement)
+      root.removeEventListener('focusout', scheduleMeasurement)
+    }
+    focusRoots = roots
+    for (const root of focusRoots) {
+      root.addEventListener('focusin', scheduleMeasurement)
+      root.addEventListener('focusout', scheduleMeasurement)
+    }
   }
 
   function scheduleMeasurement(): void {
@@ -124,6 +126,11 @@ export function createViewportStore(environment: BrowserEnvironment): ViewportSt
   }
 
   function measure(): void {
+    const roots: ShadowRoot[] = []
+    const editableFocused = isKeyboardCapableElement(
+      getDeepActiveElement(environment.document, roots),
+    )
+    updateFocusRoots(roots)
     const layout = readLayout(environment.window)
     const visual = readVisual(environment, layout)
     const nextBaseline = getNextBaseline(keyboardBaseline, layout, visual, editableFocused)
@@ -252,8 +259,4 @@ function hasKeyboardSizedVisualReduction(
 
 function finiteOrZero(value: number): number {
   return Number.isFinite(value) ? value : 0
-}
-
-function isElement(target: EventTarget | null): target is Element {
-  return target !== null && 'nodeType' in target && target.nodeType === 1
 }

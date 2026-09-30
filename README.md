@@ -17,7 +17,7 @@ Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe
 - You need one occasional value: read `window.visualViewport` directly.
 - React must react to shared layout/visual geometry: use React Viewport.
 
-> **Alpha software:** `0.1.0-alpha.0` may change. Physical iPhone Safari and Android
+> **Stable release:** `1.0.0`. Physical iPhone Safari and Android
 > Chrome testing is pending. Read [browser limitations](#browser-terminology-and-limitations)
 > and [real-device QA](docs/REAL_DEVICE_QA.md) before making a support claim.
 
@@ -56,12 +56,14 @@ No provider is required. Use `ViewportProvider` only for a same-origin window sc
 that an iframe or popup Window is accessible. Each window gets one shared `useSyncExternalStore`
 store and listener set. See the [API reference](https://react-viewport.nipesolutions.com/api).
 
+Unmount all consumers before navigating a scoped window to a new document, then remount to
+reacquire its store. Navigation during active subscriptions is not supported.
+
 ## Why not `window.visualViewport`?
 
-Use it directly for occasional reads. React Viewport earns its place when React needs a consistent,
-reactive snapshot shared across consumers, an SSR-neutral initial snapshot, safe-area values, or
-normalized keyboard occlusion. It exposes geometry; it does not position elements, manage focus,
-scroll automatically, define responsive breakpoints, or replace CSS.
+Use it directly for occasional reads. This package adds shared reactive snapshots,
+SSR-neutral initialization, safe-area values, and normalized keyboard occlusion.
+It does not position elements, manage focus, scroll, or replace CSS.
 
 ## Geometry Lab
 
@@ -216,6 +218,7 @@ The project does not claim universal browser support. In particular:
   arrangements.
 - The fallback inference intentionally favors false negatives over moving UI for
   ordinary browser chrome changes.
+- Focus inference follows open shadow roots, not closed shadow-root internals.
 - Desktop automation cannot reproduce physical mobile browser chrome or keyboard
   animations exactly.
 - Embedded WebViews can expose different viewport behavior and need host-level
@@ -232,8 +235,6 @@ physical-device matrix.
 - Security reporting: [`SECURITY.md`](SECURITY.md)
 - Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
-- Release readiness:
-  [`0.1.0-alpha.0`](docs/releases/0.1.0-alpha.0-readiness.md)
 - License: [MIT](LICENSE)
 
 [Part of NIPE Open Source](https://opensource.nipesolutions.com)

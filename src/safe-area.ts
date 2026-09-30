@@ -17,10 +17,10 @@ export function createSafeAreaProbe(document: Document): SafeAreaProbe {
   node.style.height = '0'
   node.style.visibility = 'hidden'
   node.style.pointerEvents = 'none'
-  node.style.paddingTop = 'env(safe-area-inset-top)'
-  node.style.paddingRight = 'env(safe-area-inset-right)'
-  node.style.paddingBottom = 'env(safe-area-inset-bottom)'
-  node.style.paddingLeft = 'env(safe-area-inset-left)'
+  // Global padding rules must not replace the raw environment measurements.
+  for (const edge of ['top', 'right', 'bottom', 'left']) {
+    node.style.setProperty(`padding-${edge}`, `env(safe-area-inset-${edge}, 0px)`, 'important')
+  }
   ;(document.body ?? document.documentElement).append(node)
 
   return {

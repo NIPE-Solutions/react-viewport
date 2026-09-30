@@ -1,6 +1,6 @@
 {
   "name": "@nipe-solutions/react-viewport",
-  "version": "0.1.0-alpha.0",
+  "version": "1.0.0",
   "description": "Reactive React viewport geometry for layout, visual viewport, keyboards, and safe areas.",
   "license": "MIT",
   "repository": {
@@ -25,7 +25,12 @@
   "engines": {
     "node": ">=24 <25"
   },
-  "packageManager": "npm@11",
+  "packageManager": "npm@11.19.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "tag": "latest"
+  },
   "scripts": {
     "build": "npm run build:website",
     "build:dist": "vite build && tsc -p tsconfig.build.json",
@@ -47,7 +52,7 @@
     "test:size": "node scripts/check-bundle-size.mjs",
     "test:types": "tsc --project test/types/tsconfig.json --noEmit",
     "test:unit": "vitest run",
-    "test:workflows": "node --test scripts/clean.test.mjs scripts/verify-workflows.test.mjs scripts/verify-release.test.mjs scripts/verify-production.test.mjs",
+    "test:workflows": "node --test scripts/clean.test.mjs scripts/verify-workflows.test.mjs scripts/verify-release.test.mjs scripts/pack-artifact.test.mjs scripts/verify-production.test.mjs",
     "typecheck": "tsc --noEmit",
     "verify:production": "node scripts/verify-production.mjs"
   },
