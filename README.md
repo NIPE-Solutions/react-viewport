@@ -59,12 +59,6 @@ store and listener set. See the [API reference](https://react-viewport.nipesolut
 Unmount all consumers before navigating a scoped window to a new document, then remount to
 reacquire its store. Navigation during active subscriptions is not supported.
 
-## Why not `window.visualViewport`?
-
-Use it directly for occasional reads. This package adds shared reactive snapshots,
-SSR-neutral initialization, safe-area values, and normalized keyboard occlusion.
-It does not position elements, manage focus, scroll, or replace CSS.
-
 ## Geometry Lab
 
 [Test React Viewport on your phone →](https://react-viewport.nipesolutions.com/lab)
@@ -79,13 +73,11 @@ remains pending; follow the [device protocol](docs/REAL_DEVICE_QA.md). A seconda
 - `ready` becomes true after the first client measurement. Before then,
   `layout`, `visual`, and `orientation` are null; false does not mean the browser
   APIs are unsupported.
-- `layout` is the layout viewport width and height from `window.innerWidth` and
-  `window.innerHeight`, in CSS pixels. It is the page's reference plane, not a
-  promise that every point is visible or unobstructed.
-- `visual` is the visible viewport's size, layout-relative offsets,
-  document-relative page coordinates, and scale. It comes from
-  `window.visualViewport` when available; otherwise documented layout geometry
-  is used. A visual change does not, by itself, identify its cause as a keyboard.
+- `layout` contains `window.innerWidth` and `window.innerHeight` in CSS pixels:
+  the layout reference plane, not an unobstructed region.
+- `visual` contains size, layout-relative offsets, document-relative coordinates,
+  and scale from `window.visualViewport`, or documented fallback geometry.
+  A visual change alone does not identify a keyboard.
 - `keyboard.open` records sufficient native or fallback evidence of an on-screen
   keyboard. `keyboard.height` is only bottom-edge occlusion in CSS pixels, not
   the on-screen keyboard's full rectangle. Native floating geometry can therefore
@@ -106,12 +98,6 @@ coordinate space used for layout. The **Visual viewport** is the currently
 visible region. When `window.visualViewport` is available, it also has offsets,
 page coordinates, and a scale. A soft keyboard, browser UI, or pinch zoom can
 change the visual viewport without changing the layout viewport.
-
-The API intentionally keeps those coordinate systems separate:
-
-```ts
-const { layout, visual, keyboard, safeArea, supported } = useViewport()
-```
 
 On a client without `window.visualViewport`, `visual` falls back to layout
 geometry with zero offsets, page coordinates from window scroll, and scale `1`.
