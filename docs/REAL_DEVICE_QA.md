@@ -10,13 +10,13 @@ browser/app version, date, scenarios, and evidence.
 `HISTORICAL` labels preserve evidence for the retired Device Lab and do not describe the current
 Geometry Lab.
 
-There are no `MANUAL VERIFIED` rows in the initial alpha.
+There are no `MANUAL VERIFIED` rows.
 
 Physical iPhone Safari and Android Chrome testing is pending. Nothing in this
 matrix, the desktop browser suites, or the upstream issue links records a
 physical-device pass.
 
-The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102
+The historical automated baseline on 2026-09-06 passed 54 library scenarios and 102
 documentation-site scenarios: 18 library and 34 site scenarios in each of
 desktop Chromium, Firefox, and WebKit. Those results are detailed in the
 [`2026-09-06` Device Lab readiness report](releases/2026-09-06-device-lab-readiness.md)
@@ -51,7 +51,7 @@ actually proves.
 | scrolling with and without the keyboard | MANUAL PENDING | AUTOMATED FIXTURE | Window and VisualViewport scrolling without a keyboard; keyboard-open scrolling remains pending | [library browser suite](../e2e/viewport.spec.ts) |
 | modal input | MANUAL PENDING | MANUAL PENDING | Legacy Device Lab scenario; no deterministic scenario | — |
 | fixed-bottom composer | MANUAL PENDING | HISTORICAL AUTOMATED FIXTURE | Legacy CSS-variable positioning under controlled bottom occlusion; this is evidence from the prior Device Lab, not the current Geometry Lab | [prior Device Lab readiness](releases/2026-09-06-device-lab-readiness.md) |
-| safe areas | MANUAL PENDING | AUTOMATED UNIT | Probe parsing/cleanup and zero-value rendering only; physical cutouts remain pending | [safe-area tests](../test/unit/safe-area.test.ts), [website browser suite](../e2e/website.spec.ts) |
+| safe areas | MANUAL PENDING | AUTOMATED FIXTURE | Probe parsing/cleanup, zero-value rendering, and resistance to global important padding rules; physical cutouts remain pending | [safe-area tests](../test/unit/safe-area.test.ts), [library browser suite](../e2e/viewport.spec.ts), [website browser suite](../e2e/website.spec.ts) |
 | zoom | MANUAL PENDING | AUTOMATED FIXTURE | Keyboard rejection at controlled scale 2 | [library browser suite](../e2e/viewport.spec.ts) |
 | geometry dimensions and coordinates | MANUAL PENDING | AUTOMATED FIXTURE | Layout/visual dimensions, offsets, page coordinates, scale, and all four safe-area sides under synthetic geometry | [library browser suite](../e2e/viewport.spec.ts), [website browser suite](../e2e/website.spec.ts) |
 | coordinate visibility | MANUAL PENDING | AUTOMATED FIXTURE | Positive document-rectangle intersection against visual page bounds; clipping and unrelated overlays are excluded | [website browser suite](../e2e/website.spec.ts) |

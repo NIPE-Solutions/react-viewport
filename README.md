@@ -17,7 +17,7 @@ Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe
 - You need one occasional value: read `window.visualViewport` directly.
 - React must react to shared layout/visual geometry: use React Viewport.
 
-> **Alpha software:** `0.1.0-alpha.0` may change. Physical iPhone Safari and Android
+> **Stable release:** `1.0.0`. Physical iPhone Safari and Android
 > Chrome testing is pending. Read [browser limitations](#browser-terminology-and-limitations)
 > and [real-device QA](docs/REAL_DEVICE_QA.md) before making a support claim.
 
@@ -56,12 +56,8 @@ No provider is required. Use `ViewportProvider` only for a same-origin window sc
 that an iframe or popup Window is accessible. Each window gets one shared `useSyncExternalStore`
 store and listener set. See the [API reference](https://react-viewport.nipesolutions.com/api).
 
-## Why not `window.visualViewport`?
-
-Use it directly for occasional reads. React Viewport earns its place when React needs a consistent,
-reactive snapshot shared across consumers, an SSR-neutral initial snapshot, safe-area values, or
-normalized keyboard occlusion. It exposes geometry; it does not position elements, manage focus,
-scroll automatically, define responsive breakpoints, or replace CSS.
+Unmount all consumers before navigating a scoped window to a new document, then remount to
+reacquire its store. Navigation during active subscriptions is not supported.
 
 ## Geometry Lab
 
@@ -77,13 +73,11 @@ remains pending; follow the [device protocol](docs/REAL_DEVICE_QA.md). A seconda
 - `ready` becomes true after the first client measurement. Before then,
   `layout`, `visual`, and `orientation` are null; false does not mean the browser
   APIs are unsupported.
-- `layout` is the layout viewport width and height from `window.innerWidth` and
-  `window.innerHeight`, in CSS pixels. It is the page's reference plane, not a
-  promise that every point is visible or unobstructed.
-- `visual` is the visible viewport's size, layout-relative offsets,
-  document-relative page coordinates, and scale. It comes from
-  `window.visualViewport` when available; otherwise documented layout geometry
-  is used. A visual change does not, by itself, identify its cause as a keyboard.
+- `layout` contains `window.innerWidth` and `window.innerHeight` in CSS pixels:
+  the layout reference plane, not an unobstructed region.
+- `visual` contains size, layout-relative offsets, document-relative coordinates,
+  and scale from `window.visualViewport`, or documented fallback geometry.
+  A visual change alone does not identify a keyboard.
 - `keyboard.open` records sufficient native or fallback evidence of an on-screen
   keyboard. `keyboard.height` is only bottom-edge occlusion in CSS pixels, not
   the on-screen keyboard's full rectangle. Native floating geometry can therefore
@@ -104,12 +98,6 @@ coordinate space used for layout. The **Visual viewport** is the currently
 visible region. When `window.visualViewport` is available, it also has offsets,
 page coordinates, and a scale. A soft keyboard, browser UI, or pinch zoom can
 change the visual viewport without changing the layout viewport.
-
-The API intentionally keeps those coordinate systems separate:
-
-```ts
-const { layout, visual, keyboard, safeArea, supported } = useViewport()
-```
 
 On a client without `window.visualViewport`, `visual` falls back to layout
 geometry with zero offsets, page coordinates from window scroll, and scale `1`.
@@ -216,6 +204,7 @@ The project does not claim universal browser support. In particular:
   arrangements.
 - The fallback inference intentionally favors false negatives over moving UI for
   ordinary browser chrome changes.
+- Focus inference follows open shadow roots, not closed shadow-root internals.
 - Desktop automation cannot reproduce physical mobile browser chrome or keyboard
   animations exactly.
 - Embedded WebViews can expose different viewport behavior and need host-level
@@ -232,8 +221,6 @@ physical-device matrix.
 - Security reporting: [`SECURITY.md`](SECURITY.md)
 - Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
-- Release readiness:
-  [`0.1.0-alpha.0`](docs/releases/0.1.0-alpha.0-readiness.md)
 - License: [MIT](LICENSE)
 
 [Part of NIPE Open Source](https://opensource.nipesolutions.com)

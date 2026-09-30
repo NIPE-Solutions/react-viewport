@@ -5,10 +5,10 @@ Thanks for helping improve `@nipe-solutions/react-viewport`. Please read the
 
 ## Development setup
 
-Use Node.js `>=24 <25` and npm 11.
+Use Node.js `>=24 <25` and npm `11.19.0`.
 
 ```sh
-npm ci
+NPM_CONFIG_USERCONFIG=/dev/null npm ci
 npm run build:dist
 npm run test
 ```
@@ -23,6 +23,8 @@ npm run test:api
 npm run test:size
 npm run test:package
 npm run test:e2e
+npm run test:website:e2e
+npm run test:workflows
 node scripts/verify-docs.mjs
 ```
 
@@ -56,3 +58,11 @@ mark a real-device result verified until a person has performed and recorded it.
 Use the pull-request template. Keep unrelated formatting or refactors out of a
 behavior change, and update the changelog when a release-note-worthy public
 change is introduced.
+
+## Releases
+
+Follow [`docs/RELEASING.md`](docs/RELEASING.md) for the stable `1.0.0` staging
+process. Its manual workflow validates current `main`, runs the full quality and
+three-engine browser gates, and verifies all installed consumers against one
+retained tarball before staging it for npm approval. Preserve the exact package
+surface and existing size limits when changing release tooling.

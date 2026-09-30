@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { execFile } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import console from 'node:console'
 import { cp, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -7,8 +9,10 @@ import { basename, dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
+import { gzipSync } from 'node:zlib'
 
-import { assertReactIsExternal } from './check-bundle-size.mjs'
+import { assertReactIsExternal, reportBundleMeasurements } from './check-bundle-size.mjs'
+import { inspectPackedArchive } from './pack-artifact.mjs'
 
 const executeFile = promisify(execFile)
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
@@ -26,14 +30,6 @@ const consumers = [
   { name: 'vite', executable: 'npm', arguments: ['run', 'build'] },
   { name: 'next', executable: 'npm', arguments: ['run', 'build'] },
 ]
-
-function isAllowedPackedFile(file) {
-  return (
-    file === 'package.json' ||
-    file.startsWith('dist/') ||
-    /^(?:changelog|license|readme)(?:\..+)?$/i.test(file)
-  )
-}
 
 export function assertNoRuntimeDependencies(packageJson) {
   const dependencies = packageJson.dependencies
@@ -58,6 +54,7 @@ async function run(executable, arguments_, cwd) {
         NEXT_TELEMETRY_DISABLED: '1',
         npm_config_audit: 'false',
         npm_config_fund: 'false',
+        NPM_CONFIG_USERCONFIG: '/dev/null',
       },
       maxBuffer: 20 * 1024 * 1024,
     })
@@ -73,26 +70,43 @@ export async function verifyPackage(root = packageRoot) {
   const temporaryDirectory = await mkdtemp(resolve(tmpdir(), 'react-viewport-package-'))
 
   try {
-    const { stdout } = await run(
-      'npm',
-      ['pack', '--json', '--pack-destination', temporaryDirectory],
-      root,
+    let tarballPath
+    if (process.env.REACT_VIEWPORT_PACKAGE_TARBALL !== undefined) {
+      assert.ok(
+        process.env.REACT_VIEWPORT_PACKAGE_TARBALL,
+        'Provided package tarball path must not be empty',
+      )
+      tarballPath = resolve(root, process.env.REACT_VIEWPORT_PACKAGE_TARBALL)
+    } else {
+      const { stdout } = await run(
+        'npm',
+        ['pack', '--json', '--ignore-scripts', '--pack-destination', temporaryDirectory],
+        root,
+      )
+      const descriptors = JSON.parse(stdout)
+      assert.ok(
+        Array.isArray(descriptors) && descriptors.length === 1,
+        'npm pack must describe exactly one tarball',
+      )
+      const [pack] = descriptors
+      assert.equal(pack.filename, basename(pack.filename), 'npm pack returned an unsafe filename')
+      tarballPath = resolve(temporaryDirectory, pack.filename)
+    }
+    const { files, packageJson, sources, tarballBytes } = inspectPackedArchive(tarballPath)
+    const initialIntegrity = createHash('sha512')
+      .update(await readFile(tarballPath))
+      .digest('hex')
+    const sourcePackage = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
+    assert.equal(
+      packageJson.name,
+      sourcePackage.name,
+      'Archive package identity differs from source package',
     )
-    const pack = JSON.parse(stdout)[0]
-
-    assert.ok(pack !== undefined, 'npm pack did not describe the generated tarball')
-
-    const files = pack.files.map(({ path }) => path).sort()
-    const unexpectedFiles = files.filter((file) => !isAllowedPackedFile(file))
-
-    assert.deepEqual(unexpectedFiles, [], `Unexpected packed files: ${unexpectedFiles.join(', ')}`)
-    assert.ok(files.includes('package.json'), 'The tarball must contain package.json')
-    assert.ok(
-      files.some((file) => file.startsWith('dist/')),
-      'The tarball must contain dist',
+    assert.equal(
+      packageJson.version,
+      sourcePackage.version,
+      'Archive package version differs from source package',
     )
-
-    const packageJson = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'))
     const packageExports = packageJson.exports?.['.']
 
     assertNoRuntimeDependencies(packageJson)
@@ -103,10 +117,15 @@ export async function verifyPackage(root = packageRoot) {
     }
 
     const bareImports = {
-      esm: assertReactIsExternal(await readFile(resolve(root, 'dist/index.js'), 'utf8'), 'esm'),
-      cjs: assertReactIsExternal(await readFile(resolve(root, 'dist/index.cjs'), 'utf8'), 'cjs'),
+      esm: assertReactIsExternal(sources.esm, 'esm'),
+      cjs: assertReactIsExternal(sources.cjs, 'cjs'),
     }
-    const tarballPath = resolve(temporaryDirectory, basename(pack.filename))
+    const esm = Buffer.from(sources.esm)
+    reportBundleMeasurements({
+      esm: esm.byteLength,
+      gzip: gzipSync(esm).byteLength,
+      tarball: tarballBytes,
+    })
     const passedConsumers = []
 
     for (const consumer of consumers) {
@@ -122,14 +141,21 @@ export async function verifyPackage(root = packageRoot) {
       console.log(`Packed ${consumer.name} consumer passed`)
     }
 
-    console.log(`Tarball: ${pack.filename} (${pack.size} bytes, ${files.length} files)`)
+    assert.equal(
+      createHash('sha512')
+        .update(await readFile(tarballPath))
+        .digest('hex'),
+      initialIntegrity,
+      'Consumer verification changed the supplied tarball bytes',
+    )
+    console.log(`Tarball: ${basename(tarballPath)} (${tarballBytes} bytes, ${files.length} files)`)
 
     return {
       bareImports,
       consumers: passedConsumers,
       exports: packageExports,
       files,
-      tarballBytes: pack.size,
+      tarballBytes,
     }
   } finally {
     await rm(temporaryDirectory, { force: true, recursive: true })

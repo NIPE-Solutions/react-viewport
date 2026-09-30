@@ -89,6 +89,61 @@ describe('viewport store registry', () => {
     resetViewportStoreForTests(windowB)
   })
 
+  it('replaces an inactive cached store when the same Window has a different document', () => {
+    const originalWindow = createTargetWindow()
+    const replacementWindow = createTargetWindow()
+    const originalDocument = originalWindow.document
+    let currentDocument = originalDocument
+    const targetWindow = new Proxy(originalWindow, {
+      get(target, key) {
+        if (key === 'document') {
+          return currentDocument
+        }
+        const value: unknown = Reflect.get(target, key, target)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    })
+    const originalStore = getViewportStore(targetWindow)
+    const unsubscribeOriginal = originalStore.subscribe(() => undefined)
+    unsubscribeOriginal()
+    currentDocument = replacementWindow.document
+
+    const replacementStore = getViewportStore(targetWindow)
+    expect(replacementStore).not.toBe(originalStore)
+    const unsubscribeReplacement = replacementStore.subscribe(() => undefined)
+
+    expect(originalDocument.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0)
+    expect(currentDocument.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
+
+    unsubscribeReplacement()
+    resetViewportStoreForTests(targetWindow)
+  })
+
+  it('retains one active store across document changes and replaces it after cleanup', () => {
+    const originalWindow = createTargetWindow()
+    const replacementWindow = createTargetWindow()
+    let currentDocument = originalWindow.document
+    const targetWindow = new Proxy(originalWindow, {
+      get(target, key) {
+        if (key === 'document') {
+          return currentDocument
+        }
+        const value: unknown = Reflect.get(target, key, target)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    })
+    const originalStore = getViewportStore(targetWindow)
+    const unsubscribe = originalStore.subscribe(() => undefined)
+    currentDocument = replacementWindow.document
+
+    expect(getViewportStore(targetWindow)).toBe(originalStore)
+    expect(currentDocument.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0)
+
+    unsubscribe()
+    expect(getViewportStore(targetWindow)).not.toBe(originalStore)
+    resetViewportStoreForTests(targetWindow)
+  })
+
   it('rejects reset while a store is active and permits it after cleanup', () => {
     const targetWindow = createTargetWindow()
     const store = getViewportStore(targetWindow)

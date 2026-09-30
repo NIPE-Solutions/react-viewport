@@ -12,6 +12,7 @@ const executeFile = promisify(execFile)
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const verifier = resolve(root, 'scripts/verify-docs.mjs')
 const documentPaths = [
+  'package.json',
   'README.md',
   'CHANGELOG.md',
   'CONTRIBUTING.md',
@@ -116,6 +117,24 @@ test('rejects a README opening without early discovery links', async () => {
     'README.md',
     (readme) => readme.replace(discoveryLinks, ''),
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /opening.*discovery links/i),
+  )
+})
+
+test('rejects release documentation that disagrees with the package version', async () => {
+  await withMutatedDocuments(
+    'package.json',
+    '"version": "1.0.0"',
+    '"version": "1.0.1"',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /release version/i),
+  )
+})
+
+test('rejects a README opening that removes pending physical-device validation', async () => {
+  await withMutatedDocuments(
+    'README.md',
+    'Physical iPhone Safari and Android\n> Chrome testing is pending.',
+    'Physical iPhone Safari and Android\n> Chrome testing is complete.',
+    (temporaryRoot) => expectVerificationFailure(temporaryRoot, /physical.*pending/i),
   )
 })
 
@@ -265,7 +284,7 @@ test('rejects a stale automated QA baseline', async () => {
     'docs/REAL_DEVICE_QA.md',
     (qa) =>
       qa.replace(
-        'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102\ndocumentation-site scenarios',
+        'The historical automated baseline on 2026-09-06 passed 54 library scenarios and 102\ndocumentation-site scenarios',
         'The latest automated baseline on 2026-09-05 passed 42 library scenarios and 42\ndocumentation-site scenarios',
       ),
     (temporaryRoot) => expectVerificationFailure(temporaryRoot, /2026-09-06.*54.*102/is),

@@ -5,6 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { validateReleaseWorkflow } from './verify-workflows.mjs'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const playwrightCli = path.join(repositoryRoot, 'node_modules/playwright/cli.js')
@@ -104,34 +105,118 @@ test('website Playwright discovery runs every scenario in Chromium, Firefox, and
   )
 })
 
-test('release CI uses OIDC, an npm environment, and no long-lived npm token', async () => {
+test('release CI stages current main through protected OIDC and all quality gates', async () => {
   const workflow = await readRepositoryFile('.github/workflows/release.yml')
-
-  assert.match(workflow, /permissions:\s*\n\s+contents: read\s*\n\s+id-token: write/)
-  assert.match(workflow, /environment:\s*\n\s+name:\s*npm/)
-  assert.doesNotMatch(workflow, /NPM_TOKEN|NODE_AUTH_TOKEN|_authToken/i)
-  assert.match(workflow, /node-version:\s*24/)
-  assert.match(workflow, /actions\/setup-node@v7/)
-  assert.match(workflow, /registry-url:\s*['"]https:\/\/registry\.npmjs\.org['"]/)
+  assert.deepEqual(validateReleaseWorkflow(workflow), [])
 })
 
-test('release CI requires both browser matrices before packing and publishing with provenance', async () => {
-  const workflow = await readRepositoryFile('.github/workflows/release.yml')
+test('release contract rejects bypassed guards, direct publication and extra executable fields', async () => {
+  const source = await readRepositoryFile('.github/workflows/release.yml')
+  const mutations = [
+    ['automatic trigger', source.replace('  workflow_dispatch:', '  push:')],
+    [
+      'wrong dispatch ref',
+      source.replace("github.ref == 'refs/heads/main'", "github.ref == 'refs/heads/feature'"),
+    ],
+    ['unprotected environment', source.replace('environment: npm', 'environment: preview')],
+    ['missing OIDC', source.replace('id-token: write', 'id-token: read')],
+    ['unsafe concurrency', source.replace('cancel-in-progress: false', 'cancel-in-progress: true')],
+    ['checkout moving ref', source.replace('ref: ${{ github.sha }}', 'ref: main')],
+    ['wrong npm', source.replace('npm@11.19.0', 'npm@11')],
+    [
+      'conditional gate',
+      source.replace('      - run: npm run check', '      - run: npm run check\n        if: false'),
+    ],
+    ['skipped engine', source.replace('chromium firefox webkit', 'chromium')],
+    ['missing website gate', source.replace('      - run: npm run test:website:e2e\n', '')],
+    [
+      'missing preparation guard',
+      source.replace('      - run: node scripts/verify-release.mjs --verify-current-main\n', ''),
+    ],
+    [
+      'missing final guard',
+      source.replace(
+        / {6}- run: node scripts\/verify-release.mjs --verify-current-main\n(?= {6}- run: npm stage)/,
+        '',
+      ),
+    ],
+    ['no uniqueness lookup', source.replaceAll('--ensure-unpublished', '--dry-run')],
+    ['unverified retained artifact', source.replaceAll('--verify-retained', '--dry-run')],
+    [
+      'consumer skipped',
+      source.replace(
+        '      - run: REACT_VIEWPORT_PACKAGE_TARBALL=./artifacts/nipe-solutions-react-viewport-1.0.0.tgz npm run test:package\n',
+        '',
+      ),
+    ],
+    [
+      'wrong consumer bytes',
+      source.replace(
+        'REACT_VIEWPORT_PACKAGE_TARBALL=./artifacts/nipe-solutions-react-viewport-1.0.0.tgz',
+        'REACT_VIEWPORT_PACKAGE_TARBALL=./other.tgz',
+      ),
+    ],
+    [
+      'wrong staged artifact',
+      source.replace(
+        'npm stage publish ./artifacts/nipe-solutions-react-viewport-1.0.0.tgz',
+        'npm stage publish .',
+      ),
+    ],
+    ['wrong channel', source.replace('--tag latest', '--tag alpha')],
+    ['missing provenance', source.replace('--provenance ', '')],
+    ['lifecycle scripts', source.replace('--ignore-scripts ', '')],
+    ['policy override', source.replace('--tag latest', '--tag latest --provenance=false')],
+    ['direct publish', source + '      - run: npm publish --access public\n'],
+    [
+      'missing upload',
+      source.replace('actions/upload-artifact@v7', 'actions/download-artifact@v7'),
+    ],
+    ['ignored artifact', source.replace('if-no-files-found: error', 'if-no-files-found: ignore')],
+    [
+      'credentials config',
+      source.replace('NPM_CONFIG_USERCONFIG: /dev/null', 'NPM_CONFIG_USERCONFIG: /tmp/credentials'),
+    ],
+    ['extra command', source + '      - run: echo unverified\n'],
+    [
+      'extra shell payload',
+      source.replace('run: npm run check', 'run: npm run check && npm publish'),
+    ],
+    [
+      'credential override',
+      source.replace(
+        '    environment: npm',
+        '    environment: npm\n    env:\n      NODE_AUTH_TOKEN: unsafe',
+      ),
+    ],
+    [
+      'alternate cwd',
+      source.replace(
+        '      - run: npm stage',
+        '      - working-directory: /tmp\n        run: npm stage',
+      ),
+    ],
+    [
+      'failure bypass',
+      source.replace(
+        '      - run: npm run check',
+        '      - run: npm run check\n        continue-on-error: true',
+      ),
+    ],
+  ]
+  for (const [label, mutated] of mutations) {
+    assert.notEqual(mutated, source, `mutation must apply: ${label}`)
+    assert.ok(validateReleaseWorkflow(mutated).length > 0, label)
+  }
+})
 
-  assertOrdered(workflow, [
-    'npm ci',
-    'npm run check',
-    'playwright install --with-deps chromium firefox webkit',
-    'npm run test:e2e',
-    'npm run test:website:e2e',
-    'npm run release:check',
-    'npm pack',
-    'npm publish',
+test('release contract rejects duplicate YAML keys, aliases and unsupported block commands', () => {
+  for (const source of [
+    'on:\n  workflow_dispatch:\non:\n  push:\n',
+    'jobs: &unsafe\n  stage: *unsafe\n',
+    'jobs:\n  stage:\n    steps:\n      - run: |\n          npm publish\n',
   ])
-  assert.match(workflow, /--tag\s+["']?\$GITHUB_REF_NAME/)
-  assert.match(workflow, /--dist-tag\s+alpha/)
-  assert.match(workflow, /npm publish[^\n]*--provenance/)
-  assert.match(workflow, /npm publish[^\n]*--tag\s+alpha/)
+    assert.ok(validateReleaseWorkflow(source).length > 0)
 })
 
 test('Dependabot covers npm dependencies and GitHub Actions', async () => {

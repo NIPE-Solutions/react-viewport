@@ -2,9 +2,8 @@
 
 ## Supported versions
 
-Security fixes are considered for the current alpha line, `0.1.0-alpha.x`.
-Because this project is pre-1.0, an appropriate fix may require an upgrade or a
-breaking correction in a later alpha.
+Security fixes target the current stable `1.x` line. Upgrade to its latest
+patch release before reporting a vulnerability. Earlier prereleases are unsupported.
 
 ## Reporting a vulnerability
 
@@ -18,6 +17,6 @@ vulnerability details and only request a private maintainer channel. Do not
 disclose security details in a public issue. Wait for a private response before
 sharing any vulnerability detail.
 
-The repository does not publish a security-response SLA in this alpha.
+The repository does not publish a security-response SLA.
 Acknowledgement and remediation timing therefore cannot be promised here.
 Reporters will be credited only with their permission.

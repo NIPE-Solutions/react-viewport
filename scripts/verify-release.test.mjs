@@ -8,24 +8,26 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { assertCleanWorkingTree, validateReleaseMetadata } from './verify-release.mjs'
+import * as release from './verify-release.mjs'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const releaseScript = path.join(repositoryRoot, 'scripts/verify-release.mjs')
 
-const alphaPackage = {
+const stablePackage = {
   name: '@nipe-solutions/react-viewport',
-  version: '0.1.0-alpha.0',
+  version: '1.0.0',
+  publishConfig: { access: 'public', provenance: true, tag: 'latest' },
 }
-const alphaChangelog = '# Changelog\n\n## 0.1.0-alpha.0\n\nInitial alpha.\n'
+const stableChangelog = '# Changelog\n\n## 1.0.0\n\nStable release.\n'
 
 test('release metadata requires the git tag to exactly match the package version', () => {
   assert.throws(
     () =>
       validateReleaseMetadata({
-        packageJson: alphaPackage,
-        changelog: alphaChangelog,
-        gitTag: 'v0.1.0-alpha.1',
-        distTag: 'alpha',
+        packageJson: stablePackage,
+        changelog: stableChangelog,
+        gitTag: 'v1.0.1',
+        distTag: 'latest',
       }),
     /does not match package version/,
   )
@@ -35,25 +37,43 @@ test('release metadata requires a changelog heading for the package version', ()
   assert.throws(
     () =>
       validateReleaseMetadata({
-        packageJson: alphaPackage,
+        packageJson: stablePackage,
         changelog: '# Changelog\n',
-        gitTag: 'v0.1.0-alpha.0',
-        distTag: 'alpha',
+        gitTag: 'v1.0.0',
+        distTag: 'latest',
       }),
     /Changelog has no heading/,
   )
 })
 
-test('alpha versions can only use the alpha npm dist-tag', () => {
+test('stable releases require exactly 1.0.0 with public latest and provenance policy', () => {
+  for (const patch of [
+    { name: '@other/package' },
+    { version: '1.0.0-alpha.0' },
+    { version: '1.0.1' },
+    { private: true },
+    { publishConfig: { access: 'restricted', provenance: true, tag: 'latest' } },
+    { publishConfig: { access: 'public', provenance: false, tag: 'latest' } },
+    { publishConfig: { access: 'public', provenance: true, tag: 'alpha' } },
+  ]) {
+    assert.throws(() =>
+      validateReleaseMetadata({
+        packageJson: { ...stablePackage, ...patch },
+        changelog: stableChangelog,
+        gitTag: `v${patch.version ?? '1.0.0'}`,
+        distTag: 'latest',
+      }),
+    )
+  }
   assert.throws(
     () =>
       validateReleaseMetadata({
-        packageJson: alphaPackage,
-        changelog: alphaChangelog,
-        gitTag: 'v0.1.0-alpha.0',
-        distTag: 'latest',
+        packageJson: stablePackage,
+        changelog: stableChangelog,
+        gitTag: 'v1.0.0',
+        distTag: 'alpha',
       }),
-    /must use the alpha npm dist-tag/,
+    /latest/,
   )
 })
 
@@ -75,14 +95,14 @@ test('the guarded dry run inspects the tarball and never invokes npm publish', a
   await import('node:fs/promises').then(({ mkdir }) =>
     Promise.all([mkdir(binDirectory), mkdir(fixtureDirectory)]),
   )
-  await writeFile(path.join(fixtureDirectory, 'package.json'), `${JSON.stringify(alphaPackage)}\n`)
-  await writeFile(path.join(fixtureDirectory, 'CHANGELOG.md'), alphaChangelog)
+  await writeFile(path.join(fixtureDirectory, 'package.json'), `${JSON.stringify(stablePackage)}\n`)
+  await writeFile(path.join(fixtureDirectory, 'CHANGELOG.md'), stableChangelog)
 
   const fakeNpm = `#!/usr/bin/env node
 import { appendFileSync } from 'node:fs'
 appendFileSync(process.env.RELEASE_TEST_CALL_LOG, JSON.stringify(process.argv.slice(2)) + '\\n')
 if (process.argv[2] !== 'pack') process.exit(91)
-process.stdout.write(JSON.stringify([{ filename: 'nipe-solutions-react-viewport-0.1.0-alpha.0.tgz', name: '@nipe-solutions/react-viewport', version: '0.1.0-alpha.0', size: 1234, unpackedSize: 5678, entryCount: 4, files: [{ path: 'LICENSE' }, { path: 'README.md' }, { path: 'dist/index.js' }, { path: 'package.json' }] }]))
+process.stdout.write(JSON.stringify([{ filename: 'nipe-solutions-react-viewport-1.0.0.tgz', name: '@nipe-solutions/react-viewport', version: '1.0.0', size: 1234, unpackedSize: 5678, entryCount: 4, files: [{ path: 'LICENSE' }, { path: 'README.md' }, { path: 'dist/index.js' }, { path: 'package.json' }] }]))
 `
   const fakeNpmPath = path.join(binDirectory, 'npm')
   await writeFile(fakeNpmPath, fakeNpm)
@@ -96,9 +116,9 @@ process.stdout.write(JSON.stringify([{ filename: 'nipe-solutions-react-viewport-
       '--root',
       fixtureDirectory,
       '--tag',
-      'v0.1.0-alpha.0',
+      'v1.0.0',
       '--dist-tag',
-      'alpha',
+      'latest',
     ],
     {
       encoding: 'utf8',
@@ -119,5 +139,78 @@ process.stdout.write(JSON.stringify([{ filename: 'nipe-solutions-react-viewport-
     .trim()
     .split('\n')
     .map((line) => JSON.parse(line))
-  assert.deepEqual(calls, [['pack', '--dry-run', '--json']])
+  assert.deepEqual(calls, [['pack', '--dry-run', '--json', '--ignore-scripts']])
+})
+
+test('npm availability accepts only a structured public-registry E404', () => {
+  assert.equal(typeof release.ensureVersionIsUnpublished, 'function')
+  const results = [
+    { status: 0, stdout: '"1.0.0"' },
+    { status: 1, stdout: '{"error":{"code":"E401"}}' },
+    { status: 1, stdout: 'E404 not found' },
+    { status: 1, stdout: '{"error":{"code":"E404"}}', signal: 'SIGTERM' },
+    { status: 2, stdout: '{"error":{"code":"E404"}}' },
+    { status: 1, stdout: '{"error":{"code":"E404"}}', error: new Error('timeout') },
+  ]
+  for (const result of results) {
+    assert.throws(() =>
+      release.ensureVersionIsUnpublished(stablePackage.name, '1.0.0', () => result),
+    )
+  }
+  assert.doesNotThrow(() =>
+    release.ensureVersionIsUnpublished(stablePackage.name, '1.0.0', (command, args, options) => {
+      assert.equal(command, 'npm')
+      assert.deepEqual(args, [
+        'view',
+        '@nipe-solutions/react-viewport@1.0.0',
+        'version',
+        '--json',
+        '--registry=https://registry.npmjs.org',
+      ])
+      assert.equal(options.env.NPM_CONFIG_USERCONFIG, '/dev/null')
+      assert.equal(options.timeout, 30_000)
+      return { status: 1, stdout: '{"error":{"code":"E404"}}' }
+    }),
+  )
+})
+
+test('current-main guard rejects stale HEAD, stale remote, malformed or unavailable lookups', () => {
+  assert.equal(typeof release.verifyCurrentMain, 'function')
+  const sha = 'a'.repeat(40)
+  const env = {
+    GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_SHA: sha,
+  }
+  const run = (command, args) =>
+    args[0] === 'rev-parse' ? `${sha}\n` : `${sha}\trefs/heads/main\n`
+  assert.equal(release.verifyCurrentMain({ env, run }), sha)
+  for (const patch of [
+    { GITHUB_EVENT_NAME: 'push' },
+    { GITHUB_REF: 'refs/tags/v1.0.0' },
+    { GITHUB_SHA: 'bad' },
+    { GITHUB_SHA: 'b'.repeat(40) },
+  ])
+    assert.throws(() => release.verifyCurrentMain({ env: { ...env, ...patch }, run }))
+  for (const remote of [
+    `${'b'.repeat(40)}\trefs/heads/main\n`,
+    `${sha}\trefs/heads/main\n${sha}\trefs/heads/main\n`,
+    `${sha}\trefs/heads/feature\n`,
+    '',
+  ]) {
+    assert.throws(() =>
+      release.verifyCurrentMain({
+        env,
+        run: (command, args) => (args[0] === 'rev-parse' ? `${sha}\n` : remote),
+      }),
+    )
+  }
+  assert.throws(() =>
+    release.verifyCurrentMain({
+      env,
+      run: () => {
+        throw new Error('offline')
+      },
+    }),
+  )
 })

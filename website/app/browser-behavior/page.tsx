@@ -130,6 +130,10 @@ export default function BrowserBehaviorPage() {
             no active zoom, and visual-bottom occlusion of at least the larger of 80 CSS pixels and
             15% of layout height. Focus alone is never reported as an open keyboard.
           </p>
+          <p>
+            Focus inside nested open shadow roots is observed. Closed shadow-root internals are not
+            accessible and are outside fallback detection.
+          </p>
         </section>
         <section aria-labelledby="composition-title">
           <h2 id="composition-title">Compose bottom constraints with the larger value</h2>

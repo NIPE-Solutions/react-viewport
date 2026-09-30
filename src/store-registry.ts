@@ -2,6 +2,7 @@ import type { VirtualKeyboardLike } from './environment.js'
 import { createViewportStore, type ViewportStore } from './store.js'
 
 interface RegistryEntry {
+  readonly document: Document
   readonly store: ViewportStore
   readonly getActiveSubscriptionCount: () => number
 }
@@ -11,16 +12,22 @@ const stores = new WeakMap<Window, RegistryEntry>()
 export function getViewportStore(targetWindow: Window): ViewportStore {
   const existing = stores.get(targetWindow)
 
-  if (existing !== undefined) {
+  // A WindowProxy survives navigation; a replacement Document needs a fresh store.
+  // Keep active subscribers on the same store until they have all detached.
+  if (
+    existing !== undefined &&
+    (existing.getActiveSubscriptionCount() !== 0 || existing.document === targetWindow.document)
+  ) {
     return existing.store
   }
 
   const navigator = targetWindow.navigator as Navigator & {
     readonly virtualKeyboard?: VirtualKeyboardLike
   }
+  const targetDocument = targetWindow.document
   const baseStore = createViewportStore({
     window: targetWindow,
-    document: targetWindow.document,
+    document: targetDocument,
     visualViewport: targetWindow.visualViewport ?? null,
     virtualKeyboard: navigator.virtualKeyboard ?? null,
   })
@@ -46,6 +53,7 @@ export function getViewportStore(targetWindow: Window): ViewportStore {
   }
 
   stores.set(targetWindow, {
+    document: targetDocument,
     store,
     getActiveSubscriptionCount: () => activeSubscriptionCount,
   })

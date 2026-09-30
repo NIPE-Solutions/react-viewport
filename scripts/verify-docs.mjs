@@ -23,7 +23,6 @@ const textRequirements = [
   ['README.md', 'dvh'],
   ['README.md', 'SSR'],
   ['README.md', '--react-viewport-layout-height'],
-  ['README.md', '0.1.0-alpha.0'],
   ['README.md', 'does not claim universal browser support'],
   ['README.md', 'https://opensource.nipesolutions.com'],
   ['README.md', 'https://github.com/NIPE-Solutions/react-viewport'],
@@ -44,7 +43,7 @@ const textRequirements = [
   ['docs/REAL_DEVICE_QA.md', 'Physical iPhone Safari and Android Chrome testing is pending.'],
   [
     'docs/REAL_DEVICE_QA.md',
-    'The latest automated baseline on 2026-09-06 passed 54 library scenarios and 102 documentation-site scenarios',
+    'The historical automated baseline on 2026-09-06 passed 54 library scenarios and 102 documentation-site scenarios',
   ],
   ['docs/REAL_DEVICE_QA.md', 'releases/2026-09-06-device-lab-readiness.md'],
   ['website/app/api/page.tsx', 'supported.virtualKeyboard means API availability'],
@@ -100,7 +99,7 @@ const qaScenarios = new Map([
   ['scrolling with and without the keyboard', 'AUTOMATED FIXTURE'],
   ['modal input', 'MANUAL PENDING'],
   ['fixed-bottom composer', 'HISTORICAL AUTOMATED FIXTURE'],
-  ['safe areas', 'AUTOMATED UNIT'],
+  ['safe areas', 'AUTOMATED FIXTURE'],
   ['zoom', 'AUTOMATED FIXTURE'],
   ['restoration after blur', 'AUTOMATED UNIT'],
 ])
@@ -134,7 +133,6 @@ const publicGuidanceExtensions = new Set([
   '.ts',
   '.tsx',
 ])
-const excludedGuidanceDirectories = new Set(['superpowers'])
 
 const contents = new Map()
 
@@ -163,9 +161,7 @@ async function collectPublicGuidancePaths(directory, paths) {
     const path = `${directory}/${entry.name}`
 
     if (entry.isDirectory()) {
-      if (!excludedGuidanceDirectories.has(entry.name)) {
-        await collectPublicGuidancePaths(path, paths)
-      }
+      await collectPublicGuidancePaths(path, paths)
       continue
     }
 
@@ -243,7 +239,7 @@ function assertQuickStart(readme) {
   assert.match(example, /export function \w+\(\)/, 'Quick start must export a runnable component')
 }
 
-function assertReadmeOpening(readme) {
+function assertReadmeOpening(readme, version) {
   const firstCopyLine = readme
     .split('\n')
     .slice(1)
@@ -258,7 +254,14 @@ function assertReadmeOpening(readme) {
   assert.ok(installationIndex > 0, 'README must contain Installation after its opening')
   const opening = readme.slice(0, installationIndex)
   assert.ok(opening.includes('= useViewport()'), 'README opening must show the useViewport shape')
-  assert.ok(opening.includes('**Alpha software:**'), 'README opening must keep the alpha caveat')
+  assert.ok(
+    opening.includes('**Stable release:** `' + version + '`.'),
+    'README opening must match the package release version',
+  )
+  assert.ok(
+    /Physical iPhone Safari and Android\s*>?\s*Chrome testing is pending\./.test(opening),
+    'README opening must keep physical-device testing pending',
+  )
   assert.ok(
     opening.includes('[browser limitations](#browser-terminology-and-limitations)'),
     'README opening must link to browser limitations',
@@ -447,7 +450,8 @@ for (const [path, requiredText] of textRequirements) {
   assert.ok(normalizedContent.includes(requiredText), `${path} must include: ${requiredText}`)
 }
 
-assertReadmeOpening(await readDocument('README.md'))
+const { version } = JSON.parse(await readDocument('package.json'))
+assertReadmeOpening(await readDocument('README.md'), version)
 assertQuickStart(await readDocument('README.md'))
 await assertQaMatrix(await readDocument('docs/REAL_DEVICE_QA.md'))
 assertBrowserNoteRegistry(await readDocument('docs/browser-notes.md'))

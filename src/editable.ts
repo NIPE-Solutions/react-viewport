@@ -23,6 +23,21 @@ function hasEditableContent(element: Element): boolean {
   return contentEditable !== null && contentEditable.toLowerCase() !== 'false'
 }
 
+export function getDeepActiveElement(document: Document, roots: ShadowRoot[] = []): Element | null {
+  let element = document.activeElement
+
+  while (element?.shadowRoot != null) {
+    const root = element.shadowRoot
+    roots.push(root)
+    if (root.activeElement === null) {
+      break
+    }
+    element = root.activeElement
+  }
+
+  return element
+}
+
 export function isKeyboardCapableElement(element: Element | null): boolean {
   if (element === null) {
     return false

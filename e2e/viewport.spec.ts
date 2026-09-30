@@ -50,6 +50,89 @@ async function expectKeyboard(page: Page, open: boolean, height: number): Promis
   await expect.poll(async () => (await readState(page)).keyboard.height).toBe(height)
 }
 
+async function createShadowControls(page: Page, depth: number): Promise<void> {
+  await page.evaluate((depth) => {
+    let parent: HTMLElement | ShadowRoot = document.body
+    for (let index = 0; index < depth; index += 1) {
+      const host = document.createElement('div')
+      parent.append(host)
+      parent = host.attachShadow({ mode: 'open' })
+    }
+    const input = document.createElement('input')
+    input.id = 'shadow-input'
+    const button = document.createElement('button')
+    button.id = 'shadow-button'
+    button.textContent = 'Shadow button'
+    parent.append(input, button)
+  }, depth)
+}
+
+for (const depth of [1, 2]) {
+  test(`tracks button-to-input focus inside ${depth} open shadow roots`, async ({ page }) => {
+    await openReadyFixture(page, '?layout=mock&visual=mock')
+    await createShadowControls(page, depth)
+    await page.locator('#shadow-button').focus()
+    await page.evaluate(() => new Promise(requestAnimationFrame))
+    await page.locator('#shadow-input').focus()
+    await page.evaluate(() => {
+      window.__viewportFixture.setVisualViewport({ height: 500 })
+      window.__viewportFixture.dispatch('visual-resize')
+    })
+
+    await expectKeyboard(page, true, 300)
+  })
+
+  test(`tracks input-to-button focus inside ${depth} open shadow roots without resize`, async ({
+    page,
+  }) => {
+    await openReadyFixture(page, '?layout=mock&visual=mock')
+    await createShadowControls(page, depth)
+    await page.locator('#shadow-input').focus()
+    await page.evaluate(() => {
+      window.__viewportFixture.setVisualViewport({ height: 500 })
+      window.__viewportFixture.dispatch('visual-resize')
+    })
+    await expectKeyboard(page, true, 300)
+
+    await page.locator('#shadow-button').focus()
+    await expectKeyboard(page, false, 0)
+  })
+}
+
+test('measures raw safe areas despite important application padding rules', async ({ page }) => {
+  await openReadyFixture(page, '?layout=mock&visual=mock')
+  await page.addStyleTag({ content: 'div { padding: 123px !important }' })
+  await page.evaluate(() => {
+    window.__viewportFixture.setLayout(390, 801)
+    window.__viewportFixture.dispatch('window-resize')
+  })
+
+  await expect.poll(async () => (await readState(page)).layout?.height).toBe(801)
+  expect((await readState(page)).safeArea).toEqual({ top: 0, right: 0, bottom: 0, left: 0 })
+})
+
+test('reacquires the current same-origin iframe document after an inactive navigation', async ({
+  page,
+}) => {
+  await page.goto('/browser/window-scope.html')
+  await expect.poll(async () => (await readState(page)).ready).toBe(true)
+
+  const navigation = await page.evaluate(() => window.__windowScopeFixture.navigate())
+  expect(navigation).toEqual({ sameWindow: true, sameDocument: false })
+
+  await expect
+    .poll(() => page.evaluate(() => window.__windowScopeFixture.diagnostics()))
+    .toMatchObject({ currentDocumentProbes: 1, previousDocumentProbes: 0 })
+  const currentGeometry = await page.evaluate(() => window.__windowScopeFixture.geometry())
+  await expect
+    .poll(() => readState(page))
+    .toMatchObject({
+      ready: true,
+      layout: currentGeometry.layout,
+      visual: currentGeometry.visual,
+    })
+})
+
 test('observes actual layout resizes and the real VisualViewport when available', async ({
   page,
 }) => {

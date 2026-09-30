@@ -1,5 +1,4 @@
 .worktrees/
-.superpowers/
 dist/
 node_modules/
 .next/
@@ -8,6 +7,8 @@ website/out/
 coverage/
 playwright-report/
 test-results/
-.DS_Store
+**/.DS_Store
+/artifacts/
+*.tgz
 .vercel/
 .env.local
