@@ -70,6 +70,21 @@ export default function HomePage() {
           zoom to observe real browser changes.
         </p>
       </section>
+      <section className="project-support site-frame" aria-labelledby="project-support-title">
+        <h2 id="project-support-title">Useful in your project?</h2>
+        <p>
+          If React Viewport helps your project, a GitHub star is a simple way to support the work
+          and help others find it.
+        </p>
+        <div className="project-support-actions">
+          <a className="primary-action" href="https://github.com/NIPE-Solutions/react-viewport">
+            Star on GitHub
+          </a>
+          <a className="project-support-link" href="https://opensource.nipesolutions.com">
+            Explore NIPE Open Source
+          </a>
+        </div>
+      </section>
       <section className="lab-cta site-frame" aria-labelledby="css-baseline-title">
         <div>
           <h2 id="css-baseline-title">Start with CSS.</h2>
