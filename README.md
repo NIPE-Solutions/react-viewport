@@ -2,6 +2,11 @@
 
 Visual viewport geometry as React state.
 
+Use it when visible geometry changes what React renders or how an interaction
+works: limit expensive results to a visible-height budget, compare a target's
+document coordinates with visible bounds, or adjust a drawing tool's hit tolerance
+while zoomed. Several consumers share one store and listener set per window.
+
 CSS owns layout. React Viewport exposes geometry; your application decides when that geometry
 changes behavior. **If CSS solves it, don’t install React Viewport.**
 
@@ -10,6 +15,8 @@ const { ready, layout, visual, keyboard, safeArea, orientation, supported } = us
 ```
 
 Start with [CSS alternatives](#when-css-is-enough), then read [Keyboard and safe area](#keyboard-and-safe-area) and [Browser behavior](#browser-terminology-and-limitations).
+
+[Docs](https://react-viewport.nipesolutions.com) · [Examples](https://react-viewport.nipesolutions.com/examples) · [Geometry Lab](https://react-viewport.nipesolutions.com/lab) · [API](https://react-viewport.nipesolutions.com/api) · [npm](https://www.npmjs.com/package/@nipe-solutions/react-viewport)
 
 ## Quick decision
 
@@ -34,124 +41,113 @@ requires Node.js `>=24 <25` for repository development.
 ## Quick start
 
 ```tsx
+'use client'
+
 import { useViewport } from '@nipe-solutions/react-viewport'
 
-export function ViewportReadout() {
+const results = [
+  'Account',
+  'Billing',
+  'Projects',
+  'Settings',
+  'Support',
+  'Team',
+  'Usage',
+  'Workspace',
+]
+
+export function VisibleResults() {
   const viewport = useViewport()
 
   if (!viewport.ready || viewport.visual === null) {
     return <p>Measuring viewport…</p>
   }
 
+  // Application policy: reserve 320px and budget 48px for each result.
+  const count = Math.min(8, Math.max(0, Math.floor((viewport.visual.height - 320) / 48)))
+
   return (
-    <p>
-      Visible size: {viewport.visual.width} × {viewport.visual.height}; keyboard:{' '}
-      {viewport.keyboard.open ? `${viewport.keyboard.height}px` : 'closed'}
-    </p>
+    <ul>
+      {results.slice(0, count).map((result) => (
+        <li key={result}>{result}</li>
+      ))}
+    </ul>
   )
 }
 ```
 
-No provider is required. Use `ViewportProvider` only for a same-origin window scope after verifying
-that an iframe or popup Window is accessible. Each window gets one shared `useSyncExternalStore`
-store and listener set. See the [API reference](https://react-viewport.nipesolutions.com/api).
+No provider or stylesheet is required. The row budget is application policy,
+not a measurement of the rendered list; use CSS for its layout. For SSR, render
+a placeholder until the first client measurement sets `ready`. Before then,
+`layout`, `visual`, and `orientation` are null. In Next.js App Router, use the
+hook in a client component.
 
-Unmount all consumers before navigating a scoped window to a new document, then remount to
-reacquire its store. Navigation during active subscriptions is not supported.
+Use `ViewportProvider` only when scoping to an accessible same-origin iframe or
+popup. Unmount its consumers before navigating that window, then remount to
+reacquire the store. Navigation during active subscriptions is not supported.
 
 ## Geometry Lab
 
 [Test React Viewport on your phone →](https://react-viewport.nipesolutions.com/lab)
 
-Change visual dimensions, offsets, page coordinates, scale, and safe areas; then test rendering
-budgets and document-coordinate visibility. Copy diagnostics excludes input text. Physical QA
-remains pending; follow the [device protocol](docs/REAL_DEVICE_QA.md). A secondary
-[CSS baseline](https://react-viewport.nipesolutions.com/lab/css) remains available for layout work.
-
-## Reading `ViewportState`
-
-- `ready` becomes true after the first client measurement. Before then,
-  `layout`, `visual`, and `orientation` are null; false does not mean the browser
-  APIs are unsupported.
-- `layout` contains `window.innerWidth` and `window.innerHeight` in CSS pixels:
-  the layout reference plane, not an unobstructed region.
-- `visual` contains size, layout-relative offsets, document-relative coordinates,
-  and scale from `window.visualViewport`, or documented fallback geometry.
-  A visual change alone does not identify a keyboard.
-- `keyboard.open` records sufficient native or fallback evidence of an on-screen
-  keyboard. `keyboard.height` is only bottom-edge occlusion in CSS pixels, not
-  the on-screen keyboard's full rectangle. Native floating geometry can therefore
-  be open with a zero height.
-- `safeArea` contains the four raw CSS `env(safe-area-inset-*)` measurements. It
-  does not automatically become zero while a keyboard is visible. For a bottom
-  constraint, use `Math.max(keyboard.height, safeArea.bottom)`; do not add them.
-- `orientation` is derived from the layout viewport aspect ratio. It is not a
-  device-orientation sensor reading.
-- `supported.visualViewport` and `supported.virtualKeyboard` report runtime API
-  availability. They do not prove a behavior was physically tested, that overlay
-  mode is active, or that a keyboard will be detected in every configuration.
+Inspect device geometry or simulate offsets, zoom, and safe areas to try rendering
+budgets and document-coordinate comparisons. Copy diagnostics excludes input
+text. The lab is a diagnostic tool; physical QA remains pending. Follow the
+[device protocol](docs/REAL_DEVICE_QA.md), or compare the
+[CSS baseline](https://react-viewport.nipesolutions.com/lab/css).
 
 ## Layout viewport versus visual viewport
 
-The **Layout viewport** is `window.innerWidth` and `window.innerHeight`: the
-coordinate space used for layout. The **Visual viewport** is the currently
-visible region. When `window.visualViewport` is available, it also has offsets,
-page coordinates, and a scale. A soft keyboard, browser UI, or pinch zoom can
-change the visual viewport without changing the layout viewport.
+The **Layout viewport** (`layout`) contains `window.innerWidth` and
+`window.innerHeight` in CSS pixels. The **Visual viewport** (`visual`) describes
+the visible region, including offsets, page coordinates, and scale. Browser UI,
+pinch zoom, or a keyboard can change this region; a visual change alone does not
+identify a keyboard. `orientation` comes from the layout aspect ratio, not a
+device sensor.
 
-On a client without `window.visualViewport`, `visual` falls back to layout
-geometry with zero offsets, page coordinates from window scroll, and scale `1`.
-`supported.visualViewport` records that this is fallback geometry rather than a
-native VisualViewport reading.
+Without `window.visualViewport`, `visual` falls back to layout geometry, zero
+offsets, window-scroll page coordinates, and scale `1`. Check
+`supported.visualViewport` to distinguish the fallback from a native reading.
 
-`visual.offsetTop` and `offsetLeft` are layout-relative. `visual.pageTop` and
-`pageLeft` are document-relative CSS pixels. Convert a DOM rectangle by adding
-`window.scrollX` and `window.scrollY` to `getBoundingClientRect()` values from
-the same window. Do not multiply by `visual.scale`; scale is not a breakpoint.
+`offsetTop`/`offsetLeft` are layout-relative; `pageTop`/`pageLeft` are
+document-relative. For a DOM rectangle, add same-window scroll coordinates to
+`getBoundingClientRect()`. Do not multiply by `visual.scale` or use scale as a
+breakpoint. See [concepts](https://react-viewport.nipesolutions.com/concepts)
+and the [API reference](https://react-viewport.nipesolutions.com/api) for state
+fields and coordinate recipes.
 
 ## Keyboard and safe area
 
-`keyboard.height` is the estimated or reported bottom viewport occlusion caused
-by the software keyboard. It is not the physical keyboard's full rectangular
-height.
-
-Detection follows a deliberately short hierarchy:
-
-1. Native Virtual Keyboard intersection geometry is authoritative when available.
-2. Otherwise, conservative VisualViewport inference can report an occlusion.
-3. When the evidence is insufficient, the library reports no keyboard.
-
-The W3C [VirtualKeyboard API](https://w3c.github.io/virtual-keyboard/) defines
-`boundingRect` as the intersection of the virtual keyboard with the document
-viewport in client coordinates. `supported.virtualKeyboard` means that API is
-present; it does not mean `overlaysContent` mode is active. This library observes
-geometry and never enables overlay mode. A non-empty native intersection sets
-`open: true`; if floating geometry does not touch the layout viewport's bottom
-edge, bottom occlusion remains `height: 0`.
+`keyboard.height` is bottom-edge viewport occlusion in CSS pixels, not the full
+keyboard rectangle. Native VirtualKeyboard intersection geometry takes precedence;
+a floating keyboard can report `open: true` with `height: 0`. The library observes
+geometry and never enables `overlaysContent` mode.
 
 A bottom-attached partial-width rectangle still yields a scalar bottom inset. That scalar cannot represent segmented or arbitrary-shape avoidance.
 
 The fallback infers an occluding software keyboard only when an
-editable element is focused, zoom is not active, and visual-bottom occlusion
-crosses `max(80 CSS px, 15% of layout height)`. The keyboard-closed baseline is
-only an evidence gate: reported fallback height is always the current
+editable element is focused, zoom is inactive, and visual-bottom occlusion reaches
+`max(80 CSS px, 15% of layout height)`. Its closed baseline gates the evidence;
+reported height is the current
 `Math.max(0, layoutHeight - (visualOffsetTop + visualHeight))`. If layout and
-visual height shrink together with no current bottom occlusion, the keyboard
-remains closed. Focus alone never means that a software keyboard is open. This
-deliberate heuristic can miss small, floating, or split keyboards; treat
-`keyboard` as measured or inferred geometry, not a device-level keyboard
-guarantee.
+visual height shrink together without bottom occlusion, it reports closed. Focus
+alone is insufficient. Small, floating, and split keyboards may be missed.
 
-Keyboard occlusion and the raw bottom safe-area inset can describe the same
-covered edge. When an application needs one bottom constraint, use
-`Math.max(keyboard.height, safeArea.bottom)` rather than adding them.
+`safeArea` contains raw CSS `env(safe-area-inset-*)` measurements and does not
+automatically become zero while a keyboard is visible. Use
+`Math.max(keyboard.height, safeArea.bottom)` for one bottom constraint; do not
+add the two. Non-zero insets generally require `viewport-fit=cover` metadata.
+
+Read [browser behavior](https://react-viewport.nipesolutions.com/browser-behavior)
+for detection rules, native geometry, and browser-specific evidence.
 
 ## CSS variables
 
-For CSS-driven positioning, install variables on the document root (the default)
-or on a chosen element:
+When CSS needs geometry from the shared store, install the optional bridge:
 
 ```tsx
+'use client'
+
 import { useViewportCssVariables } from '@nipe-solutions/react-viewport'
 
 export function App() {
@@ -160,59 +156,36 @@ export function App() {
 }
 ```
 
-The hook is a CSS bridge, not a layout system. It writes these client-side variables: layout and visual width/height,
-visual offsets/page positions/scale, keyboard height, and four safe-area inset
-lengths. Dimensional variables such as `--react-viewport-layout-height` are
-removed until the first measurement, rather than populated with made-up server
-values. Consumers share one store per window. CSS-variable ownership is restored on cleanup;
-see [Concepts](https://react-viewport.nipesolutions.com/concepts#performance).
-
-Non-zero `env(safe-area-inset-*)` values generally require the page viewport to
-opt into `viewport-fit=cover`. Configure that metadata before relying on the
-package's measured `safeArea` values; unsupported or zero-inset environments
-truthfully report zero.
-
-For a secondary positioning recipe, see the
-[CSS baseline](https://react-viewport.nipesolutions.com/lab/css). Prefer direct CSS `env()` and
-dynamic viewport units when they solve the layout.
-
-## SSR and hydration
-
-SSR uses the stable, geometry-neutral snapshot required by `useSyncExternalStore` without accessing browser globals.
-Render a placeholder until `ready` becomes true after hydration.
+It writes layout/visual dimensions, offsets, page positions, scale, keyboard
+height, and safe-area insets to the document root by default, or a chosen element.
+Dimensional variables such as `--react-viewport-layout-height` remain absent until
+the first measurement. Ownership is restored on cleanup. See
+[concepts](https://react-viewport.nipesolutions.com/concepts#performance) for the
+lifecycle contract and the [API](https://react-viewport.nipesolutions.com/api)
+for variable names.
 
 ## When CSS is enough
 
-Prefer CSS when the browser can express the behavior directly. Use `dvh`, `svh`,
-and `lvh` for viewport-relative sizing; use `env(safe-area-inset-*)` for safe
-area padding; and use media/container queries for responsive layout. This
-library is for React behavior that needs measured geometry or an explicit
-layout-versus-visual distinction. It is not a breakpoint, device-detection,
-scroll-locking, focus-management, modal, or general mobile-layout library.
+Use `dvh`, `svh`, or `lvh` for viewport sizing, `env(safe-area-inset-*)` for
+padding, and media/container queries for responsive layout. The package is useful
+when React logic needs numeric geometry; it does not manage breakpoints, device
+detection, scrolling, focus, modals, or general mobile layout.
 
 ## Browser terminology and limitations
 
-**Supported** means the runtime can detect an API on the current browser.
-**Tested** means a deterministic repository scenario covers a behavior in the
-configured Chromium, Firefox, or WebKit projects. **Fallback** means the package
-uses documented alternate geometry when an optional API is absent. These labels
-are different from physical-device verification.
+The project does not claim universal browser support. `supported.visualViewport`
+and `supported.virtualKeyboard` indicate runtime API availability. They do not
+prove physical-device testing, overlay mode, or keyboard detection.
 
-The project does not claim universal browser support. In particular:
+Repository scenarios test deterministic behavior in Chromium, Firefox, and
+WebKit. Desktop automation cannot reproduce mobile browser chrome and keyboard
+animations exactly. The fallback favors false negatives over moving UI for
+ordinary browser chrome changes; embedded WebViews need host-level verification.
+Focus inference follows open shadow roots only. Foldable viewport segments and
+synthetic keyboard animations are outside v1.
 
-- Browser APIs cannot reliably distinguish all floating or split software-keyboard
-  arrangements.
-- The fallback inference intentionally favors false negatives over moving UI for
-  ordinary browser chrome changes.
-- Focus inference follows open shadow roots, not closed shadow-root internals.
-- Desktop automation cannot reproduce physical mobile browser chrome or keyboard
-  animations exactly.
-- Embedded WebViews can expose different viewport behavior and need host-level
-  verification.
-- Foldable viewport segments and synthetic keyboard animations are outside v1.
-
-See [`docs/browser-notes.md`](docs/browser-notes.md) for the browser-note
-registry and [`docs/REAL_DEVICE_QA.md`](docs/REAL_DEVICE_QA.md) for the current
+See [browser notes](docs/browser-notes.md) for Supported, Tested, and Fallback
+classifications and [real-device QA](docs/REAL_DEVICE_QA.md) for the pending
 physical-device matrix.
 
 ## Project
