@@ -2072,6 +2072,27 @@ h3 {
   padding-block: 2rem;
   border-block: 1px solid var(--rule);
 }
+.project-support {
+  padding-block: 2rem;
+  border-top: 1px solid var(--rule);
+}
+.project-support p {
+  max-width: 65ch;
+  color: var(--ink-muted);
+}
+.project-support-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.project-support-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.9rem;
+  padding: 0.65rem 1rem;
+  border: 2px solid var(--coordinate-deep);
+  color: var(--coordinate-deep);
+}
 .lab-cta h2 {
   margin-bottom: 0.5rem;
 }
