@@ -15,7 +15,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-frame site-header__inner">
-        <Link className="site-identity" href="/" aria-label="React Viewport home">
+        <Link className="site-identity" href="/">
           <span className="site-identity__mark" aria-hidden="true">
             <i />
           </span>
